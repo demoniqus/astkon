@@ -9,10 +9,9 @@
 namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
-use Astkon\DataBase;
 use Astkon\View\View;
 
-class MeasuresController extends Controller
+class SettingsController extends Controller
 {
     /**
      * @param string $action - запрашиваемый метод
@@ -25,17 +24,5 @@ class MeasuresController extends Controller
 
     public function IndexAction() {
         (new View())->generate();
-    }
-
-    public function MeasuresListAction($context) {
-        $view = new View();
-        $view->measures = (new DataBase())->measure->getRows();
-        $view->generate();
-    }
-
-    public function EditAction($context) {
-        $view = new View();
-        $view->Measure = (new DataBase())->measure->getFirstRow('id_measure = :id_measure', null, array('id_measure' => $context['id']));
-        $view->generate();
     }
 }

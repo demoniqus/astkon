@@ -4,19 +4,23 @@
         <?php
             $menu = array(
                 array(
-                    'Action' => 'Entrance/EntranceList',
-                    'Caption' => 'Поступления'
+                    'Action' => '/',
+                    'Caption' => 'Главная'
                 ),
                 array(
-                    'Action' => 'Entrance/LeavingList',
-                    'Caption' => 'Выбытие'
+                    'Action' => '/WarehousePosition/List',
+                    'Caption' => 'Складские позиции'
                 ),
                 array(
-                    'Action' => 'Settings/Index',
+                    'Action' => '/Operations/Index',
+                    'Caption' => 'Операции'
+                ),
+                array(
+                    'Action' => '/Settings/Index',
                     'Caption' => 'Настройки'
                 ),
                 array(
-                    'Action' => 'User/List',
+                    'Action' => '/User/List',
                     'Caption' => 'Пользователи'
                 ),
             );
@@ -25,8 +29,8 @@
             }
             array_walk($menu, function($menuItem) use ($activeMenu) {
                 ?>
-                <li class="nav-item">
-                    <a class="nav-link<?php if (isset($activeMenu) && $activeMenu === $menuItem['Action']) echo ' active'; ?>" href="<?= $menuItem['Action']; ?>"><?= $menuItem['Caption']; ?></a>
+                <li class="nav-item<?php if (isset($activeMenu) && strtolower($activeMenu) === strtolower($menuItem['Action'])) echo ' btn btn-outline-primary p0 text-left'; ?>">
+                    <a class="nav-link" href="<?= $menuItem['Action']; ?>"><?= $menuItem['Caption']; ?></a>
                 </li>
         <?php
             });
