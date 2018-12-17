@@ -11,6 +11,7 @@ namespace Astkon;
 header('Content-Type: text/html; charset=utf-8');
 require_once 'core/Model.php';
 require_once 'core/Controller.php';
+require_once 'core/View.php';
 require_once 'base64.php';
 require_once 'db.php';
 require_once 'linq.php';
@@ -80,7 +81,15 @@ final class GlobalConst {
      * Файл для регистрации моделей, реализующих сущности базы данных
      */
     const ClassRegistry = 'php' . DIRECTORY_SEPARATOR . 'models.php';
+    /**
+     * Директория представлений
+     */
+    const ViewsDirectory = 'php' . DIRECTORY_SEPARATOR . 'views';
+    const DefHeaderView = GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_defheader.php';
+    const DefFooterView = GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_deffooter.php';
+    const ViewDefCharset = 'utf-8';
     const FOpenMode = 'wt';
 
 }
+
 

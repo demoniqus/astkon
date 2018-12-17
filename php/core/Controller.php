@@ -9,11 +9,21 @@
 namespace Astkon\Controller;
 
 use Astkon\linq;
-use Astkon\Model\User;
+use Astkon\View\View;
 use ReflectionMethod;
 
 abstract class Controller
 {
+    /**
+     * @var View
+     */
+    protected $view;
+
+    protected function __construct()
+    {
+        $this->view = new View();
+    }
+
     /**
      * @param string $action - запрашиваемый метод
      * @param array $context - дополнительный контекст
@@ -22,12 +32,8 @@ abstract class Controller
 
         if (method_exists(static::class, $action)) {
             if (self::checkPermition($action)) {
-            echo '<pre>';
-            echo __FILE__ . PHP_EOL;
-            echo __LINE__ . PHP_EOL;
-            echo $action . PHP_EOL;
-            die();
-                static::$action($context);
+                echo 'action = ' .  $action . '<br />';
+                (new static())->$action($context);
             }
             else {
                 /*Возвращаем ошибку*/
@@ -46,9 +52,9 @@ abstract class Controller
         (new linq(explode(PHP_EOL,  $reflectionMethod->getDocComment())))
         ->for_each(function($line) use (&$permition){
             if (strpos($line, '@access') !== false) {
-                /** @var User $currentUser*/
-                $currentUser = $GLOBALS['CurrentUser'];
-                $role = strtolower($currentUser->Role);
+
+                $currentUser = $_SESSION['CurrentUser'];
+                $role = strtolower($currentUser['Role']);
                 $line = str_replace('*', '', $line);
                 $line = str_replace('@access', '', $line);
                 $roles = (new linq(explode(',', $line)))

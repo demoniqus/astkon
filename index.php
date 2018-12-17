@@ -2,7 +2,7 @@
 
 namespace Astkon;
 
-use Astkon\Model\User;
+
 
 session_start();
 
@@ -10,12 +10,14 @@ require_once  '.' . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'main_re
 
 $key = 'CurrentUser';
 $user = null;
-if (!isset($_SESSION[$key])) {
-    $_SESSION[$key] = new User(array(
+unset ($GLOBALS[$key]);
+if (!isset($_SESSION[$key]) || !isset($GLOBALS[$key]) || !$_SESSION[$key] || !$GLOBALS[$key]) {
+
+    $_SESSION[$key] = $GLOBALS[$key] = array(
         'Role' => 'Guest',
-    ));
+    );
 }
-$GLOBALS[$key] = $_SESSION[$key];
+
 
 /**
  * Функция дополняет части запрошенного пути соответствующими ими обозначениями типа Controller, Action
