@@ -1,8 +1,5 @@
 <?PHP
-
 namespace Astkon;
-
-
 
 session_start();
 
@@ -32,15 +29,23 @@ function setPathPartType($pathPart, $type) {
     }
     return ucfirst(mb_strtolower($pathPart)) . ucfirst($type);
 }
+$requestUri = $_SERVER['PHP_SELF'];
 
-
-$requestUri = explode('/', $_SERVER['PHP_SELF']);
+if (strpos( $requestUri, '/') === 0) {
+    $requestUri = mb_substr($requestUri, 1);
+}
+$requestUri = explode('/', $requestUri);
+$requestUri = (new linq($requestUri))
+    ->where(function($item){return !preg_match('/\.php/i', $item);})
+    ->getData();
 if (count($requestUri) > 3) {
     //Ошибка bad request, поскольку PHP_SELF не содержит параметров, в которых могли бы встречаться слеши
 }
+
 while (count($requestUri) < 3) {
-    $requestUri = array_merge(array(''), $requestUri);
+    $requestUri[] = '';
 }
+
 
 $index = 0;
 $controller = $requestUri[$index] === '' ? 'index' : $requestUri[$index];
@@ -60,7 +65,7 @@ $controllerNamespace = 'Astkon\Controllers\\';
 $controller = $controllerNamespace . $controller;
 
 if (class_exists($controller)) {
-    $controller::Run($action, array('id' => $requestUri));
+    $controller::Run($action, array('id' => $requestUri[2]));
 }
 else {
     echo '404 NOT FOUND' . PHP_EOL;
