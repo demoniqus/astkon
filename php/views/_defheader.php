@@ -14,9 +14,33 @@ $bootstrapDir = 'bootstrap_v4.0.0';
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap.css" />
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap-grid.css" />
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap-reboot.css" />
-    <script type="application/javascript" src="jquery/jquery-3.3.1.min.js" />
-    <script type="application/javascript" src="<?= $bootstrapDir; ?>/bootstrap.js" ></script>
-    <script type="application/javascript" src="<?= $bootstrapDir; ?>/bootstrap.bundle.js" ></script>
-
+    <script type="text/javascript" src="jquery/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="<?= $bootstrapDir; ?>/bootstrap.js" ></script>
+    <script type="text/javascript" src="<?= $bootstrapDir; ?>/bootstrap.bundle.js" ></script>
+    <style type="text/css">
+        body, html {
+            width: 100% !important;
+            height: 100% !important;
+            min-width: 100% !important;
+            max-height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
+        }
+        #document-header, #document-body, #document-footer {
+            border: 0px none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        #document-body {
+            overflow: auto !important;
+        }
+        #document-header {
+            overflow: hidden; !important;
+            display: none;
+        }
+    </style>
 </head>
 <body>
+    <div id="document-header" class="container-fluid"></div>
+    <div id="document-body" class="container-fluid">
