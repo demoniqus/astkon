@@ -32,7 +32,6 @@ abstract class Controller
 
         if (method_exists(static::class, $action)) {
             if (self::checkPermition($action)) {
-                echo 'action = ' .  $action . '<br />';
                 (new static())->$action($context);
             }
             else {
