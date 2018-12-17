@@ -2,7 +2,7 @@
 
 use Astkon\GlobalConst;
 
-$bootstrapDir = 'bootstrap_v4.0.0';
+$bootstrapDir = '/bootstrap_v4.0.0';
 
 ?>
 <!doctype html>
@@ -14,7 +14,7 @@ $bootstrapDir = 'bootstrap_v4.0.0';
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap.css" />
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap-grid.css" />
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap-reboot.css" />
-    <script type="text/javascript" src="jquery/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="/jquery/jquery-3.3.1.min.js"></script>
     <script type="text/javascript" src="<?= $bootstrapDir; ?>/bootstrap.js" ></script>
     <script type="text/javascript" src="<?= $bootstrapDir; ?>/bootstrap.bundle.js" ></script>
     <style type="text/css">

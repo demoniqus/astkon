@@ -29,7 +29,6 @@ abstract class Controller
      * @param array $context - дополнительный контекст
      */
     public static function Run(string $action, array $context) {
-
         if (method_exists(static::class, $action)) {
             if (self::checkPermition($action)) {
                 (new static())->$action($context);
