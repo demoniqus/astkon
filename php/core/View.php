@@ -29,6 +29,9 @@ class View
     {
         $this->defHeaderTemplate = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::DefHeaderView;
         $this->defFooterTemplate = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::DefFooterView;
+        $backtrace = debug_backtrace(2, 2);
+        list($controller, $action) = self::get_C_A_from_backtrace($backtrace[1]);
+        $this->variables['activeMenu'] = '/' . $controller . '/' . $action;
     }
 
     /**
