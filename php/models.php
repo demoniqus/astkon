@@ -1,3 +1,5 @@
 <?php
 
-require_once __DIR__ . '/../php/models/user.php';
+require_once getcwd() . '/php/models/Article.php';
+require_once getcwd() . '/php/models/Measure.php';
+require_once getcwd() . '/php/models/User.php';

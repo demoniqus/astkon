@@ -680,12 +680,17 @@ class DataBase {
             $className . 'Partial.php',
             'wt'
         );
-        fwrite($partialHandle, '<?php ' . PHP_EOL . PHP_EOL . '/** Generated automaticaly. Don\'t change this file manually! */' . PHP_EOL . PHP_EOL . PHP_EOL);
+        fwrite($partialHandle, '<?php ' . PHP_EOL . PHP_EOL . '/** Generated automaticaly. Don\'t change this file manually! */' . PHP_EOL);
+        fwrite($partialHandle,  PHP_EOL);
+        fwrite($partialHandle,  PHP_EOL);
         fwrite($partialHandle, 'namespace ' . self::getRootNameSpace() . '\\Model\\Partial;' . PHP_EOL);
+        fwrite($partialHandle,  PHP_EOL);
         fwrite($partialHandle, 'use ' . self::getRootNameSpace() . '\\Model\\Model;' . PHP_EOL);
+        fwrite($partialHandle,  PHP_EOL);
         fwrite($partialHandle, 'abstract class ' . ucfirst($className) . 'Partial extends Model {' . PHP_EOL);
         fwrite($partialHandle, "\t" . 'const DataTable = \'' . $tableName . '\';' . PHP_EOL);
-        (new linq($this->query('select '
+
+        $columns = $this->query('select '
             . 'table_name, '
             . 'column_name, '
             . 'data_type, '
@@ -696,11 +701,48 @@ class DataBase {
             . 'column_key, '
             . 'is_nullable, '
             . 'privileges '
-            . ' from information_schema.columns where table_name=\'' . self::camelCaseToUnderscore($className) . '\' and table_schema=\'' . $this->dbname . '\''))
-        )->where(function($line){
-            return count($line) > 0;
-        })->for_each(function($line) use ($partialHandle) {
+            . ' from information_schema.columns where table_name=\'' . self::camelCaseToUnderscore($className) . '\' and table_schema=\'' . $this->dbname . '\'');
 
+        $columns = array_filter($columns, function($line){ return count($line) > 0 ;});
+        $columns = (new linq($columns))->toAssoc(function($column){ return $column['column_name'];})->getData();
+
+        $references = $this->query('select '
+        . '`table_name`, '
+        . '`column_name`, '
+        . '`referenced_table_name`, '
+        . '`referenced_column_name`  '
+        . ' from `information_schema`.`key_column_usage` where table_schema = \'' . GlobalConst::DbName .
+            '\' AND table_name=\'' . self::camelCaseToUnderscore($className) . '\' AND `referenced_column_name` IS NOT NULL'
+        );
+        foreach ($references as $reference) {
+            $columns[$reference['column_name']]['foreign_key'] = array(
+                'model' => $reference['referenced_table_name'],
+                'field' => $reference['referenced_column_name'],
+            );
+        }
+
+        $extLinks = $this->query('select '
+            . '`table_name`, '
+            . '`column_name`, '
+            . '`referenced_table_name`, '
+            . '`referenced_column_name`  '
+            . ' from `information_schema`.`key_column_usage` where table_schema = \'' . GlobalConst::DbName .
+            '\' AND referenced_table_name=\'' . self::camelCaseToUnderscore($className) . '\''
+        );
+        foreach ($extLinks as $extLink) {
+            $columns[$extLink['referenced_column_name']]['external_link'] = array(
+                'model' => $extLink['table_name'],
+                'field' => $extLink['column_name'],
+            );
+        }
+
+        fwrite($partialHandle, '/** @var array */' . PHP_EOL);
+        fwrite($partialHandle, 'protected $fieldsInfo = ' . var_export($columns, true) . ';' . PHP_EOL);
+        $columns = array_values($columns);
+
+        uasort($columns, function($a, $b){ return $a['column_name'] <=> $b['column_name'];});
+
+        array_walk($columns, function($line) use ($partialHandle){
             fwrite($partialHandle, "\t");
             switch ($line['data_type']) {
                 case 'int':
@@ -755,16 +797,12 @@ class DataBase {
             $className . '.php';
         if (!file_exists($classFileName)) {
             $classFileHandle = fopen($classFileName, 'wt');
-//            $partialClassRelativePath = '';
-//            $counter = count(explode(DIRECTORY_SEPARATOR, GlobalConst::ClassDirectory));
-//            while ($counter--) {
-//                $partialClassRelativePath .= '..' . DIRECTORY_SEPARATOR;
-//            }
+
             $partialClassRelativePath = DIRECTORY_SEPARATOR . GlobalConst::PartialClassDirectory . DIRECTORY_SEPARATOR .
                 $className . 'Partial.php';
             fwrite($classFileHandle, '<?php' . PHP_EOL);
             fwrite($classFileHandle, 'namespace ' . self::getRootNameSpace() . '\\Model;' . PHP_EOL . PHP_EOL);
-            fwrite($classFileHandle, 'require_once __DIR__ . \'' . $partialClassRelativePath . '\';' . PHP_EOL . PHP_EOL);
+            fwrite($classFileHandle, 'require_once getcwd() . \'/' . $partialClassRelativePath . '\';' . PHP_EOL . PHP_EOL);
             fwrite($classFileHandle, 'use  ' . self::getRootNameSpace() . '\\DataBase;' . PHP_EOL . PHP_EOL);
             fwrite($classFileHandle, 'use  ' . self::getRootNameSpace() . '\\Model\\Partial\\' . ucfirst($className) . 'Partial;' . PHP_EOL . PHP_EOL);
             fwrite($classFileHandle, '/**' . PHP_EOL );
@@ -799,21 +837,14 @@ class DataBase {
 
     private function registerModel(string $className) {
         /*Регистрируем созданный класс*/
-//        $classRelativePath = '';
-//        $UpCount = count(explode(DIRECTORY_SEPARATOR, GlobalConst::ClassRegistry));
-//        while(--$UpCount) {
-//            $classRelativePath .= '..' . DIRECTORY_SEPARATOR;
-//        }
         $classRelativePath = DIRECTORY_SEPARATOR . GlobalConst::ClassDirectory . DIRECTORY_SEPARATOR . $className . '.php';
         $classRegisterHandle = fopen(getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ClassRegistry, 'r+t');
         if (strpos(fgets($classRegisterHandle), '<?php') === false) {
             fwrite($classRegisterHandle, '<?php' . PHP_EOL);
         }
         /*Ищем информацию о том, что файл уже зарегистрирован*/
-        $newline = 'require_once __DIR__ . \'/..' . $classRelativePath . '\';';
+        $newline = 'require_once getcwd() . \'' . $classRelativePath . '\';';
         while (trim($line = fgets($classRegisterHandle)) !== $newline) {
-//            echo 'LINE => ' . $line . PHP_EOL;
-//            echo 'SEARCH => ' . $newline . PHP_EOL;
             if(feof($classRegisterHandle)) {
                 fwrite($classRegisterHandle, $newline . PHP_EOL);
                 break;

@@ -1,7 +1,32 @@
 <?php
 namespace Astkon\Model;
 
+use Astkon\DataBase;
+use Astkon\GlobalConst;
+
 abstract class Model  {
+
+    public static function UpdateModel() {
+        $db = new DataBase();
+        if (static::class === self::class) {
+            $tables = $db->query('select `table_name` from `information_schema`.`tables` where `table_schema`=\'' . GlobalConst::DbName . '\'');
+            foreach ($tables as $table) {
+                $tableName = DataBase::underscoreToCamelCase($table['table_name']);
+                $db->generateClass($tableName);
+            }
+            die();
+        }
+        else {
+            $className = explode('\\', static::class);
+            $className = $className[count($className) - 1];
+            if (preg_match('Partial$', $className)) {
+                $className = substr($className, 0, strlen($className) - strlen('Partial'));
+            }
+            $db->generateClass($className);
+        }
+    }
+
+
     protected $fields = array();
     /**
      * @var string
