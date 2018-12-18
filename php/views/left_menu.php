@@ -8,8 +8,8 @@
                     'Caption' => 'Главная'
                 ),
                 array(
-                    'Action' => '/WarehousePosition/List',
-                    'Caption' => 'Складские позиции'
+                    'Action' => '/Articles/List',
+                    'Caption' => 'Артикулы'
                 ),
                 array(
                     'Action' => '/Operations/Index',
