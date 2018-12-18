@@ -15,6 +15,7 @@ require_once 'core/View.php';
 require_once 'base64.php';
 require_once 'db.php';
 require_once 'linq.php';
+require_once 'lib.php';
 require_once 'types_processor.php';
 require_once 'file_system.php';
 require_once 'url.php';

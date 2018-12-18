@@ -14,6 +14,7 @@ $bootstrapDir = '/bootstrap_v4.0.0';
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap.css" />
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap-grid.css" />
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap-reboot.css" />
+    <link rel="stylesheet" href="/main.css" />
     <script type="text/javascript" src="/jquery/jquery-3.3.1.min.js"></script>
     <script type="text/javascript" src="<?= $bootstrapDir; ?>/bootstrap.js" ></script>
     <script type="text/javascript" src="<?= $bootstrapDir; ?>/bootstrap.bundle.js" ></script>
@@ -36,8 +37,9 @@ $bootstrapDir = '/bootstrap_v4.0.0';
             overflow: auto !important;
         }
         #document-header {
-            overflow: hidden; !important;
-            display: none;
+            overflow: hidden !important;
+            min-height: 5px;
+            content: "";
         }
     </style>
 </head>
