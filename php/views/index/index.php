@@ -15,6 +15,8 @@ use Astkon\GlobalConst;
 <div class="row mx-0">
     <?php require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php'; ?>
     <div class="col-lg text-center">
-        <div class="alert alert-secondary p-2 d-inline-block mt-3">Для начала работы выберите пункт меню</div>
+        <?php
+        \Astkon\Lib\TileMenu(array_filter($leftMenuItems, function($menuItem){ return $menuItem['Action'] !== '/';}), 4, 2);
+        ?>
     </div>
 </div>
