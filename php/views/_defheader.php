@@ -11,6 +11,7 @@ $bootstrapDir = '/bootstrap_v4.0.0';
     <meta charset="<?= GlobalConst::ViewDefCharset ;?>" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Astkon Warehouse</title>
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap.css" />
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap-grid.css" />
     <link rel="stylesheet" href="<?= $bootstrapDir; ?>/bootstrap-reboot.css" />

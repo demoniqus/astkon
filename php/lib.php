@@ -43,3 +43,20 @@ function TileMenu (array $tiles, int $tileColumnsCount = 0, int $tilesInRow = 0)
     }
 
 }
+
+
+function Redirect(string $controller, string $action = null, string $id = null) {
+    $path = array($controller);
+    $path[] = $action ?? 'index';
+    if ($id !== null) {
+        $path[] = $id;
+    }
+    RedirectToUrl('/' . implode('/', $path));
+
+}
+
+function RedirectToUrl(string $url) {
+    ob_clean();
+    header('Location: ' . $url);
+    die();
+}

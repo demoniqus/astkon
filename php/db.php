@@ -665,7 +665,7 @@ class DataBase {
             '\' AND table_name=\'' . self::camelCaseToUnderscore($className) . '\' AND `referenced_column_name` IS NOT NULL'
         );
         foreach ($references as $reference) {
-            $columns[$reference['column_name']]['foreign_key'] = array(
+            $columns[DataBase::underscoreToCamelCase($reference['column_name'])]['foreign_key'] = array(
                 'model' => $reference['referenced_table_name'],
                 'field' => $reference['referenced_column_name'],
             );
@@ -683,7 +683,7 @@ class DataBase {
             '\' AND referenced_table_name=\'' . self::camelCaseToUnderscore($className) . '\''
         );
         foreach ($extLinks as $extLink) {
-            $columns[$extLink['referenced_column_name']]['external_link'] = array(
+            $columns[DataBase::underscoreToCamelCase($extLink['referenced_column_name'])]['external_link'] = array(
                 'model' => $extLink['table_name'],
                 'field' => $extLink['column_name'],
             );
@@ -787,7 +787,7 @@ class DataBase {
 
         $columns = $this->getClassColumns(self::camelCaseToUnderscore($className));
 
-        $columns = (new linq($columns))->toAssoc(function($column){ return $column['column_name'];})->getData();
+        $columns = (new linq($columns))->toAssoc(function($column){ return DataBase::underscoreToCamelCase($column['column_name']);})->getData();
 
         $columns = $this->setColumnsForeignKeys($columns, $className);
 
@@ -804,10 +804,10 @@ class DataBase {
             $_column_name = $line['column_name'];
             $columnName = self::underscoreToCamelCase($_column_name);
             if (isset($fieldsDoc[$columnName])) {
-                echo __LINE__;
-                echo '<br />';
-                var_dump($fieldsDoc[$columnName]);
-                echo '<hr />';
+//                echo __LINE__;
+//                echo '<br />';
+//                var_dump($fieldsDoc[$columnName]);
+//                echo '<hr />';
 
                 $var = '';
                 $databaseColumnName = $_column_name;
@@ -903,7 +903,7 @@ class DataBase {
                 fwrite($partialHandle, PHP_EOL . "\t*/" . PHP_EOL);
             }
 
-            fwrite($partialHandle, PHP_EOL . "\t" . 'public $' . $columnName . ';' . PHP_EOL . PHP_EOL);
+            fwrite($partialHandle, "\t" . 'public $' . $columnName . ';' . PHP_EOL . PHP_EOL);
         });
 
         fwrite($partialHandle, '}' . PHP_EOL);

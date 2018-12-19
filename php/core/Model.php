@@ -28,49 +28,140 @@ abstract class Model  {
         }
     }
 
-
-    public static function EditForm(array $item) {
+    /**
+     * Метод проверяет, что метод, вызвавший проверку checkIsClassOfModel, вызван не из Model или Partial классов, а
+     * из полноценной модели
+     * @return bool
+     */
+    protected static function checkIsClassOfModel() {
         if (static::class === self::class) {
-            //ошибка
+            return false;
         }
         $className = explode('\\', static::class);
         $className = $className[count($className) - 1];
         if (preg_match('/Partial$/i', $className)) {
-            // ошибка
+            return false;
         }
+        return true;
+    }
 
+    /**
+     * Метод извлекает alias для указанного поля из DocComment
+     * @param string $fieldName
+     * @return string
+     */
+    public static function getFieldAlias(string $fieldName) {
+        if (!self::checkIsClassOfModel()) {
+            //Ошибка
+        }
+        $editedProperties = self::getEditedProperties();
+
+        $editedProperties = array_filter($editedProperties, function(ReflectionProperty $property) use ($fieldName) {
+            return $property->name === $fieldName;
+        });
+
+        /** @var ReflectionProperty $reflectionProperty */
+        $reflectionProperty = array_shift($editedProperties);
+//        var_dump($reflectionProperty);
+//        die();
+        $alias = self::extractDocCommentItem($reflectionProperty, 'alias');
+        $alias = self::trimDocCommentKey($alias);
+        return !!$alias ? $alias : $fieldName;
+    }
+
+    /**
+     * Метод возвращает набор публичных нестатичных свойств класса Partial
+     * @return array
+     */
+    protected static function getEditedProperties() {
         $partialClassName = explode('\\', static::class);
         $partialClassName[] = $partialClassName[count($partialClassName) - 1] . 'Partial';
         $partialClassName[count($partialClassName) - 2] = 'Partial';
         $partialClassName = implode('\\', $partialClassName);
 
-
         $partialParentClass = new ReflectionClass($partialClassName);
 
         $editedProperties = array_filter(
-            $partialParentClass->getProperties(),
+            $partialParentClass->getProperties(ReflectionProperty::IS_PUBLIC),
             function(ReflectionProperty $property ) use ($partialClassName){
-                if (!$property->isPublic() || $property->isStatic()) {
+                if ($property->isStatic()) {
                     return false;
                 }
 
                 return $partialClassName === $property->class;
             }
         );
+        $fieldsInfo = static::$fieldsInfo;
+        usort($editedProperties, function(ReflectionProperty $a, ReflectionProperty $b) use ($fieldsInfo) {
+            $aColumnKey = strtolower($fieldsInfo[$a->name]['column_key']);
+            if ($aColumnKey === 'pri') {
+                return -1;
+            }
+            $bColumnKey = strtolower($fieldsInfo[$b->name]['column_key']);
+            if ($bColumnKey === 'pri') {
+                return 1;
+            }
+            return 0;
+        });
+        return $editedProperties;
+    }
 
-//        var_dump(static::$fieldsInfo);
+    /**
+     * Метод извлекаект из DocComment элемент по @key. Предполагается, что такой элемент однострочный без переносов строк.
+     * @param ReflectionProperty $reflectionProperty
+     * @param string $itemName
+     * @return string|null
+     */
+    protected static function extractDocCommentItem(ReflectionProperty $reflectionProperty, string $itemName) : string{
+        $items = array_filter(
+            explode(PHP_EOL, $reflectionProperty->getDocComment()),
+            function($line) use ($itemName) { return mb_strpos($line, '@' . $itemName) > 0; }
+        );
+        return count($items) > 0 ? array_shift($items) : null;
+    }
+
+    /**
+     * Метод извлекает значение из DocComment-строки и отрезает @key и начальные *
+     * @param string $docCommentLine
+     * @return string
+     */
+    protected static function trimDocCommentKey(string $docCommentLine) {
+        $docCommentLine = trim($docCommentLine);
+        while (mb_substr($docCommentLine, 0, 1) === '*') {
+            $docCommentLine = trim(mb_substr($docCommentLine, 1));
+        }
+        if (mb_substr($docCommentLine, 0, 1) === '@') {
+            $docCommentLine = trim(mb_substr($docCommentLine, mb_strpos($docCommentLine, ' ')));
+        }
+        return $docCommentLine;
+    }
+
+    /**
+     * @param array $item
+     * @param array $options
+     */
+    public static function EditForm($item = array(), $options = array()) {
+        if (!self::checkIsClassOfModel()) {
+            //Ошибка
+        }
+
+        $editedProperties = self::getEditedProperties();
+
         // https://getbootstrap.com/docs/4.1/components/forms/
-        ?>
-        <form action="" method="post" enctype="multipart/form-data">
-        <?php
+
+        echo '<form action="' . $options['formAction'] . '" method="post" enctype="multipart/form-data">';
         foreach ($editedProperties as $property) {
             $propName = $property->name;
             $_prop_name = DataBase::camelCaseToUnderscore($propName);
-            $alias = $propName;
+            $alias = self::extractDocCommentItem($property, 'alias');
+            $alias = self::trimDocCommentKey($alias);
+            if (!$alias) {
+                $alias = $propName;
+            }
             $value = $item[$_prop_name];
             /** @var array $fieldInfo */
-            $fieldInfo = static::$fieldsInfo[DataBase::camelCaseToUnderscore($property->name)];
-                var_dump($fieldInfo);
+            $fieldInfo = static::$fieldsInfo[$property->name];
+//                var_dump($fieldInfo);
             if ($fieldInfo['column_key'] === 'PRI') {
                 require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'primary_key.php';
             }
@@ -80,29 +171,39 @@ abstract class Model  {
             }
             else {
 
-                require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
                 switch ($fieldInfo['data_type']) {
                     case 'bit':
                         require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'boolean.php';
-//                    echo '<div class="col-sm-9"><input type="checkbox" name="' . $propName . '" ' . (!!$item[$_prop_name] ? 'CHECKED' : '') . '" /><input type="hidden" name="' . $propName . '" value="" /></div>';
-//
                         break;
+                    case 'int':
+                    case 'tinyint':
+                    case 'smallint':
+                    case 'mediumint':
+                    case 'bigint':
+                    case 'float':
+                    case 'double':
+                    case 'decimal':
+                        $inputType = 'number';
+                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
+                        break;
+                    case 'char':
+                    case 'varchar':
+                    case 'nvarchar':
+                        $inputType = 'text';
+                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
+                        break;
+                    case 'text':
+                    case 'tinytext':
+                    case 'mediumtext':
+                    case 'longtext':
+                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'textarea.php';
+                        break;
+
                 }
             }
-//            echo '<div class="row" style="background-color: ' . ($property->isPublic() && !$property->isStatic() ? 'green' : 'red') . ';">';
-//            echo '<div class="col-md">' . $property->name  . '</div>';
-//            echo '<div class="col-md">' . $property->class  . '</div>';
-//            echo '<div class="col-md">' . implode('\\', $partialClassName) . '</div>';
-////            echo '<div style="background-color:' . (property_exists(static::class, $property->name) ? 'green' : 'red') . ';">' . $property->name . '</div>';
-//
-////            echo '<div>' . (new \ReflectionProperty(static::class, $property->name)) . '</div>';
-//            echo '</div>';
         }
-        ?>
-        </form>
-        <?php
-
-
+            require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'submit.php';
+        echo '</form>';
     }
 
 

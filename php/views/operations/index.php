@@ -28,7 +28,7 @@
                 array(
                     'Action' => '/Operations/FreeRentForm',
                     'Caption' => 'Временное пользование',
-                    'Icon' => '/tools-pict.png',
+                    'Icon' => '/tools-pict-time.png',
                 ),
             );
 
