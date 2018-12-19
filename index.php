@@ -1,6 +1,8 @@
 <?PHP
 namespace Astkon;
 
+use Astkon\View\View;
+
 session_start();
 
 require_once  '.' . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'main_require.php';
@@ -68,7 +70,7 @@ if (class_exists($controller)) {
     $controller::Run($action, array('id' => $requestUri[2]));
 }
 else {
-    echo '404 NOT FOUND' . PHP_EOL;
+    (new View())->error(404);
 }
 
 
