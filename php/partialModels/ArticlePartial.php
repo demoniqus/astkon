@@ -1,6 +1,10 @@
 <?php 
 
-/** Generated automaticaly. Don't change this file manually! */
+/**
+ * Файл генерируется автоматически.
+ * Не допускаются произвольные изменения вручную.
+ * Допускается вручную только расширять doc-блок публичный полей класса.
+ * При этом разделы @var и @database_column_name будут автоматически перезаписываться. */
 
 
 namespace Astkon\Model\Partial;
@@ -11,7 +15,7 @@ abstract class ArticlePartial extends Model {
 	const DataTable = 'article';
 /** @var array */
 protected static $fieldsInfo = array (
-  'id_article' => 
+  'IdArticle' =>
   array (
     'table_name' => 'article',
     'column_name' => 'id_article',
@@ -24,7 +28,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'article_name' => 
+  'ArticleName' =>
   array (
     'table_name' => 'article',
     'column_name' => 'article_name',
@@ -37,7 +41,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'id_measure' => 
+  'IdMeasure' =>
   array (
     'table_name' => 'article',
     'column_name' => 'id_measure',
@@ -55,7 +59,7 @@ protected static $fieldsInfo = array (
       'field' => 'id_measure',
     ),
   ),
-  'balance' => 
+  'Balance' =>
   array (
     'table_name' => 'article',
     'column_name' => 'balance',
@@ -68,7 +72,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'vendor_code' => 
+  'VendorCode' =>
   array (
     'table_name' => 'article',
     'column_name' => 'vendor_code',
@@ -81,7 +85,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'YES',
     'privileges' => 'select,insert,update,references',
   ),
-  'is_archive' => 
+  'IsArchive' =>
   array (
     'table_name' => 'article',
     'column_name' => 'is_archive',
@@ -95,22 +99,46 @@ protected static $fieldsInfo = array (
     'privileges' => 'select,insert,update,references',
   ),
 );
-	/** @var string */
+	/**
+	* @database_column_name article_name
+	* @alias Наименование
+	* @var string
+	*/
 	public $ArticleName;
 
-	/** @var float */
+	/**
+	* @database_column_name balance
+	* @alias Остаток
+	* @var float
+	*/
 	public $Balance;
 
-	/** @var int */
+	/**
+	* @database_column_name id_article
+	* @alias Идентификатор
+	* @var int
+	*/
 	public $IdArticle;
 
-	/** @var int */
+	/**
+	* @database_column_name id_measure
+	* @alias Единица измерения
+	* @var int
+	*/
 	public $IdMeasure;
 
-	/** @var bool */
+	/**
+	* @database_column_name is_archive
+	* @alias Архивный
+	* @var bool
+	*/
 	public $IsArchive;
 
-	/** @var string */
+	/**
+	* @database_column_name vendor_code
+	* @alias Код поставщика
+	* @var string
+	*/
 	public $VendorCode;
 
 }

@@ -1,6 +1,10 @@
 <?php 
 
-/** Generated automaticaly. Don't change this file manually! */
+/**
+ * Файл генерируется автоматически.
+ * Не допускаются произвольные изменения вручную.
+ * Допускается вручную только расширять doc-блок публичный полей класса.
+ * При этом разделы @var и @database_column_name будут автоматически перезаписываться. */
 
 
 namespace Astkon\Model\Partial;
@@ -11,7 +15,7 @@ abstract class UserPartial extends Model {
 	const DataTable = 'user';
 /** @var array */
 protected static $fieldsInfo = array (
-  'id_user' => 
+  'IdUser' =>
   array (
     'table_name' => 'user',
     'column_name' => 'id_user',
@@ -24,7 +28,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'login' => 
+  'Login' =>
   array (
     'table_name' => 'user',
     'column_name' => 'login',
@@ -37,7 +41,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'password' => 
+  'Password' =>
   array (
     'table_name' => 'user',
     'column_name' => 'password',
@@ -50,7 +54,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'config' => 
+  'Config' =>
   array (
     'table_name' => 'user',
     'column_name' => 'config',
@@ -64,16 +68,33 @@ protected static $fieldsInfo = array (
     'privileges' => 'select,insert,update,references',
   ),
 );
-	/** @var array */
+	/**
+	* @useredit false
+	* @database_column_name config
+	* @alias Системная конфигурация
+	* @var array
+	*/
 	public $Config;
 
-	/** @var int */
+	/**
+	* @database_column_name id_user
+	* @alias Идентификатор
+	* @var int
+	*/
 	public $IdUser;
 
-	/** @var string */
+	/**
+	* @database_column_name login
+	* @alias Логин
+	* @var string
+	*/
 	public $Login;
 
-	/** @var string */
+	/**
+	* @database_column_name password
+	* @alias Пароль
+	* @var string
+	*/
 	public $Password;
 
 }

@@ -1,6 +1,10 @@
 <?php 
 
-/** Generated automaticaly. Don't change this file manually! */
+/**
+ * Файл генерируется автоматически.
+ * Не допускаются произвольные изменения вручную.
+ * Допускается вручную только расширять doc-блок публичный полей класса.
+ * При этом разделы @var и @database_column_name будут автоматически перезаписываться. */
 
 
 namespace Astkon\Model\Partial;
@@ -11,7 +15,7 @@ abstract class MeasurePartial extends Model {
 	const DataTable = 'measure';
 /** @var array */
 protected static $fieldsInfo = array (
-  'id_measure' => 
+  'IdMeasure' =>
   array (
     'table_name' => 'measure',
     'column_name' => 'id_measure',
@@ -29,7 +33,7 @@ protected static $fieldsInfo = array (
       'field' => 'id_measure',
     ),
   ),
-  'measure_name' => 
+  'MeasureName' =>
   array (
     'table_name' => 'measure',
     'column_name' => 'measure_name',
@@ -42,7 +46,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'is_split' => 
+  'IsSplit' =>
   array (
     'table_name' => 'measure',
     'column_name' => 'is_split',
@@ -55,7 +59,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'precision' => 
+  'Precision' =>
   array (
     'table_name' => 'measure',
     'column_name' => 'precision',
@@ -69,16 +73,32 @@ protected static $fieldsInfo = array (
     'privileges' => 'select,insert,update,references',
   ),
 );
-	/** @var int */
+	/**
+	* @database_column_name id_measure
+	* @alias Идентификатор
+	* @var int
+	*/
 	public $IdMeasure;
 
-	/** @var bool */
+	/**
+	* @database_column_name is_split
+	* @alias Признак делимости
+	* @var bool
+	*/
 	public $IsSplit;
 
-	/** @var string */
+	/**
+	* @database_column_name measure_name
+	* @alias Обозначение
+	* @var string
+	*/
 	public $MeasureName;
 
-	/** @var int */
+	/**
+	* @database_column_name precision
+	* @alias Точность деления (дес. зн)
+	* @var int
+	*/
 	public $Precision;
 
 }

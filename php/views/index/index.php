@@ -6,8 +6,6 @@ use Astkon\GlobalConst;
 <div class="container-fluid" style="color: lawngreen; font-size: 14em; display: none !important;">
     THIS IS VIEW FOR INDEX ACTION OF INDEX CONTROLLER
     <p>
-<?= $some_var; ?>
-    <p>
     <?= getcwd(); ?><p>
     <?= GlobalConst::DefHeaderView; ?>
     <img src="4.jpg" style="width: 500px; height: 500px;"/>

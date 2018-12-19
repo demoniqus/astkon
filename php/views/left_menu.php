@@ -8,7 +8,7 @@
                     'Caption' => 'Главная',
                 ),
                 array(
-                    'Action' => '/Articles/List',
+                    'Action' => '/Articles/ArticlesList',
                     'Caption' => 'Артикулы',
                     'Icon' => '/barcode.png',
                 ),
@@ -23,7 +23,7 @@
                     'Icon' => '/options.png',
                 ),
                 array(
-                    'Action' => '/User/List',
+                    'Action' => '/Users/UsersList',
                     'Caption' => 'Пользователи',
                     'Icon' => '/users.png',
                 ),
