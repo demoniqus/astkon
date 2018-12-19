@@ -13,8 +13,7 @@ use  Astkon\Model\Partial\UserPartial;
 
 class User extends UserPartial {
 
-public function __construct (array $fields = array()) {
-	parent::__construct($fields, DataBase::camelCaseToUnderscore(__CLASS__));
-}
-
+	public function __construct (array $fields = array()) {
+		parent::__construct($fields, DataBase::camelCaseToUnderscore(__CLASS__));
+	}
 }

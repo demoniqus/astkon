@@ -1,7 +1,7 @@
 <?php 
 
 /** Generated automaticaly. Don't change this file manually! */
-/*test update*/
+
 
 namespace Astkon\Model\Partial;
 
@@ -10,7 +10,7 @@ use Astkon\Model\Model;
 abstract class ArticlePartial extends Model {
 	const DataTable = 'article';
 /** @var array */
-protected $fieldsInfo = array (
+protected static $fieldsInfo = array (
   'id_article' => 
   array (
     'table_name' => 'article',
@@ -95,22 +95,52 @@ protected $fieldsInfo = array (
     'privileges' => 'select,insert,update,references',
   ),
 );
-	/** @var string */
+	/**
+	* @database_column_name article_name
+	* @alias Наименование
+	* @var string
+	*/
+
 	public $ArticleName;
 
-	/** @var float */
+	/**
+	* @database_column_name balance
+	* @alias Остаток
+	* @var float
+	*/
+
 	public $Balance;
 
-	/** @var int */
+	/**
+	* @database_column_name id_article
+	* @alias Идентификатор
+	* @var int
+	*/
+
 	public $IdArticle;
 
-	/** @var int */
+	/**
+	* @database_column_name id_measure
+	* @alias Единица измерения
+	* @var int
+	*/
+
 	public $IdMeasure;
 
-	/** @var bool */
+	/**
+	* @database_column_name is_archive
+	* @alias Архивный
+	* @var bool
+	*/
+
 	public $IsArchive;
 
-	/** @var string */
+	/**
+	* @database_column_name vendor_code
+	* @alias Код поставщика
+	* @var string
+	*/
+
 	public $VendorCode;
 
 }
