@@ -64,16 +64,37 @@ protected static $fieldsInfo = array (
     'privileges' => 'select,insert,update,references',
   ),
 );
-	/** @var array */
+	/**
+    * @editingdisabled
+	* @database_column_name config
+	* @alias Системная конфигурация
+	* @var array
+	*/
+
 	public $Config;
 
-	/** @var int */
+	/**
+	* @database_column_name id_user
+	* @alias Идентификатор
+	* @var int
+	*/
+
 	public $IdUser;
 
-	/** @var string */
+	/**
+	* @database_column_name login
+	* @alias Логин
+	* @var string
+	*/
+
 	public $Login;
 
-	/** @var string */
+	/**
+	* @database_column_name password
+	* @alias Пароль
+	* @var string
+	*/
+
 	public $Password;
 
 }
