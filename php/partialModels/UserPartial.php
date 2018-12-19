@@ -10,7 +10,7 @@ use Astkon\Model\Model;
 abstract class UserPartial extends Model {
 	const DataTable = 'user';
 /** @var array */
-protected $fieldsInfo = array (
+protected static $fieldsInfo = array (
   'id_user' => 
   array (
     'table_name' => 'user',

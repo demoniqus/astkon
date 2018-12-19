@@ -3,6 +3,8 @@ namespace Astkon\Model;
 
 use Astkon\DataBase;
 use Astkon\GlobalConst;
+use ReflectionClass;
+use ReflectionProperty;
 
 abstract class Model  {
 
@@ -24,6 +26,83 @@ abstract class Model  {
             }
             $db->generateClass($className);
         }
+    }
+
+
+    public static function EditForm(array $item) {
+        if (static::class === self::class) {
+            //ошибка
+        }
+        $className = explode('\\', static::class);
+        $className = $className[count($className) - 1];
+        if (preg_match('/Partial$/i', $className)) {
+            // ошибка
+        }
+
+        $partialClassName = explode('\\', static::class);
+        $partialClassName[] = $partialClassName[count($partialClassName) - 1] . 'Partial';
+        $partialClassName[count($partialClassName) - 2] = 'Partial';
+        $partialClassName = implode('\\', $partialClassName);
+
+
+        $partialParentClass = new ReflectionClass($partialClassName);
+
+        $editedProperties = array_filter(
+            $partialParentClass->getProperties(),
+            function(ReflectionProperty $property ) use ($partialClassName){
+                if (!$property->isPublic() || $property->isStatic()) {
+                    return false;
+                }
+
+                return $partialClassName === $property->class;
+            }
+        );
+
+//        var_dump(static::$fieldsInfo);
+        // https://getbootstrap.com/docs/4.1/components/forms/
+        ?>
+        <form action="" method="post" enctype="multipart/form-data">
+        <?php
+        foreach ($editedProperties as $property) {
+            $propName = $property->name;
+            $_prop_name = DataBase::camelCaseToUnderscore($propName);
+            $alias = $propName;
+            $value = $item[$_prop_name];
+            /** @var array $fieldInfo */
+            $fieldInfo = static::$fieldsInfo[DataBase::camelCaseToUnderscore($property->name)];
+                var_dump($fieldInfo);
+            if ($fieldInfo['column_key'] === 'PRI') {
+                require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'primary_key.php';
+            }
+            else  if (isset($fieldInfo['foreign_key'])){
+                require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'foreign_key.php';
+
+            }
+            else {
+
+                require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
+                switch ($fieldInfo['data_type']) {
+                    case 'bit':
+                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'boolean.php';
+//                    echo '<div class="col-sm-9"><input type="checkbox" name="' . $propName . '" ' . (!!$item[$_prop_name] ? 'CHECKED' : '') . '" /><input type="hidden" name="' . $propName . '" value="" /></div>';
+//
+                        break;
+                }
+            }
+//            echo '<div class="row" style="background-color: ' . ($property->isPublic() && !$property->isStatic() ? 'green' : 'red') . ';">';
+//            echo '<div class="col-md">' . $property->name  . '</div>';
+//            echo '<div class="col-md">' . $property->class  . '</div>';
+//            echo '<div class="col-md">' . implode('\\', $partialClassName) . '</div>';
+////            echo '<div style="background-color:' . (property_exists(static::class, $property->name) ? 'green' : 'red') . ';">' . $property->name . '</div>';
+//
+////            echo '<div>' . (new \ReflectionProperty(static::class, $property->name)) . '</div>';
+//            echo '</div>';
+        }
+        ?>
+        </form>
+        <?php
+
+
     }
 
 

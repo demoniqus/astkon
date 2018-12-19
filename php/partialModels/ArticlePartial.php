@@ -1,7 +1,7 @@
 <?php 
 
 /** Generated automaticaly. Don't change this file manually! */
-/*test update*/
+
 
 namespace Astkon\Model\Partial;
 
@@ -10,7 +10,7 @@ use Astkon\Model\Model;
 abstract class ArticlePartial extends Model {
 	const DataTable = 'article';
 /** @var array */
-protected $fieldsInfo = array (
+protected static $fieldsInfo = array (
   'id_article' => 
   array (
     'table_name' => 'article',

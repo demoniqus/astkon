@@ -10,7 +10,7 @@ use Astkon\Model\Model;
 abstract class MeasurePartial extends Model {
 	const DataTable = 'measure';
 /** @var array */
-protected $fieldsInfo = array (
+protected static $fieldsInfo = array (
   'id_measure' => 
   array (
     'table_name' => 'measure',
