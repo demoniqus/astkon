@@ -10,6 +10,7 @@ namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
+use function Astkon\Lib\Redirect;
 use Astkon\View\View;
 
 class ArticlesController extends Controller
@@ -34,6 +35,13 @@ class ArticlesController extends Controller
     }
 
     public function EditAction($context) {
+
+        if (array_key_exists('submit', $_POST)) {
+            Redirect(
+                preg_replace('/Controller$/i', '', array_pop(explode('\\',__CLASS__))),
+                'ArticlesList'
+            );
+        }
         $view = new View();
         $view->Article = (new DataBase())->article->getFirstRow('id_article = :id_article', null, array('id_article' => $context['id']));
         $view->generate();

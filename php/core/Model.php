@@ -55,13 +55,13 @@ abstract class Model  {
             //Ошибка
         }
         $editedProperties = self::getEditedProperties();
-//        echo $fieldName . '<br />';
-//        var_dump($editedProperties);
-//        die();
-        /** @var ReflectionProperty $reflectionProperty */
-        $reflectionProperty = array_shift(array_filter($editedProperties, function(ReflectionProperty $property) use ($fieldName) {
+
+        $editedProperties = array_filter($editedProperties, function(ReflectionProperty $property) use ($fieldName) {
             return $property->name === $fieldName;
-        }));
+        });
+
+        /** @var ReflectionProperty $reflectionProperty */
+        $reflectionProperty = array_shift($editedProperties);
 //        var_dump($reflectionProperty);
 //        die();
         $alias = self::extractDocCommentItem($reflectionProperty, 'alias');
@@ -92,9 +92,17 @@ abstract class Model  {
             }
         );
         $fieldsInfo = static::$fieldsInfo;
-//        usort($editedProperties, function(ReflectionProperty $a, ReflectionProperty $b) use ($fieldsInfo) {
-//            //if ($fieldsInfo[DataBase::camelCaseToUnderscore($a->name)])
-//        });
+        usort($editedProperties, function(ReflectionProperty $a, ReflectionProperty $b) use ($fieldsInfo) {
+            $aColumnKey = strtolower($fieldsInfo[$a->name]['column_key']);
+            if ($aColumnKey === 'pri') {
+                return -1;
+            }
+            $bColumnKey = strtolower($fieldsInfo[$b->name]['column_key']);
+            if ($bColumnKey === 'pri') {
+                return 1;
+            }
+            return 0;
+        });
         return $editedProperties;
     }
 
@@ -130,8 +138,9 @@ abstract class Model  {
 
     /**
      * @param array $item
+     * @param array $options
      */
-    public static function EditForm($item = array()) {
+    public static function EditForm($item = array(), $options = array()) {
         if (!self::checkIsClassOfModel()) {
             //Ошибка
         }
@@ -140,7 +149,7 @@ abstract class Model  {
 
         // https://getbootstrap.com/docs/4.1/components/forms/
         ?>
-        <form action="" method="post" enctype="multipart/form-data">
+        <form action="<?= $options['formAction'] ?>" method="post" enctype="multipart/form-data">
         <?php
         foreach ($editedProperties as $property) {
             $propName = $property->name;
@@ -193,15 +202,8 @@ abstract class Model  {
 
                 }
             }
-//            echo '<div class="row" style="background-color: ' . ($property->isPublic() && !$property->isStatic() ? 'green' : 'red') . ';">';
-//            echo '<div class="col-md">' . $property->name  . '</div>';
-//            echo '<div class="col-md">' . $property->class  . '</div>';
-//            echo '<div class="col-md">' . implode('\\', $partialClassName) . '</div>';
-////            echo '<div style="background-color:' . (property_exists(static::class, $property->name) ? 'green' : 'red') . ';">' . $property->name . '</div>';
-//
-////            echo '<div>' . (new \ReflectionProperty(static::class, $property->name)) . '</div>';
-//            echo '</div>';
         }
+            require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'submit.php';
         ?>
         </form>
         <?php

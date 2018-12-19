@@ -24,13 +24,13 @@
                 <th>Точность деления (дес.зн.)</th>
                 <th></th>
                 <?php
-                array_walk($measures, function($measure){
+                array_walk($articles, function($article){
                     ?>
                     <tr>
-                        <td><?= $measure['measure_name']; ?></td>
-                        <td><?= $measure['is_split']; ?></td>
-                        <td><?= $measure['is_split'] == 1 ? $measure['precision'] : ''; ?></td>
-                        <td><a href="/Measures/Edit/<?=  $measure['id_measure']; ?>"><img src="/icon-edit.png" class="action-icon"/></a></td>
+                        <td><?= $article['measure_name']; ?></td>
+                        <td><?= $article['is_split']; ?></td>
+                        <td><?= $article['is_split'] == 1 ? $article['precision'] : ''; ?></td>
+                        <td><a href="/Article/Edit/<?=  $article['id_article']; ?>"><img src="/icon-edit.png" class="action-icon"/></a></td>
                     </tr>
                     <?php
                 })

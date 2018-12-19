@@ -15,7 +15,7 @@
                 array(
                     'Action' => '/Operations/Index',
                     'Caption' => 'Операции',
-                    'Icon' => '/4.jpg',//Совместить иконки 4 операций
+                    'Icon' => '/operations-icon.png',
                 ),
                 array(
                     'Action' => '/Settings/Index',
@@ -33,7 +33,7 @@
             }
             array_walk($leftMenuItems, function($menuItem) use ($activeMenu) {
                 ?>
-                <li class="nav-item<?php if (isset($activeMenu) && strtolower($activeMenu) === strtolower($menuItem['Action'])) echo ' btn btn-outline-primary p0 text-left'; ?>">
+                <li class="nav-item<?php if (isset($activeMenu) && strtolower($activeMenu) === strtolower($menuItem['Action'])) echo ' btn btn-outline-primary p-0 text-left'; ?>">
                     <a class="nav-link" href="<?= $menuItem['Action']; ?>"><?= $menuItem['Caption']; ?></a>
                 </li>
         <?php
