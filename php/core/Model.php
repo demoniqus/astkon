@@ -148,9 +148,8 @@ abstract class Model  {
         $editedProperties = self::getEditedProperties();
 
         // https://getbootstrap.com/docs/4.1/components/forms/
-        ?>
-        <form action="<?= $options['formAction'] ?>" method="post" enctype="multipart/form-data">
-        <?php
+
+        echo '<form action="' . $options['formAction'] . '" method="post" enctype="multipart/form-data">';
         foreach ($editedProperties as $property) {
             $propName = $property->name;
             $_prop_name = DataBase::camelCaseToUnderscore($propName);
@@ -204,11 +203,7 @@ abstract class Model  {
             }
         }
             require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'submit.php';
-        ?>
-        </form>
-        <?php
-
-
+        echo '</form>';
     }
 
 
