@@ -29,9 +29,12 @@ class View
     {
         $this->defHeaderTemplate = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::DefHeaderView;
         $this->defFooterTemplate = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::DefFooterView;
-        $backtrace = debug_backtrace(2, 2);
-        list($controller, $action) = self::get_C_A_from_backtrace($backtrace[1]);
-        $this->variables['activeMenu'] = '/' . $controller . '/' . $action;
+        $backtraceLimit = 2;
+        $backtrace = debug_backtrace(2, $backtraceLimit);
+        if (count($backtrace) === $backtraceLimit) {
+            list($controller, $action) = self::get_C_A_from_backtrace($backtrace[1]);
+            $this->variables['activeMenu'] = '/' . $controller . '/' . $action;
+        }
     }
 
     /**
@@ -80,6 +83,17 @@ class View
         foreach ($templates as $template) {
             require_once $template;
         }
+    }
+
+    public function error(int $code) {
+        $templateName = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'errors' . DIRECTORY_SEPARATOR . $code . '.php';
+        if (!file_exists($templateName)) {
+            $code = 404;
+            $templateName = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'errors' . DIRECTORY_SEPARATOR . $code . '.php';
+        }
+        require_once $this->defHeaderTemplate;
+        require_once $templateName;
+        require_once $this->defFooterTemplate;
     }
 
     /**
