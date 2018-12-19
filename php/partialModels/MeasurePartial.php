@@ -10,7 +10,7 @@ use Astkon\Model\Model;
 abstract class MeasurePartial extends Model {
 	const DataTable = 'measure';
 /** @var array */
-protected $fieldsInfo = array (
+protected static $fieldsInfo = array (
   'id_measure' => 
   array (
     'table_name' => 'measure',
@@ -69,16 +69,36 @@ protected $fieldsInfo = array (
     'privileges' => 'select,insert,update,references',
   ),
 );
-	/** @var int */
+	/**
+	* @database_column_name id_measure
+	* @alias Идентификатор
+	* @var int
+	*/
+
 	public $IdMeasure;
 
-	/** @var bool */
+	/**
+	* @database_column_name is_split
+	* @alias Признак делимости
+	* @var bool
+	*/
+
 	public $IsSplit;
 
-	/** @var string */
+	/**
+	* @database_column_name measure_name
+	* @alias Обозначение
+	* @var string
+	*/
+
 	public $MeasureName;
 
-	/** @var int */
+	/**
+	* @database_column_name precision
+	* @alias Точность деления (дес. зн)
+	* @var int
+	*/
+
 	public $Precision;
 
 }

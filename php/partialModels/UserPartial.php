@@ -10,7 +10,7 @@ use Astkon\Model\Model;
 abstract class UserPartial extends Model {
 	const DataTable = 'user';
 /** @var array */
-protected $fieldsInfo = array (
+protected static $fieldsInfo = array (
   'id_user' => 
   array (
     'table_name' => 'user',
@@ -64,16 +64,37 @@ protected $fieldsInfo = array (
     'privileges' => 'select,insert,update,references',
   ),
 );
-	/** @var array */
+	/**
+    * @editingdisabled
+	* @database_column_name config
+	* @alias Системная конфигурация
+	* @var array
+	*/
+
 	public $Config;
 
-	/** @var int */
+	/**
+	* @database_column_name id_user
+	* @alias Идентификатор
+	* @var int
+	*/
+
 	public $IdUser;
 
-	/** @var string */
+	/**
+	* @database_column_name login
+	* @alias Логин
+	* @var string
+	*/
+
 	public $Login;
 
-	/** @var string */
+	/**
+	* @database_column_name password
+	* @alias Пароль
+	* @var string
+	*/
+
 	public $Password;
 
 }
