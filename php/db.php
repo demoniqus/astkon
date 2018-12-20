@@ -1,5 +1,6 @@
 <?php
 namespace Astkon;
+use Astkon\View\View;
 use DateTime;
 use \PDO as PDO;
 use \PDOException as PDOException;
@@ -113,7 +114,14 @@ class DataBase {
      * @return bool|PDOStatement
      */
     protected function _execQueryCommad($query, $values = null) {
+        /** @var \PDOStatement $stmt */
         $stmt = $this->PDO->prepare($query);
+        if (false === $stmt) {
+            $view = new View();
+            $view->trace = 'Запрос в БД не может быть выполнен';
+            $view->error(ErrorCode::BAD_DB_QUERY);
+            die();
+        }
         try {
             $stmt->execute($values);
         }
@@ -121,6 +129,12 @@ class DataBase {
             echo $query . PHP_EOL;
             echo $ex->getMessage() . PHP_EOL;
             $ex->getTraceAsString();
+            die();
+        }
+        if (false === $stmt) {
+            $view = new View();
+            $view->trace = 'Запрос в БД не может быть выполнен';
+            $view->error(ErrorCode::BAD_DB_QUERY);
             die();
         }
         return $stmt;
