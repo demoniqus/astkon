@@ -210,6 +210,9 @@ abstract class Model  {
                     case 'longtext':
                         require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'textarea.php';
                         break;
+                    case 'json':
+                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'json.php';
+                        break;
 
                 }
             }

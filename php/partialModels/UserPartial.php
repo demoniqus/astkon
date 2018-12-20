@@ -69,7 +69,7 @@ protected static $fieldsInfo = array (
   ),
 );
 	/**
-	* @useredit false
+	* @noeditable false
 	* @database_column_name config
 	* @alias Системная конфигурация
 	* @var array
