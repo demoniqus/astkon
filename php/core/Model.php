@@ -10,7 +10,9 @@ use ReflectionClass;
 use ReflectionProperty;
 
 abstract class Model  {
-
+    /**
+     * Системная функция для переноса изменений структуры БД в код.
+     */
     public static function UpdateModel() {
         $db = new DataBase();
         if (static::class === self::class) {
@@ -65,8 +67,6 @@ abstract class Model  {
 
         /** @var ReflectionProperty $reflectionProperty */
         $reflectionProperty = array_shift($editedProperties);
-//        var_dump($reflectionProperty);
-//        die();
         $alias = self::extractDocCommentItem($reflectionProperty, 'alias');
         $alias = self::trimDocCommentKey($alias);
         return !!$alias ? $alias : $fieldName;
@@ -147,6 +147,43 @@ abstract class Model  {
     }
 
     /**
+     * Извлекает из DocComment все @параметры и возвращает из них массив (с @ключами)
+     * @param ReflectionProperty $reflectionProperty
+     * @return array
+     */
+    protected static function extractDocCommentParams(ReflectionProperty $reflectionProperty) {
+        $_items = array_filter(
+            explode(PHP_EOL, $reflectionProperty->getDocComment()),
+            function($line){
+                return mb_strpos($line, '@') !== false;
+            }
+        );
+        $_items = array_map(
+            function($line){
+                while (mb_substr($line = trim($line), 0, 1) === '*') {
+                    $line = mb_substr($line, 1);
+                }
+                return $line;
+            },
+            $_items
+        );
+        $_items = array_filter(
+            $_items,
+            function($line){
+                return !!preg_match('/^@[a-z_]/i', $line);
+            }
+        );
+
+        $items = array();
+        array_walk($_items, function($item) use (&$items) {
+            list($key, $value) = explode(' ', $item, 2);
+            $items[$key] = $value;
+        });
+        return $items;
+    }
+
+    /**
+     * Метод генерирует форму редактирования экземпляра модели
      * @param array $item
      * @param array $options
      */
@@ -165,15 +202,16 @@ abstract class Model  {
         foreach ($editedProperties as $property) {
             $propName = $property->name;
             $_prop_name = DataBase::camelCaseToUnderscore($propName);
-            $alias = self::extractDocCommentItem($property, 'alias');
-            $alias = self::trimDocCommentKey($alias);
-            if (!$alias) {
-                $alias = $propName;
+            $docCommentParams = self::extractDocCommentParams($property);
+            if (array_key_exists('@noeditable', $docCommentParams)) {
+                continue;
             }
+            /** @var string $alias - используется во вьюхах*/
+            $alias = isset($docCommentParams['@alias']) ? $docCommentParams['@alias'] : $propName;
+            /** @var mixed $value - используется во вьюхах*/
             $value = $item[$_prop_name];
             /** @var array $fieldInfo */
             $fieldInfo = static::$fieldsInfo[$property->name];
-//                var_dump($fieldInfo);
             if ($fieldInfo['column_key'] === 'PRI') {
                 require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'primary_key.php';
             }
@@ -213,7 +251,6 @@ abstract class Model  {
                     case 'json':
                         require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'json.php';
                         break;
-
                 }
             }
         }
