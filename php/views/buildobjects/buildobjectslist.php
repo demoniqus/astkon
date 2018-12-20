@@ -15,20 +15,20 @@
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php'; ?>
     <div class="col-lg text-center">
         <div class="text-left">
-            <a href="/People/Edit/0" class="btn btn-success">Добавить человека</a>
+            <a href="/BuildObjects/Edit/0" class="btn btn-success">Добавить объект</a>
         </div>
         <table>
             <tr>
-                <th><?= \Astkon\Model\People::getFieldAlias('PeopleName'); ?></th>
-                <th><?= \Astkon\Model\People::getFieldAlias('PostName'); ?></th>
+                <th><?= \Astkon\Model\BuildObject::getFieldAlias('BuildObjectName'); ?></th>
+                <th><?= \Astkon\Model\BuildObject::getFieldAlias('Comment'); ?></th>
                 <th></th>
                 <?php
-                array_walk($peoples, function($people){
+                array_walk($buildObjects, function($buildObject){
                     ?>
                     <tr>
-                        <td><?= $people['people_name']; ?></td>
-                        <td><?= $people['post_name']; ?></td>
-                        <td><a href="/People/Edit/<?=  $people['id_people']; ?>"><img src="/icon-edit.png" class="action-icon"/></a></td>
+                        <td><?= $buildObject['build_object_name']; ?></td>
+                        <td><?= $buildObject['comment']; ?></td>
+                        <td><a href="/BuildObjects/Edit/<?=  $buildObject['id_people']; ?>"><img src="/icon-edit.png" class="action-icon"/></a></td>
                     </tr>
                     <?php
                 })

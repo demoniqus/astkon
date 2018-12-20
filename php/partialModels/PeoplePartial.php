@@ -11,14 +11,14 @@ namespace Astkon\Model\Partial;
 
 use Astkon\Model\Model;
 
-abstract class UserPartial extends Model {
-	const DataTable = 'user';
+abstract class PeoplePartial extends Model {
+	const DataTable = 'people';
 /** @var array */
 protected static $fieldsInfo = array (
-  'IdUser' => 
+  'IdPeople' => 
   array (
-    'table_name' => 'user',
-    'column_name' => 'id_user',
+    'table_name' => 'people',
+    'column_name' => 'id_people',
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => 10,
@@ -28,25 +28,12 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'Login' => 
+  'PeopleName' => 
   array (
-    'table_name' => 'user',
-    'column_name' => 'login',
+    'table_name' => 'people',
+    'column_name' => 'people_name',
     'data_type' => 'varchar',
-    'max_length' => 255,
-    'num_prec' => NULL,
-    'dtime_prec' => NULL,
-    'char_set' => 'utf8',
-    'column_key' => 'UNI',
-    'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
-  ),
-  'Password' => 
-  array (
-    'table_name' => 'user',
-    'column_name' => 'password',
-    'data_type' => 'varchar',
-    'max_length' => 45,
+    'max_length' => 200,
     'num_prec' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
@@ -54,47 +41,39 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'Config' => 
+  'PostName' => 
   array (
-    'table_name' => 'user',
-    'column_name' => 'config',
-    'data_type' => 'json',
-    'max_length' => NULL,
+    'table_name' => 'people',
+    'column_name' => 'post_name',
+    'data_type' => 'varchar',
+    'max_length' => 200,
     'num_prec' => NULL,
     'dtime_prec' => NULL,
-    'char_set' => NULL,
+    'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'YES',
     'privileges' => 'select,insert,update,references',
   ),
 );
 	/**
-	* @useredit false
-	* @database_column_name config
-	* @alias Системная конфигурация
-	* @var array
-	*/
-	public $Config;
-
-	/**
-	* @database_column_name id_user
-	* @alias Идентификатор
+	* @database_column_name id_people
+	* @alias
 	* @var int
 	*/
-	public $IdUser;
+	public $IdPeople;
 
 	/**
-	* @database_column_name login
-	* @alias Логин
+	* @database_column_name people_name
+	* @alias ФИО
 	* @var string
 	*/
-	public $Login;
+	public $PeopleName;
 
 	/**
-	* @database_column_name password
-	* @alias Пароль
+	* @database_column_name post_name
+	* @alias Должность
 	* @var string
 	*/
-	public $Password;
+	public $PostName;
 
 }

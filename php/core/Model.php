@@ -1,8 +1,11 @@
 <?php
 namespace Astkon\Model;
 
+//find . -exec chown demonius:demonius {} \; -exec chmod a+rw {} \;
+
 use Astkon\DataBase;
 use Astkon\GlobalConst;
+use Astkon\View\View;
 use ReflectionClass;
 use ReflectionProperty;
 
@@ -131,7 +134,14 @@ abstract class Model  {
             $docCommentLine = trim(mb_substr($docCommentLine, 1));
         }
         if (mb_substr($docCommentLine, 0, 1) === '@') {
-            $docCommentLine = trim(mb_substr($docCommentLine, mb_strpos($docCommentLine, ' ')));
+            $docCommentLine = trim($docCommentLine);
+            if (mb_strpos($docCommentLine, ' ') === false) {
+                /*У ключа нет значения*/
+                $docCommentLine = null;
+            }
+            else {
+                $docCommentLine = trim(mb_substr($docCommentLine, mb_strpos($docCommentLine, ' ')));
+            }
         }
         return $docCommentLine;
     }
@@ -143,13 +153,15 @@ abstract class Model  {
     public static function EditForm($item = array(), $options = array()) {
         if (!self::checkIsClassOfModel()) {
             //Ошибка
+            (new View())->error(1);//Ошибка программиста
+            die();
         }
 
         $editedProperties = self::getEditedProperties();
 
         // https://getbootstrap.com/docs/4.1/components/forms/
 
-        echo '<form action="' . $options['formAction'] . '" method="post" enctype="multipart/form-data">';
+        echo '<form action="' . (isset($options['formAction']) ? $options['formAction'] : '') . '" method="post" enctype="multipart/form-data">';
         foreach ($editedProperties as $property) {
             $propName = $property->name;
             $_prop_name = DataBase::camelCaseToUnderscore($propName);

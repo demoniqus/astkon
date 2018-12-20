@@ -12,7 +12,7 @@ use Astkon\Controller\Controller;
 use Astkon\DataBase;
 use Astkon\View\View;
 
-class MeasuresController extends Controller
+class PeopleController extends Controller
 {
     /**
      * @param string $action - запрашиваемый метод
@@ -27,15 +27,15 @@ class MeasuresController extends Controller
 //        (new View())->generate();
 //    }
 
-    public function MeasuresListAction($context) {
+    public function PeopleListAction($context) {
         $view = new View();
-        $view->measures = (new DataBase())->measure->getRows();
+        $view->peoples = (new DataBase())->people->getRows();
         $view->generate();
     }
 
     public function EditAction($context) {
         $view = new View();
-        $view->Measure = (new DataBase())->measure->getFirstRow('id_measure = :id_measure', null, array('id_measure' => $context['id']));
+        $view->People = (new DataBase())->people->getFirstRow('id_people = :id_people', null, array('id_people' => $context['id']));
         $view->generate();
     }
 }

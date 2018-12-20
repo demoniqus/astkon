@@ -11,14 +11,14 @@ namespace Astkon\Model\Partial;
 
 use Astkon\Model\Model;
 
-abstract class UserPartial extends Model {
-	const DataTable = 'user';
+abstract class BuildObjectPartial extends Model {
+	const DataTable = 'build_object';
 /** @var array */
 protected static $fieldsInfo = array (
-  'IdUser' => 
+  'IdBuildObject' => 
   array (
-    'table_name' => 'user',
-    'column_name' => 'id_user',
+    'table_name' => 'build_object',
+    'column_name' => 'id_build_object',
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => 10,
@@ -28,12 +28,12 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'Login' => 
+  'BuildObjectName' => 
   array (
-    'table_name' => 'user',
-    'column_name' => 'login',
+    'table_name' => 'build_object',
+    'column_name' => 'build_object_name',
     'data_type' => 'varchar',
-    'max_length' => 255,
+    'max_length' => 500,
     'num_prec' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
@@ -41,60 +41,39 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'Password' => 
+  'Comment' => 
   array (
-    'table_name' => 'user',
-    'column_name' => 'password',
-    'data_type' => 'varchar',
-    'max_length' => 45,
+    'table_name' => 'build_object',
+    'column_name' => 'comment',
+    'data_type' => 'text',
+    'max_length' => 65535,
     'num_prec' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
-    'column_key' => '',
-    'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
-  ),
-  'Config' => 
-  array (
-    'table_name' => 'user',
-    'column_name' => 'config',
-    'data_type' => 'json',
-    'max_length' => NULL,
-    'num_prec' => NULL,
-    'dtime_prec' => NULL,
-    'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'YES',
     'privileges' => 'select,insert,update,references',
   ),
 );
 	/**
-	* @useredit false
-	* @database_column_name config
-	* @alias Системная конфигурация
-	* @var array
+	* @database_column_name build_object_name
+	* @alias Наименование объекта
+	* @var string
 	*/
-	public $Config;
+	public $BuildObjectName;
 
 	/**
-	* @database_column_name id_user
+	* @database_column_name comment
+	* @alias Комментарий для объекта
+	* @var string
+	*/
+	public $Comment;
+
+	/**
+	* @database_column_name id_build_object
 	* @alias Идентификатор
 	* @var int
 	*/
-	public $IdUser;
-
-	/**
-	* @database_column_name login
-	* @alias Логин
-	* @var string
-	*/
-	public $Login;
-
-	/**
-	* @database_column_name password
-	* @alias Пароль
-	* @var string
-	*/
-	public $Password;
+	public $IdBuildObject;
 
 }

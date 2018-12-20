@@ -1,9 +1,9 @@
 <?php 
 
-/**
+/** 
  * Файл генерируется автоматически.
  * Не допускаются произвольные изменения вручную.
- * Допускается вручную только расширять doc-блок публичный полей класса.
+ * Допускается вручную только расширять doc-блок публичный полей класса. 
  * При этом разделы @var и @database_column_name будут автоматически перезаписываться. */
 
 
@@ -15,7 +15,7 @@ abstract class MeasurePartial extends Model {
 	const DataTable = 'measure';
 /** @var array */
 protected static $fieldsInfo = array (
-  'IdMeasure' =>
+  'IdMeasure' => 
   array (
     'table_name' => 'measure',
     'column_name' => 'id_measure',
@@ -33,7 +33,7 @@ protected static $fieldsInfo = array (
       'field' => 'id_measure',
     ),
   ),
-  'MeasureName' =>
+  'MeasureName' => 
   array (
     'table_name' => 'measure',
     'column_name' => 'measure_name',
@@ -46,7 +46,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'IsSplit' =>
+  'IsSplit' => 
   array (
     'table_name' => 'measure',
     'column_name' => 'is_split',
@@ -59,7 +59,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'Precision' =>
+  'Precision' => 
   array (
     'table_name' => 'measure',
     'column_name' => 'precision',

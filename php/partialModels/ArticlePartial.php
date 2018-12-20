@@ -1,9 +1,9 @@
 <?php 
 
-/**
+/** 
  * Файл генерируется автоматически.
  * Не допускаются произвольные изменения вручную.
- * Допускается вручную только расширять doc-блок публичный полей класса.
+ * Допускается вручную только расширять doc-блок публичный полей класса. 
  * При этом разделы @var и @database_column_name будут автоматически перезаписываться. */
 
 
@@ -15,7 +15,7 @@ abstract class ArticlePartial extends Model {
 	const DataTable = 'article';
 /** @var array */
 protected static $fieldsInfo = array (
-  'IdArticle' =>
+  'IdArticle' => 
   array (
     'table_name' => 'article',
     'column_name' => 'id_article',
@@ -28,7 +28,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'ArticleName' =>
+  'ArticleName' => 
   array (
     'table_name' => 'article',
     'column_name' => 'article_name',
@@ -41,7 +41,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'IdMeasure' =>
+  'IdMeasure' => 
   array (
     'table_name' => 'article',
     'column_name' => 'id_measure',
@@ -59,7 +59,7 @@ protected static $fieldsInfo = array (
       'field' => 'id_measure',
     ),
   ),
-  'Balance' =>
+  'Balance' => 
   array (
     'table_name' => 'article',
     'column_name' => 'balance',
@@ -72,7 +72,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
-  'VendorCode' =>
+  'VendorCode' => 
   array (
     'table_name' => 'article',
     'column_name' => 'vendor_code',
@@ -85,7 +85,7 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'YES',
     'privileges' => 'select,insert,update,references',
   ),
-  'IsArchive' =>
+  'IsArchive' => 
   array (
     'table_name' => 'article',
     'column_name' => 'is_archive',

@@ -6,14 +6,29 @@
         <?php
         $menu = array(
             array(
+                'Action' => '/Articles/ArticlesList',
+                'Caption' => 'Артикулы',
+                'Icon' => '/barcode.png',
+            ),
+            array(
                 'Action' => '/Measures/MeasuresList',
                 'Caption' => 'Единицы измерения',
                 'Icon' => '/measures.png',
             ),
+            array(
+                'Action' => '/BuildObjects/BuildObjectsList',
+                'Caption' => 'Объекты',
+                'Icon' => '/building.png',
+            ),
+            array(
+                'Action' => '/People/PeopleList',
+                'Caption' => 'Люди',
+                'Icon' => '/people.jpg',
+            ),
 
         );
 
-        \Astkon\Lib\TileMenu($menu, 2, 2);
+        \Astkon\Lib\TileMenu($menu, 4, 2);
         ?>
     </div>
 </div>

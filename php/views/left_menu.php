@@ -7,11 +7,11 @@
                     'Action' => '/',
                     'Caption' => 'Главная',
                 ),
-                array(
-                    'Action' => '/Articles/ArticlesList',
-                    'Caption' => 'Артикулы',
-                    'Icon' => '/barcode.png',
-                ),
+//                array(
+//                    'Action' => '/Articles/ArticlesList',
+//                    'Caption' => 'Артикулы',
+//                    'Icon' => '/barcode.png',
+//                ),
                 array(
                     'Action' => '/Operations/Index',
                     'Caption' => 'Операции',
@@ -19,8 +19,8 @@
                 ),
                 array(
                     'Action' => '/Settings/Index',
-                    'Caption' => 'Настройки',
-                    'Icon' => '/options.png',
+                    'Caption' => 'Справочники',
+                    'Icon' => '/refbook.png',
                 ),
                 array(
                     'Action' => '/Users/UsersList',
