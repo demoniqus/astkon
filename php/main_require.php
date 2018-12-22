@@ -91,6 +91,8 @@ final class GlobalConst {
     const ViewDefCharset = 'utf-8';
     const FOpenMode = 'wt';
 
+    const MySqlPKVal = 'PRI';
+
 }
 
 
