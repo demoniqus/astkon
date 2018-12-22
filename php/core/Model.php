@@ -276,7 +276,6 @@ abstract class Model  {
             /** @var mixed $value - используется во вьюхах*/
             $value = $item[$propName];
 
-
             $validMessage = null;
             $validState = self::ValidStateUndefined;
             if ($isFormProcessed) {
@@ -441,10 +440,7 @@ abstract class Model  {
             return $db->QueryInfo();
         }
         else {
-            if ($PKVal === 0 && $db->LastInsertId()) {
-                $PKVal = $db->LastInsertId();
-            }
-            return $db->query('SELECT * FROM `' . static::DataTable . '` WHERE `' . $fieldsInfo[$PKName]['column_name'] . '` = ' . $db->LastInsertId());
+            return $db->query('SELECT * FROM `' . static::DataTable . '` WHERE `' . $fieldsInfo[$PKName]['column_name'] . '` = ' . $db->LastInsertId())[0];
         }
     }
 
