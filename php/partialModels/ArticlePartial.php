@@ -107,6 +107,7 @@ protected static $fieldsInfo = array (
 	public $ArticleName;
 
 	/**
+    * @autocalc auto_calc_rule
 	* @database_column_name balance
 	* @alias Остаток
 	* @var float
@@ -114,6 +115,7 @@ protected static $fieldsInfo = array (
 	public $Balance;
 
 	/**
+     * @noeditable
 	* @database_column_name id_article
 	* @alias Идентификатор
 	* @var int

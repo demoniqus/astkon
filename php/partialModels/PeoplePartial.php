@@ -57,7 +57,7 @@ protected static $fieldsInfo = array (
 );
 	/**
 	* @database_column_name id_people
-	* @alias
+	* @alias Идентификатор
 	* @var int
 	*/
 	public $IdPeople;
