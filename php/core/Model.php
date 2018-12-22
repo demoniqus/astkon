@@ -4,12 +4,16 @@ namespace Astkon\Model;
 //find . -exec chown demonius:demonius {} \; -exec chmod a+rw {} \;
 
 use Astkon\DataBase;
+use Astkon\ErrorCode;
 use Astkon\GlobalConst;
 use Astkon\View\View;
 use ReflectionClass;
 use ReflectionProperty;
 
 abstract class Model  {
+    const ValidStateError = 0;
+    const ValidStateOK = 1;
+    const ValidStateUndefined = 2;
     /**
      * Системная функция для переноса изменений структуры БД в код.
      */
@@ -256,7 +260,213 @@ abstract class Model  {
         }
             require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'submit.php';
         echo '</form>';
+        //https://getbootstrap.com/docs/4.1/components/forms/#validation   - проверка формы
     }
+
+    /**
+     * Метод сохраняет данные в БД.
+     * В случае успеха возвращает true В случае ошибки возвращает массив с информацией об ошибке
+     * @return array|bool
+     */
+    public function Save() {
+        $editedProperties = self::getEditedProperties();
+        $values = array();
+        foreach ($editedProperties as $referenceProperty) {
+            $propName = $referenceProperty->name;
+            $values[$propName] = $this->$propName;
+        }
+        $result = self::SaveInstance($values);
+        if (array_key_exists('@error', $result)) {
+            return $result;
+        }
+
+        foreach ($result as $fieldKey => $fieldVal) {
+            $this->$fieldKey = $fieldVal;
+        }
+        return true;
+    }
+
+    /**
+     * Метод сохраняет данные в БД.
+     * Возвращает массив - либо поля сохраненного объекта, либо информаццию об ошибке (при наличии ключа @error => true)
+     * @param array $values
+     * @return array
+     */
+    public static function SaveInstance(array $values) {
+        if (!self::checkIsClassOfModel()) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        $primaryFieldInfo = array_filter(
+            static::$fieldsInfo,
+            function($fieldInfo){
+                return strtoupper($fieldInfo['column_key']) === GlobalConst::MySqlPKVal;
+            }
+        );
+        $PKName = array_keys($primaryFieldInfo)[0];
+        if (!array_key_exists($PKName, $values)) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Не передано значение первичного ключа для обновления записи в БД'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        if (!$values[$PKName]) {
+            $values[$PKName] = 0;
+        }
+        $PKVal = $values[$PKName];
+        if (intval($PKVal) != $PKVal) {
+            throw new \Exception('Недопустимое значение первичного ключа');
+        }
+        $PKVal = intval($PKVal);
+        if ($PKVal < 0) {
+            throw new \Exception('Недопустимое значение первичного ключа');
+        }
+        $fieldsInfo = static::$fieldsInfo;
+        $query = $PKVal === 0 ? ' INSERT INTO `' . static::DataTable . '` SET ' : 'UPDATE `' . static::DataTable . '` SET ';
+        $values = array_filter(
+            $values,
+            function($v, $k) use ($PKName, $fieldsInfo ){
+                return $k !== $PKName && array_key_exists($k, $fieldsInfo);
+            },
+            ARRAY_FILTER_USE_BOTH
+        );
+        $values = static::typifyValues($fieldsInfo, $values);
+
+        $autoCalcFields = static::getAutoCalcFields(array_keys($values));
+        /*Здесь потом будем рассчитывать автоматические значения*/
+
+        foreach ($values as $fieldKey => $fieldValue) {
+            $query .= ' `' . $fieldsInfo[$fieldKey]['column_name'] . '` = :' . $fieldKey . ',';
+        }
+
+        $query = mb_substr($query, 0, mb_strlen($query) - 1);
+
+        if ($PKVal > 0) {
+            $query .= ' WHERE `' . $fieldsInfo[$PKName]['column_name'] . '` = :' . $PKName . '';
+            $values[$PKName] = $PKVal;
+        }
+//        var_dump(__FILE__, __LINE__);
+//        var_dump($query);
+//        var_dump($values);
+
+        $db = new DataBase();
+        $res = $db->query($query, $values);
+        if ($res === false) {
+            return $db->QueryInfo();
+        }
+        else {
+            if ($PKVal === 0 && $db->LastInsertId()) {
+                $PKVal = $db->LastInsertId();
+            }
+            return $db->query('SELECT * FROM `' . static::DataTable . '` WHERE `' . $fieldsInfo[$PKName]['column_name'] . '` = ' . $db->LastInsertId());
+        }
+    }
+
+    protected static function typifyValues(array $fieldsInfo, array $values) {
+        foreach ($values as $k => &$v) {
+            if (is_null($v)) {
+                continue;
+            }
+            switch (strtolower($fieldsInfo[$k]['data_type'])) {
+                case 'int':
+                case 'year':
+                case 'bigint':
+                case 'mediumint':
+                case 'smallint':
+                case 'tinyint':
+                    if (is_string($v) && !trim($v) && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))) {
+                        $v = null;
+                    }
+                    else {
+                        $v = (int)$v;
+                    }
+                    break;
+                case 'decimal':
+                case 'dec':
+                case 'double':
+                case 'float':
+                case 'real':
+                    if (is_string($v) && !trim($v) && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))) {
+                        $v = null;
+                    }
+                    else {
+                        $v = (float)$v;
+                    }
+                    break;
+                case 'char':
+                case 'varchar':
+                case 'nvarchar':
+                case 'text':
+                case 'tinytext':
+                case 'mediumtext':
+                case 'longtext':
+                    $v = $v . '';
+                    break;
+                case 'bit':
+                    if (is_string($v) && !trim($v) && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))) {
+                        $v = null;
+                    }
+                    else {
+                        $v = $v === '1' || strtolower($v) === 'true' || $v === 1 || strtolower($v) === 'on';
+                    }
+                    break;
+                case 'json':
+//                    if (is_sting($v) && trim($v) !== '') {
+//                        $v = json_decode($v);
+//                    }
+//                    else {
+//                        $v = null;
+//                    }
+                    break;
+                case 'datetime':
+                case 'date':
+                    $v = $v . '';
+                    break;
+            }
+        }
+        return $values;
+    }
+
+    /**
+     * Метод формирует набор свойств с автоматическим рассчетом
+     * @param array $keys - список наименвоаний свойсвт, среди которых надо искать рассчитываемые автоматически
+     * @return array
+     */
+    protected static function getAutoCalcFields(array $keys) {
+        $autoCalcFields = array_map(function($fieldKey){
+            return new ReflectionProperty(static::class, $fieldKey);
+        }, $keys);
+        $autoCalcFields = array_filter($autoCalcFields, function(ReflectionProperty $reflectionProperty){
+            return mb_strpos($reflectionProperty->getDocComment(), '@autocalc') !== false;
+        });
+        $result = array();
+        foreach ($autoCalcFields as $reflectionProperty) {
+            $calcRule = self::extractDocCommentItem($reflectionProperty, 'autocalc');
+            $result[$reflectionProperty->name] = self::trimDocCommentKey($calcRule);
+        }
+        return $result;
+    }
+
+    const DocCommentKeys = array(
+        'alias' => ' Псевдоним, выводимый на страницы для пользователя вместо реального имени свойства экзепмляра модели',
+        'autocalc' => 'Обозначает, что значение свойства автоматически рассчитывается согласно указанному выражению. Такое свойство не отображается в форме редактирования',
+        'database_column_name' => 'наименование колонки в таблице БД, отвечающей за хранение значения свойства модели',
+        'noeditable' => 'Обозначает, что данное свойство не отображается в форме редактирования',
+    );
 
 
     protected $fields = array();
@@ -314,9 +524,9 @@ abstract class Model  {
      * @param array $fields - массив полей нового объекта
      * @param string $entityName - наименование объекта (наименование таблицы БД, реализующей объект). Регистр имеет значение
      */
-    public function __construct(array $fields, string $entityName) {
-        $this->fields = $fields;
-        $this->entityName = $entityName;
+    public function __construct(/*array $fields, string $entityName*/) {
+//        $this->fields = $fields;
+//        $this->entityName = $entityName;
     }
 
     /**
