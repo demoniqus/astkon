@@ -71,7 +71,7 @@ class View
                     $action = strtolower($action);
                 }
                 else if (gettype($item) === gettype(array())) {
-                    $controller = array_key_first();
+                    $controller = array_key_first($item);
                     $action = $item[$controller];
                 }
                 $templates[] = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . "$controller/$action.php";
@@ -90,6 +90,9 @@ class View
         if (!file_exists($templateName)) {
             $code = 404;
             $templateName = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'errors' . DIRECTORY_SEPARATOR . $code . '.php';
+        }
+        foreach ($this->variables as $varName => $varValue) {
+            $$varName = $varValue;
         }
         require_once $this->defHeaderTemplate;
         require_once $templateName;
