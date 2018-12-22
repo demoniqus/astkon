@@ -1,11 +1,10 @@
 <?php
 
-use Astkon\GlobalConst;
 
 ?>
 <style type="text/css">
     body {
-        background-image: url(/black-hole.jpeg);
+        background-image: url(/backgrounds/black-hole.jpeg);
         background-attachment: fixed;
         background-size: 100%;
     }
