@@ -27,15 +27,25 @@ class MeasuresController extends Controller
         parent::Run($action, $context);
     }
 
-//    public function IndexAction() {
-//        (new View())->generate();
-//    }
-
     public function MeasuresListAction($context) {
         $view = new View();
 //        $pageId = isset($context['id']) ? intval($context['id']) : 0;
 //        $pageSize = 5;
-        $view->measures = (new DataBase())->measure->getRows();
+        $view->listItemOptions = array(
+            array(
+            'action' => '/Measures/Edit',
+            'click' => null,
+            'icon' => '/icon-edit.png',
+            'title' => 'Редактировать'
+            )
+        );
+        $view->modelConfig = Measure::getConfigForListView();
+        $view->listItems = array_map(
+            function($row){
+                return array_keys_CameCase($row);
+            },
+            (new DataBase())->measure->getRows()
+        );
         $view->generate();
     }
 
