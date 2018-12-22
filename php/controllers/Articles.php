@@ -13,7 +13,7 @@ use Astkon\DataBase;
 use function Astkon\Lib\array_keys_CameCase;
 use function Astkon\Lib\Redirect;
 use Astkon\Model\Article;
-use Astkon\Model\Partial\ArticlePartial;
+use Astkon\Model\Model;
 use Astkon\View\View;
 
 class ArticlesController extends Controller
