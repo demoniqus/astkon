@@ -293,6 +293,16 @@ abstract class Model  {
                 require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'primary_key.php';
             }
             else  if (isset($fieldInfo['foreign_key'])){
+                $fk = $fieldInfo['foreign_key'];
+                $model = $fk['model'];
+                $refModel = explode('\\', __CLASS__);
+                $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($model);
+                $refItem = (new DataBase())->$model->getFirstRow(
+                    $fk['field'] . ' = :' . $fk['field'],
+                    call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys'),
+                    array($fk['field'] => intval($value))
+                );
+                $displayValue = is_array($refItem) ? implode(' ', $refItem) : '';
                 require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'foreign_key.php';
             }
             else {
@@ -332,6 +342,27 @@ abstract class Model  {
             require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'submit.php';
         echo '</form>';
         //https://getbootstrap.com/docs/4.1/components/forms/#validation   - проверка формы
+    }
+
+    public static function getReferenceDisplayedKeys() : array {
+        $editedProperties = self::getModelPublicProperties();
+        $editedProperties = array_map(function (ReflectionProperty $reflectionProperty){
+            $docParams = static::extractDocCommentParams($reflectionProperty);
+            if (!array_key_exists('@foreign_key_display_value', $docParams)) {
+                return null;
+            }
+            return array(
+                'key' => $reflectionProperty->name,
+                'order' => intval($docParams['@foreign_key_display_value'])
+            );
+        }, $editedProperties);
+        $editedProperties = array_filter($editedProperties, function($item) {return !is_null($item);});
+        usort($editedProperties, function($a, $b){ return $a['order'] <=> $b['order']; });
+        $editedProperties = array_map(function($prop){ return $prop['key']; }, $editedProperties);
+        if (count($editedProperties) === 0) {
+            $editedProperties = static::PKName();
+        }
+        return $editedProperties;
     }
 
     /**
@@ -533,6 +564,7 @@ abstract class Model  {
         'alias' => ' Псевдоним, выводимый на страницы для пользователя вместо реального имени свойства экзепмляра модели',
         'autocalc' => 'Обозначает, что значение свойства автоматически рассчитывается согласно указанному выражению. Такое свойство не отображается в форме редактирования',
         'database_column_name' => 'наименование колонки в таблице БД, отвечающей за хранение значения свойства модели',
+        'foreign_key_display_value' => 'Это значение показывается в ссылочных полях вместо идентификатора. Если нескоько полей используются для отображения значения, их порядок сортируется значением этого параметра',
         'noeditable' => 'Обозначает, что данное свойство не отображается в форме редактирования',
     );
 
