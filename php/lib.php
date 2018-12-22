@@ -1,6 +1,8 @@
 <?php
 namespace Astkon\Lib;
 
+use Astkon\DataBase;
+
 function TileMenu (array $tiles, int $tileColumnsCount = 0, int $tilesInRow = 0) {
     $rows = array();
     if ($tilesInRow === 0) {
@@ -59,4 +61,20 @@ function RedirectToUrl(string $url) {
     ob_clean();
     header('Location: ' . $url);
     die();
+}
+
+function array_keys_CameCase(array $a) {
+    $r = array();
+    foreach ($a as $k => $v) {
+        $r[DataBase::underscoreToCamelCase($k)] = $v;
+    }
+    return $r;
+}
+
+function array_keys_underscore(array $a) {
+    $r = array();
+    foreach ($a as $k => $v) {
+        $r[DataBase::camelCaseToUnderscore($k)] = $v;
+    }
+    return $r;
 }
