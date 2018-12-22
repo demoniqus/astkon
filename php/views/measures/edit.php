@@ -9,7 +9,6 @@
         <div class="alert alert-info text-center">
             Редактирование единицы измерения
         </div>
-        <?= \Astkon\Model\Measure::EditForm($Measure); ?>
+        <?= \Astkon\Model\Measure::EditForm($Measure, $options); ?>
     </div>
 </div>
-
