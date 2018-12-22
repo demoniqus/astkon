@@ -17,7 +17,7 @@ abstract class Model  {
     /**
      * Системная функция для переноса изменений структуры БД в код.
      */
-    public static function UpdateModel() {
+    public static function UpdateModelPhpCode() {
         $db = new DataBase();
         if (static::class === self::class) {
             $tables = $db->query('select `table_name` from `information_schema`.`tables` where `table_schema`=\'' . GlobalConst::DbName . '\'');
@@ -30,11 +30,31 @@ abstract class Model  {
         else {
             $className = explode('\\', static::class);
             $className = $className[count($className) - 1];
-            if (preg_match('Partial$', $className)) {
+            if (preg_match('/Partial$/', $className)) {
                 $className = substr($className, 0, strlen($className) - strlen('Partial'));
             }
             $db->generateClass($className);
         }
+    }
+
+    public static function PKName() {
+        if (!self::checkIsClassOfModel()) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        $PK = array_filter(static::$fieldsInfo, function($item){
+            return strtoupper($item['column_key']) === GlobalConst::MySqlPKVal;
+        });
+        $PK = array_keys($PK);
+        return array_pop($PK);
     }
 
     /**
@@ -61,7 +81,16 @@ abstract class Model  {
      */
     public static function getFieldAlias(string $fieldName) {
         if (!self::checkIsClassOfModel()) {
-            //Ошибка
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
         }
         $editedProperties = self::getEditedProperties();
 
@@ -100,12 +129,12 @@ abstract class Model  {
         );
         $fieldsInfo = static::$fieldsInfo;
         usort($editedProperties, function(ReflectionProperty $a, ReflectionProperty $b) use ($fieldsInfo) {
-            $aColumnKey = strtolower($fieldsInfo[$a->name]['column_key']);
-            if ($aColumnKey === 'pri') {
+            $aColumnKey = strtoupper($fieldsInfo[$a->name]['column_key']);
+            if ($aColumnKey === GlobalConst::MySqlPKVal) {
                 return -1;
             }
-            $bColumnKey = strtolower($fieldsInfo[$b->name]['column_key']);
-            if ($bColumnKey === 'pri') {
+            $bColumnKey = strtoupper($fieldsInfo[$b->name]['column_key']);
+            if ($bColumnKey === GlobalConst::MySqlPKVal) {
                 return 1;
             }
             return 0;
@@ -180,7 +209,11 @@ abstract class Model  {
 
         $items = array();
         array_walk($_items, function($item) use (&$items) {
-            list($key, $value) = explode(' ', $item, 2);
+            $segments = explode(' ', $item, 2);
+            if (count($segments) < 2) {
+                $segments[] = null;
+            }
+            list($key, $value) = $segments;
             $items[$key] = $value;
         });
         return $items;
@@ -193,38 +226,77 @@ abstract class Model  {
      */
     public static function EditForm($item = array(), $options = array()) {
         if (!self::checkIsClassOfModel()) {
-            //Ошибка
-            (new View())->error(1);//Ошибка программиста
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
             die();
         }
 
         $editedProperties = self::getEditedProperties();
 
+        $isFormProcessed = is_array($options) && isset($options['validation']);
+
         // https://getbootstrap.com/docs/4.1/components/forms/
 
         echo '<form action="' . (isset($options['formAction']) ? $options['formAction'] : '') . '" method="post" enctype="multipart/form-data">';
+        if ($isFormProcessed && isset($options['validation']['message'])) {
+            $validationFormClass = 'alert-secondary';
+            if (isset($options['validation']['state'])) {
+                switch ($options['validation']['state']) {
+                    case Model::ValidStateOK:
+                        $validationFormClass = 'alert-success';
+                        break;
+                    case Model::ValidStateError:
+                        $validationFormClass = 'alert-danger';
+                        break;
+                }
+            }
+            $validationFormMessage = $options['validation']['message'];
+            require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'common_message.php';
+        }
+
         foreach ($editedProperties as $property) {
             $propName = $property->name;
-            $_prop_name = DataBase::camelCaseToUnderscore($propName);
             $docCommentParams = self::extractDocCommentParams($property);
-            if (array_key_exists('@noeditable', $docCommentParams)) {
+            if (
+                array_key_exists('@noeditable', $docCommentParams) ||
+                array_key_exists('@autocalc', $docCommentParams)
+
+            ) {
                 continue;
             }
             /** @var string $alias - используется во вьюхах*/
             $alias = isset($docCommentParams['@alias']) ? $docCommentParams['@alias'] : $propName;
             /** @var mixed $value - используется во вьюхах*/
-            $value = $item[$_prop_name];
+            $value = $item[$propName];
+
+
+            $validMessage = null;
+            $validState = self::ValidStateUndefined;
+            if ($isFormProcessed) {
+                if (isset($options['validation']['fields'][$propName])) {
+                    $validState = $options['validation']['fields'][$propName]['state'];
+                    $validMessage = isset($options['validation']['fields'][$propName]['message']) ?
+                        trim($options['validation']['fields'][$propName]['message']) :
+                        null;
+                }
+            }
+
             /** @var array $fieldInfo */
             $fieldInfo = static::$fieldsInfo[$property->name];
-            if ($fieldInfo['column_key'] === 'PRI') {
+            if ($fieldInfo['column_key'] === GlobalConst::MySqlPKVal) {
                 require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'primary_key.php';
             }
             else  if (isset($fieldInfo['foreign_key'])){
                 require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'foreign_key.php';
-
             }
             else {
-
                 switch ($fieldInfo['data_type']) {
                     case 'bit':
                         require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'boolean.php';
