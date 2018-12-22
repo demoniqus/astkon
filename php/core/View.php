@@ -144,4 +144,8 @@ class View
     {
         $this->variables[$name] = $value;
     }
+
+    public static function TableList($config, $items, $options = array()) {
+        require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_table_list_view' . DIRECTORY_SEPARATOR . 'table.php';
+    }
 }

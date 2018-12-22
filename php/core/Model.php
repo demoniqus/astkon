@@ -92,7 +92,7 @@ abstract class Model  {
             $view->error(ErrorCode::PROGRAMMER_ERROR);
             die();
         }
-        $editedProperties = self::getEditedProperties();
+        $editedProperties = self::getModelPublicProperties();
 
         $editedProperties = array_filter($editedProperties, function(ReflectionProperty $property) use ($fieldName) {
             return $property->name === $fieldName;
@@ -109,7 +109,7 @@ abstract class Model  {
      * Метод возвращает набор публичных нестатичных свойств класса Partial
      * @return array
      */
-    protected static function getEditedProperties() {
+    protected static function getModelPublicProperties() {
         $partialClassName = explode('\\', static::class);
         $partialClassName[] = $partialClassName[count($partialClassName) - 1] . 'Partial';
         $partialClassName[count($partialClassName) - 2] = 'Partial';
@@ -238,7 +238,7 @@ abstract class Model  {
             die();
         }
 
-        $editedProperties = self::getEditedProperties();
+        $editedProperties = self::getModelPublicProperties();
 
         $isFormProcessed = is_array($options) && isset($options['validation']);
 
@@ -341,7 +341,7 @@ abstract class Model  {
      * @return array|bool
      */
     public function Save() {
-        $editedProperties = self::getEditedProperties();
+        $editedProperties = self::getModelPublicProperties();
         $values = array();
         foreach ($editedProperties as $referenceProperty) {
             $propName = $referenceProperty->name;
@@ -539,6 +539,17 @@ abstract class Model  {
         'database_column_name' => 'наименование колонки в таблице БД, отвечающей за хранение значения свойства модели',
         'noeditable' => 'Обозначает, что данное свойство не отображается в форме редактирования',
     );
+
+    public static function getConfigForListView() {
+        return array_map(function(ReflectionProperty $prop){
+            return array(
+                'key' => $prop->name,
+                'alias' => self::getFieldAlias($prop->name),
+                'primary_key' => static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal,
+                'foreign_key' => isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null
+            );
+        }, self::getModelPublicProperties());
+    }
 
 
     protected $fields = array();
