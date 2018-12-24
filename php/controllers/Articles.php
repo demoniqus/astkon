@@ -42,12 +42,16 @@ class ArticlesController extends Controller
             )
         );
         $view->modelConfig = Article::getConfigForListView();
-        $view->listItems = array_map(
+
+        $rows = array_map(
             function($row){
                 return array_keys_CameCase($row);
             },
             (new DataBase())->article->getRows()
         );
+        Article::decodeForeignKeys($rows);
+
+        $view->listItems = $rows;
         $view->generate();
     }
 
