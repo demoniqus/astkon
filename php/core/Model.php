@@ -374,6 +374,104 @@ abstract class Model  {
     }
 
     /**
+     * Метод возвращает список полей, значение которых будет выводиться вместо справочного поля
+     * @return array
+     */
+    public static function ReferenceDisplayedKeys() : array {
+        if (!self::checkIsClassOfModel()) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        return static::getReferenceDisplayedKeys();
+    }
+
+    /**
+     * Метод расшифровывает значения справочных полей, заменяя идентификаторы понятными значениями
+     * @param array $listItems
+     */
+    public static function decodeForeignKeys(array &$listItems) {
+        /*Пока мудрить ради скорости не буду - выбираю более понятный путь вывода значений справочников*/
+        $fieldsInfo = array_filter(static::$fieldsInfo, function($fieldInfo){ return isset($fieldInfo['foreign_key']);});
+        if (count($listItems) && count($fieldsInfo)) {
+            $db = new DataBase();
+            foreach ($fieldsInfo as $fieldKey => $fieldInfo) {
+                $fk = $fieldInfo['foreign_key'];
+                $model = $fk['model'];
+                $refModel = explode('\\', __CLASS__);
+                $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($model);
+                $fk['displayed_keys'] = call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys');
+                foreach ($listItems as &$listItem) {
+                    if (is_null($listItem[$fieldKey])) {
+                        continue;
+                    }
+                    $refItem = $db->$model->getFirstRow(
+                        $fk['field'] . '= :' . $fk['field'],
+                        $fk['displayed_keys'],
+                        array($fk['field'] => $listItem[$fieldKey])
+                    );
+                    if (is_null($refItem)) {
+                        $view = new View();
+                        $view->trace = 'Нарушена целостность БД: элемент ' . $fieldInfo['table_name'] . '#' . $listItem[static::PKName()] .
+                            ' ссылается на несуществующий элемент ' . $fk['model'] . '#' . $listItem[$fieldKey];
+                        $view->error(ErrorCode::BAD_DB_CONSISTENCE);
+                        die();
+                    }
+
+                    $listItem[$fieldKey] = implode(' ', $refItem);
+                }
+            }
+        }
+
+
+//        $fieldsInfo = array_filter(function($fieldInfo){ return isset($fieldInfo['foreign_key']);}, static::$fieldsInfo);
+//        if (count($listItems) && count($fieldsInfo)) {
+//            foreach ($fieldsInfo as $fieldKey => $fieldInfo) {
+//                $fk = &$fieldInfo['foreign_key'];
+//                $model = $fk['model'];
+//                $refModel = explode('\\', __CLASS__);
+//                $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($model);
+//                $fk['displayed_keys'] = call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys');
+//
+//                /*Получим все запрашиваемые идентификаторы*/
+//                $requiredIdList = array_map(function($item) use ($fieldKey) { return $item[$fieldKey];}, $listItems);
+//                $requiredIdList = array_filter($requiredIdList, function($fkId){ return !is_null($fkId);});
+//                $kfValuesDict = array();
+//                foreach (array_chunk($requiredIdList, 50) as $fkIgGroup) {
+//
+//                }
+//
+//            }
+//            $f = function(){};
+//            $itemsDict = array();
+//            $PKName = static::PKName();
+//            foreach ($listItems as &$item) {
+//                $itemsDict[$item[$PKName]] = $item;
+//            }
+//            /*
+//             * Требуется более точный расчет. Однако при 50 записях и предельном буфере в 10 МБ,
+//             * на 1 запись получается 20 КБ - в абсолютном большинстве предостаточно
+//            */
+//            $tmpArray = array_chunk($itemsDict, 50);
+//            $db = new DataBase();
+//            $db->setPDOAttribute(PDO::MYSQL_ATTR_MAX_BUFFER_SIZE, 10 * 2 ** 10);
+//            $refItem = (new DataBase())->$model->getFirstRow(
+//                $fk['field'] . ' = :' . $fk['field'],
+//
+//                array($fk['field'] => intval($value))
+//            );
+//            $displayValue = is_array($refItem) ? implode(' ', $refItem) : '';
+//        }
+    }
+
+    /**
      * Метод сохраняет данные в БД.
      * В случае успеха возвращает true В случае ошибки возвращает массив с информацией об ошибке
      * @return array|bool
