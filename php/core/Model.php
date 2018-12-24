@@ -242,6 +242,9 @@ abstract class Model  {
 
         $isFormProcessed = is_array($options) && isset($options['validation']);
 
+        $Controller = explode('\\', static::class);
+        $Controller = array_pop($Controller);
+
         // https://getbootstrap.com/docs/4.1/components/forms/
 
         echo '<form action="' . (isset($options['formAction']) ? $options['formAction'] : '') . '" method="post" enctype="multipart/form-data">';
@@ -258,9 +261,9 @@ abstract class Model  {
                 }
             }
             $validationFormMessage = $options['validation']['message'];
-            require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'common_message.php';
+            require \Astkon\View\FORM_EDIT_FIELDS_TEMPLATES . DIRECTORY_SEPARATOR . 'common_message.php';
         }
-
+        $baseRequirePath = \Astkon\View\FORM_EDIT_FIELDS_TEMPLATES . DIRECTORY_SEPARATOR;
         foreach ($editedProperties as $property) {
             $propName = $property->name;
             $docCommentParams = self::extractDocCommentParams($property);
@@ -288,27 +291,32 @@ abstract class Model  {
             }
 
             /** @var array $fieldInfo */
-            $fieldInfo = static::$fieldsInfo[$property->name];
+            $fieldInfo = static::$fieldsInfo[$propName];
+
             if ($fieldInfo['column_key'] === GlobalConst::MySqlPKVal) {
-                require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'primary_key.php';
+                require_once $baseRequirePath . 'primary_key.php';
             }
             else  if (isset($fieldInfo['foreign_key'])){
-                $fk = $fieldInfo['foreign_key'];
-                $model = $fk['model'];
+                $ForeignKeyParams = $fieldInfo['foreign_key'];
+                $model = $ForeignKeyParams['model'];
                 $refModel = explode('\\', __CLASS__);
                 $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($model);
                 $refItem = (new DataBase())->$model->getFirstRow(
-                    $fk['field'] . ' = :' . $fk['field'],
+                    $ForeignKeyParams['field'] . ' = :' . $ForeignKeyParams['field'],
                     call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys'),
-                    array($fk['field'] => intval($value))
+                    array($ForeignKeyParams['field'] => intval($value))
                 );
                 $displayValue = is_array($refItem) ? implode(' ', $refItem) : '';
-                require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'foreign_key.php';
+                $dictionaryAction = '';
+                if (isset($docCommentParams['@foreign_key_action'])) {
+                    $dictionaryAction = $docCommentParams['@foreign_key_action'];
+                }
+                require $baseRequirePath . 'foreign_key.php';
             }
             else {
                 switch ($fieldInfo['data_type']) {
                     case 'bit':
-                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'boolean.php';
+                        require $baseRequirePath . 'boolean.php';
                         break;
                     case 'int':
                     case 'tinyint':
@@ -319,32 +327,32 @@ abstract class Model  {
                     case 'double':
                     case 'decimal':
                         $inputType = 'number';
-                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
+                        require $baseRequirePath. 'input.php';
                         break;
                     case 'char':
                     case 'varchar':
                     case 'nvarchar':
                         $inputType = 'text';
-                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
+                        require $baseRequirePath . 'input.php';
                         break;
                     case 'text':
                     case 'tinytext':
                     case 'mediumtext':
                     case 'longtext':
-                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'textarea.php';
+                        require $baseRequirePath . 'textarea.php';
                         break;
                     case 'json':
-                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'json.php';
+                        require $baseRequirePath . 'json.php';
                         break;
                 }
             }
         }
-            require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'submit.php';
+            require $baseRequirePath . 'submit.php';
         echo '</form>';
         //https://getbootstrap.com/docs/4.1/components/forms/#validation   - проверка формы
     }
 
-    public static function getReferenceDisplayedKeys() : array {
+    protected static function getReferenceDisplayedKeys() : array {
         $editedProperties = self::getModelPublicProperties();
         $editedProperties = array_map(function (ReflectionProperty $reflectionProperty){
             $docParams = static::extractDocCommentParams($reflectionProperty);
