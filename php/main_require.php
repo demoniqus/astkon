@@ -13,6 +13,7 @@ require_once 'core/Model.php';
 require_once 'core/Controller.php';
 require_once 'core/View.php';
 require_once 'base64.php';
+require_once 'error_code.php';
 require_once 'db.php';
 require_once 'linq.php';
 require_once 'lib.php';
