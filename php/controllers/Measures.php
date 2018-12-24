@@ -39,6 +39,29 @@ class MeasuresController extends Controller
             'title' => 'Редактировать'
             )
         );
+        $this->configureListView($view);
+        $view->generate();
+    }
+
+    public function MeasuresDictAction($context) {
+        $view = new View();
+//        $pageId = isset($context['id']) ? intval($context['id']) : 0;
+//        $pageSize = 5;
+        $view->listItemOptions = array(
+            array(
+                'action' => null,
+                'click' => 'DictionarySelector.setValue(JSON.parse($(this).parents(\'tr:first\').get(0).dataset.item),' . htmlspecialchars(json_encode(Measure::ReferenceDisplayedKeys())) . ')',
+                'icon' => '/icon-ok-green.png',
+                'title' => 'Выбрать элемент'
+            )
+        );
+        $view->setHeaderTemplate(null);
+        $view->setFooterTemplate(null);
+        $this->configureListView($view);
+        $view->generate();
+    }
+
+    protected function configureListView(View $view) {
         $view->modelConfig = Measure::getConfigForListView();
         $view->listItems = array_map(
             function($row){
@@ -46,7 +69,6 @@ class MeasuresController extends Controller
             },
             (new DataBase())->measure->getRows()
         );
-        $view->generate();
     }
 
     public function EditAction($context) {
