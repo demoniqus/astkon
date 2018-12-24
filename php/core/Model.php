@@ -461,9 +461,6 @@ abstract class Model  {
             $query .= ' WHERE `' . $fieldsInfo[$PKName]['column_name'] . '` = :' . $PKName . '';
             $values[$PKName] = $PKVal;
         }
-//        var_dump(__FILE__, __LINE__);
-//        var_dump($query);
-//        var_dump($values);
 
         $db = new DataBase();
         $res = $db->query($query, $values);
@@ -487,7 +484,7 @@ abstract class Model  {
                 case 'mediumint':
                 case 'smallint':
                 case 'tinyint':
-                    if (is_string($v) && !trim($v) && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))) {
+                    if (is_string($v) && trim($v) === ''/* && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))*/) {
                         $v = null;
                     }
                     else {
@@ -499,7 +496,7 @@ abstract class Model  {
                 case 'double':
                 case 'float':
                 case 'real':
-                    if (is_string($v) && !trim($v) && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))) {
+                    if (is_string($v) && trim($v) ===''/* && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))*/) {
                         $v = null;
                     }
                     else {
@@ -516,7 +513,7 @@ abstract class Model  {
                     $v = $v . '';
                     break;
                 case 'bit':
-                    if (is_string($v) && !trim($v) && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))) {
+                    if (is_string($v) && trim($v) === ''/* && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))*/) {
                         $v = null;
                     }
                     else {
