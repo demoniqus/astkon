@@ -119,6 +119,7 @@ class DataBase {
         $data = array();
         if ($query) {
             /*Получаем результат запроса из БД*/
+            $query = trim($query);
             $this->lastQueryState = 0;
             $queryType = self::getQueryType($query);
             if($queryType === self::QueryTypeDenied) {
@@ -171,6 +172,10 @@ class DataBase {
                 return self::QueryTypeDenied;
 
         }
+    }
+
+    public function setPDOAttribute(int $attribute, mixed $value) {
+        $this->PDO->setAttribute($attribute, $value);
     }
 
     /**
@@ -347,18 +352,37 @@ class DataBase {
                 }
                 break;
             case '23000':
+                //1048 - not null ; 1062 - unique
+                $keySuffix = '';
+                $keyPrefix = '';
+                $errCodeExplain = 'Ошибка при сохранении значения';
                 if ($errInfo['errorMessage']) {
                     $errMessage = strtolower($errInfo['errorMessage']);
-                    foreach ($fieldNames as $fieldName) {
-                        $_field_name = self::camelCaseToUnderscore($fieldName);
-                        if (mb_strpos($errMessage, $_field_name . '_unique') !== false) {
-                            $expectedErrorColumn[] = $fieldName;
+                    if(is_array($errInfo['errorInfo']) && count($errInfo['errorInfo']) > 1) {
+                        switch ($errInfo['errorInfo'][1]) {
+                            case 1062:
+                                $keySuffix = '_unique';
+                                $errCodeExplain = 'Значение поля должно быть уникальным';
+                                break;
+                            case 1048:
+                                $errCodeExplain = 'Значение поля не может быть пустым';
+                                break;
+                            case 1452:
+                                $keySuffix = $keyPrefix = '`';
+                                $errCodeExplain = 'Необходимо выбрать значение из справочника';
+                                break;
                         }
+                    }
+                }
+                foreach ($fieldNames as $fieldName) {
+                    $_field_name = self::camelCaseToUnderscore($fieldName);
+                    if (mb_strpos($errMessage, $keyPrefix . $_field_name . $keySuffix) !== false) {
+                        $expectedErrorColumn[] = $fieldName;
                     }
                 }
                 if (count($expectedErrorColumn) > 0) {
                     $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
-                    $errInfo['err_code_explain'] = 'Значение не уникально';
+                    $errInfo['err_code_explain'] = $errCodeExplain;
                 }
                 break;
             default:
@@ -421,6 +445,7 @@ class DataBase {
             count($required_fields) < 1
         ) &&
         $required_fields = array('*');//По умолчанию извлекаются все поля
+        $required_fields = array_map(function($fieldName){ return DataBase::camelCaseToUnderscore($fieldName);}, $required_fields);
 
         /*Запросим строки и сразу произведем типизацию*/
         return 'select ' .
@@ -449,7 +474,6 @@ class DataBase {
         if (!$this->currentObject) {
             throw new Exception('Не установлен объект для извелечения из БД');
         }
-
         /*Отберем список колонок, которым надо преобразовать тип из строкового*/
         $columns = $this->currentObject['fields'];
         /*Запросим строки и сразу произведем типизацию*/
