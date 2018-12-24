@@ -2,7 +2,7 @@
     <?php
     foreach ($items as $item) {
         ?>
-        <tr>
+        <tr data-item="<?= htmlspecialchars(json_encode($item)); ?>">
         <?php
         $PKVal = 0;
         foreach ($config as $fieldConfig) {
