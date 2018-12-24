@@ -10,6 +10,10 @@ namespace Astkon\View;
 
 use Astkon\GlobalConst;
 
+define(__NAMESPACE__ . '\FORM_EDIT_FIELDS_TEMPLATES', getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields');
+
+
+
 class View
 {
     /**
@@ -81,7 +85,9 @@ class View
             $$varName = $varValue;
         }
         foreach ($templates as $template) {
-            require_once $template;
+            if ($template) {
+                require $template;
+            }
         }
     }
 
@@ -120,24 +126,16 @@ class View
 
     /**
      * @param null|string $template - абсолютный путь до файла шаблона
-     * @return string
      */
-    public function HeaderTemplate($template = null) {
-        if ($template) {
-            $this->defHeaderTemplate = $template;
-        }
-        return $this->defHeaderTemplate;
+    public function setHeaderTemplate($template = null) {
+        $this->defHeaderTemplate = $template;
     }
 
     /**
      * @param null|string $template - абсолютный путь до файла шаблона
-     * @return string
      */
-    public function FooterTemplate($template = null) {
-        if ($template) {
-            $this->defFooterTemplate = $template;
-        }
-        return $this->defFooterTemplate;
+    public function setFooterTemplate($template = null) {
+        $this->defFooterTemplate = $template;
     }
 
     public function __set($name, $value)
@@ -146,6 +144,7 @@ class View
     }
 
     public static function TableList($config, $items, $options = array()) {
-        require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_table_list_view' . DIRECTORY_SEPARATOR . 'table.php';
+        define('TABLE_LIST_VIEW_DIRECTORY', getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_table_list_view');
+        require_once TABLE_LIST_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . 'table.php';
     }
 }
