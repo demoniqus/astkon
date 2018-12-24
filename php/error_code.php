@@ -11,6 +11,6 @@ namespace Astkon;
 abstract class ErrorCode
 {
     const PROGRAMMER_ERROR = 1;
-    const BAD_DB_QUERY = 2;
+    const BAD_DB_CONSISTENCE = 2;
 
 }
