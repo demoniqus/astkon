@@ -50,7 +50,9 @@ class MeasuresController extends Controller
         $view->listItemOptions = array(
             array(
                 'action' => null,
-                'click' => 'DictionarySelector.setValue(JSON.parse($(this).parents(\'tr:first\').get(0).dataset.item),' . htmlspecialchars(json_encode(Measure::ReferenceDisplayedKeys())) . ')',
+                'click' => 'DictionarySelector.setValue(\'' .
+                    $_POST['dialogId'] . '\', [JSON.parse($(this).parents(\'tr:first\').get(0).dataset.item)],' .
+                    htmlspecialchars(json_encode(Measure::ReferenceDisplayedKeys())) . ')',
                 'icon' => '/icon-ok-green.png',
                 'title' => 'Выбрать элемент'
             )
