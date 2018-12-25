@@ -74,4 +74,16 @@ abstract class Controller
         return $permition;
     }
 
+    /**
+     * @return array
+     */
+    public static function ThisAction() : array {
+        $backtrace = (debug_backtrace(2, 2));
+        $backtrace = $backtrace[1];
+        $classSegments = explode('\\',$backtrace['class']);
+        $controller = preg_replace('/Controller$/i', '', array_pop($classSegments));
+        $acttion = preg_replace('/Action$/i', '', $backtrace['function']);
+        return array($controller, $acttion);
+    }
+
 }

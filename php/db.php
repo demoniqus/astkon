@@ -1,5 +1,6 @@
 <?php
 namespace Astkon;
+use Astkon\View\View;
 use DateTime;
 use \PDO as PDO;
 use \PDOException as PDOException;
@@ -17,6 +18,12 @@ use ReflectionProperty;
 
 
 class DataBase {
+    const QueryTypeInsert = 0;
+    const QueryTypeUpdate = 1;
+    const QueryTypeDelete = 2;
+    const QueryTypeSelect = 3;
+    const QueryTypeDenied = 4;
+
     /**
      * Текущее подключение к БД
      * @var PDOStatement
@@ -33,6 +40,18 @@ class DataBase {
      * @var string
      */
     private $currentObject;
+    /**
+     * Статус последнего запроса в БД
+     * 0 - успешно
+     * иначе инфорация об ошибке
+     * @var array|int
+     */
+    protected $lastQueryState = 0;
+    /**
+     * Идентификатор последней вставленной записи
+     * @var null
+     */
+    protected $lastInsertId = null;
 
     /**
      * DataBase constructor.
@@ -73,7 +92,8 @@ class DataBase {
                 $pass,
                 array(
 //                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => false
+//                    PDO::ATTR_EMULATE_PREPARES => true, //Не ставить принудительно в false - может сильно глючить!!!
+                    PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
                 )
             );
         }
@@ -87,65 +107,336 @@ class DataBase {
 
     /**
      * @param string $query - строка запроса к выполнению
-     * @param array $values - значения для подстановки в запрос на место placeholder'ов
+     * @param array $values - значения для подстановки в запрос на место placeholder'ов. Ключи в CamelCase
      * @param string $mode - метод формирования списка значений
-     * @return array
+     * @return array|false
      */
     public function query(
             $query,
             $values = array(),
-            $mode = 'assoc') : array {
+            $mode = 'assoc'
+    ) {
         $data = array();
         if ($query) {
             /*Получаем результат запроса из БД*/
-            $result = $this->_execQueryCommad($query, $values);
-
-            while ($row = $result->fetch($mode === 'assoc' ? PDO::FETCH_ASSOC : PDO::FETCH_NUM)) {
-                $data[] = $row;
+            $query = trim($query);
+            $this->lastQueryState = 0;
+            $queryType = self::getQueryType($query);
+            if($queryType === self::QueryTypeDenied) {
+                $this->lastQueryState = array(
+                    '@error' => true,
+                    'errorType' => 'PHP',
+                    'errorCode' => 0,
+                    'errorMessage' => 'Запрещенная команда',
+                );;
+                return false;
+            }
+            $result = $this->_execQueryCommand($query, $queryType, $values);
+            if (is_array($result)) {
+                $this->lastQueryState = $result;
+                return false;
+            }
+            if ($queryType === self::QueryTypeSelect) {
+                while ($row = $result->fetch($mode === 'assoc' ? PDO::FETCH_ASSOC : PDO::FETCH_NUM)) {
+                    $data[] = $row;
+                }
             }
         }
         return $data;
     }
 
-    /**
-     * @param array $values
-     * @param string $query
-     * @return bool|PDOStatement
-     */
-    protected function _execQueryCommad($query, $values = null) {
-        $stmt = $this->PDO->prepare($query);
-        try {
-            $stmt->execute($values);
+    public function QueryState() {
+        return $this->lastQueryState === 0;
+    }
+
+    public function QueryInfo() {
+        return is_array($this->lastQueryState) ? $this->lastQueryState : array();
+    }
+
+    public function LastInsertId() {
+        return $this->lastInsertId;
+    }
+
+    protected static function getQueryType(string $query) : int {
+        $queryType = strtolower(mb_substr($query, 0, mb_strpos($query, ' ')));
+        switch ($queryType) {
+            case 'select':
+                return self::QueryTypeSelect;
+            case 'insert':
+                return self::QueryTypeInsert;
+            case 'update':
+                return self::QueryTypeUpdate;
+            case 'delete':
+                return self::QueryTypeDelete;
+            default:
+                return self::QueryTypeDenied;
+
         }
-        catch (\Exception $ex) {
-            echo $query . PHP_EOL;
-            echo $ex->getMessage() . PHP_EOL;
-            $ex->getTraceAsString();
-            die();
+    }
+
+    public function setPDOAttribute(int $attribute, mixed $value) {
+        $this->PDO->setAttribute($attribute, $value);
+    }
+
+    /**
+     * @param array $values - значения для подстановки. Ключи в CamelCase
+     * @param int $queryType
+     * @param string $query
+     * @return bool|PDOStatement|array
+     */
+    protected function _execQueryCommand($query, int $queryType, $values = null) {
+        $query = trim($query);
+
+
+        /** @var \PDOStatement $stmt */
+        try {
+            $stmt = $this->PDO->prepare($query);
+        }
+        catch (\PDOException $PDOException) {
+            switch ($PDOException->getCode()) {
+                case '42S22':
+                    $view = new View();
+                    $view->trace = array(
+                        'errorCode' => $PDOException->getCode(),
+                        'errorMessage' => $PDOException->getMessage(),
+                        'errorInfo' => $PDOException->errorInfo,
+                    );
+                    $view->error(ErrorCode::PROGRAMMER_ERROR);
+                    die();
+                default:
+                    return array(
+                        '@error' => true,
+                        'errorType' => 'PDO',
+                        'errorCode' => $PDOException->getCode(),
+                        'errorMessage' => $PDOException->getMessage(),
+                    );
+            }
+        }
+        catch (\Exception $exception) {
+            return array(
+                '@error' => true,
+                'errorType' => 'PHP',
+                'errorCode' => $exception->getCode(),
+                'errorMessage' => $exception->getMessage(),
+            );
+        }
+        // Альтернатива PDO - https://habr.com/post/141127/
+        if (is_array($values)) {
+            try {
+                foreach ($values as $k => $v) {
+                    $paramType = false;
+                    if (is_int($v)) {
+                        $paramType = PDO::PARAM_INT;
+                    }
+                    else if (is_bool($v)) {
+                        $paramType = PDO::PARAM_BOOL;
+                    }
+                    else if (is_null($v)) {
+                        $paramType = PDO::PARAM_NULL;
+                    }
+                    else if(is_array($v)) {
+                        $paramType = PDO::PARAM_STR;
+                        $v = json_encode($v);
+                    }
+                    else if (is_string($v)) {
+                        $paramType = PDO::PARAM_STR;
+                    }
+                    if ($paramType !== false) {
+                        (function($v) use ($stmt, $k, $paramType) {
+                            $stmt->bindParam(':' . $k, $v, $paramType);
+
+                        })($v);
+                    }
+                }
+            } catch (\PDOException $PDOException) {
+                return array(
+                    '@error' => true,
+                    'errorType' => 'PDO',
+                    'errorCode' => $PDOException->getCode(),
+                    'errorMessage' => $PDOException->getMessage(),
+                );
+            }
+        }
+
+        try {
+
+            if ($queryType === self::QueryTypeInsert) {
+                $this->PDO->beginTransaction();
+                $stmt->execute();
+                $this->lastInsertId = $this->PDO->lastInsertId();
+                $this->PDO->commit();
+//                echo '<pre>';
+//                $stmt->debugDumpParams();
+//                die();
+            }
+            else {
+                $stmt->execute();
+            }
+        }
+        catch (\PDOException $PDOException) {
+            try {
+                if ($this->PDO->inTransaction()) {
+                    $this->PDO->rollback();
+                }
+            }
+            catch (\PDOException $PDOException) {
+                return array(
+                    '@error' => true,
+                    'errorType' => 'PDO',
+                    'errorCode' => $PDOException->getCode(),
+                    'errorMessage' => $PDOException->getMessage(),
+                );
+            }
+            $errInfo = array(
+                '@error' => true,
+                'errorType' => 'PDO',
+                'errorCode' => $PDOException->getCode(),
+                'errorMessage' => $PDOException->getMessage(),
+                'errorInfo' => $PDOException->errorInfo
+            );
+
+            $errInfo = self::errorMessageParser($errInfo, array_keys($values));
+
+            return $errInfo;
+        }
+        catch(\Exception $exception) {
+            return array(
+                '@error' => true,
+                'errorType' => 'PHP',
+                'errorCode' => $exception->getCode(),
+                'errorMessage' => $exception->getMessage(),
+            );
         }
         return $stmt;
     }
 
     /**
-     * @param string $condition
-     * @param array  $required_fields
+     * Метод обрабатывает ошибки, возникшие при работе с PDO (подготовкой и отправкой запроса)
+     * @param array $errInfo
+     * @param array $fieldNames - наименования полей в CamelCase
+     * @return array
+     */
+    protected static function errorMessageParser(array $errInfo, array $fieldNames) {
+        switch ($errInfo['errorCode']) {
+            case 'HY093':
+                $view = new View();
+                $view->trace = array(
+                    'errorCode' => $errInfo['errorCode'],
+                    'errorMessage' => $errInfo['errorMessage'],
+                    'errorInfo' => $errInfo['errorInfo'],
+                    'class' => __CLASS__,
+                    'line' => __LINE__,
+                );
+                $view->error(ErrorCode::PROGRAMMER_ERROR);
+                die();
+            case 'HY000':
+                if ($errInfo['errorMessage']) {
+
+                    /*
+                     * Попробуем получить колонку из сообщения об ошибке
+                    */
+
+                    foreach ($fieldNames as $fieldName) {
+                        $_field_name = self::camelCaseToUnderscore($fieldName);
+                        if (
+                            mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
+                            mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
+                        ) {
+                            $expectedErrorColumn[] = $fieldName;
+                        }
+                    }
+                }
+                if (count($expectedErrorColumn) > 0) {
+                    $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
+                    $errInfo['err_code_explain'] = 'Недопустимое значение';
+                }
+                break;
+            case '23000':
+                //1048 - not null ; 1062 - unique
+                $keySuffix = '';
+                $keyPrefix = '';
+                $errCodeExplain = 'Ошибка при сохранении значения';
+                if ($errInfo['errorMessage']) {
+                    $errMessage = strtolower($errInfo['errorMessage']);
+                    if(is_array($errInfo['errorInfo']) && count($errInfo['errorInfo']) > 1) {
+                        switch ($errInfo['errorInfo'][1]) {
+                            case 1062:
+                                $keySuffix = '_unique';
+                                $errCodeExplain = 'Значение поля должно быть уникальным';
+                                break;
+                            case 1048:
+                                $errCodeExplain = 'Значение поля не может быть пустым';
+                                break;
+                            case 1452:
+                                $keySuffix = $keyPrefix = '`';
+                                $errCodeExplain = 'Необходимо выбрать значение из справочника';
+                                break;
+                        }
+                    }
+                }
+                foreach ($fieldNames as $fieldName) {
+                    $_field_name = self::camelCaseToUnderscore($fieldName);
+                    if (mb_strpos($errMessage, $keyPrefix . $_field_name . $keySuffix) !== false) {
+                        $expectedErrorColumn[] = $fieldName;
+                    }
+                }
+                if (count($expectedErrorColumn) > 0) {
+                    $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
+                    $errInfo['err_code_explain'] = $errCodeExplain;
+                }
+                break;
+            default:
+                if ($errInfo['errorMessage']) {
+                    foreach ($fieldNames as $fieldName) {
+                        $_field_name = self::camelCaseToUnderscore($fieldName);
+                        if (
+                            mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
+                            mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
+                        ) {
+                            $expectedErrorColumn[] = $fieldName;
+                        }
+                    }
+                }
+                if (count($expectedErrorColumn) > 0) {
+                    $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
+                    $errInfo['err_code_explain'] = 'Непредвиденная ошибка';
+                }
+                break;
+        }
+
+        return $errInfo;
+
+    }
+
+
+    /**
+     * @param null|string $condition
+     * @param null|array $required_fields
+     * @param null|int $offset
+     * @param null|int $limit
      * @return string
      */
     public function getQueryString(
         $condition = null, //строка
-        $required_fields = null //массив наименований колонок для выборки
+        $required_fields = null, //массив наименований колонок для выборки,
+        $offset = null,
+        $limit = null
     ) : string {
-        return $this->_getQueryString($condition, $required_fields);
+        return $this->_getQueryString($condition, $required_fields, $offset, $limit);
     }
 
     /**
-     * @param string $condition
-     * @param array  $required_fields
+     * @param null|string $condition
+     * @param null|array $required_fields
+     * @param null|int $offset
+     * @param null|int $limit
      * @return string
      */
     private function _getQueryString (
         $condition = null, //строка
-        $required_fields = null //массив наименований колонок для выборки
+        $required_fields = null, //массив наименований колонок для выборки,
+        $offset = null,
+        $limit = null
     ) : string {
         /*Определим список полей, которые требуется извлечь*/
         (
@@ -154,30 +445,39 @@ class DataBase {
             count($required_fields) < 1
         ) &&
         $required_fields = array('*');//По умолчанию извлекаются все поля
+        $required_fields = array_map(function($fieldName){ return DataBase::camelCaseToUnderscore($fieldName);}, $required_fields);
 
         /*Запросим строки и сразу произведем типизацию*/
-        return 'select ' . implode(', ', $required_fields) . ' from ' . $this->currentObject['name'] . ' ' . ($condition ? 'where ' . $condition : '');
+        return 'select ' .
+            implode(', ', $required_fields) .
+            ' from ' . $this->currentObject['name'] . ' ' .
+            ($condition ? 'where ' . $condition : '') . ' ' .
+            (!is_null($limit) ? 'limit ' . $limit : '') . ' ' .
+            (!is_null($offset) ? 'offset ' . $offset : '');
     }
 
     /**
      * @param null|string $condition - условие для выборки
      * @param null|array $required_fields - требуемые для выборки поля
      * @param array $values - значения для подставновки в запрос вместо placeholder'ов
+     * @param null|int $offset
+     * @param null|int $limit
      * @return array
      */
     public function getRows(
             $condition = null, //строка
             $required_fields = null, //массив наименований колонок для выборки
-            $values = array()
+            $values = array(),
+            $offset = null,
+            $limit = null
             ) : array {
         if (!$this->currentObject) {
             throw new Exception('Не установлен объект для извелечения из БД');
         }
-
         /*Отберем список колонок, которым надо преобразовать тип из строкового*/
         $columns = $this->currentObject['fields'];
         /*Запросим строки и сразу произведем типизацию*/
-        $query = $this->_getQueryString($condition, $required_fields);
+        $query = $this->_getQueryString($condition, $required_fields, $offset, $limit);
         $rows = (new linq($this->query($query, $values)))
             ->where(function($row){ return count($row) > 0;})
             ->for_each(function(&$row) use ($columns){
@@ -191,24 +491,24 @@ class DataBase {
      * @param array $values
      * @return array|null
      */
-    public function getObjects($condition, $values = array()) {
-        if (!$this->currentObject) {
-            throw new Exception('Не установлен объект для извелечения из БД');
-        }
-        $className = $this->getObjClassName();
-        $entityName = $this->currentObject['name'];
-        return (new linq($this->getRows($condition, $values)))
-            ->select(function($row) use ($className, $entityName){
-                return new $className($row, $entityName);
-            })->getData();
-    }
+//    public function getObjects($condition, $values = array()) {
+//        if (!$this->currentObject) {
+//            throw new Exception('Не установлен объект для извелечения из БД');
+//        }
+//        $className = $this->getObjClassName();
+//        $entityName = $this->currentObject['name'];
+//        return (new linq($this->getRows($condition, $values)))
+//            ->select(function($row) use ($className, $entityName){
+//                return new $className($row, $entityName);
+//            })->getData();
+//    }
 
     /**
      * @return string
      */
-    private function getObjClassName(){
-        return class_exists($this->currentObject['name']) ? $this->currentObject['name'] : 'StandPrototype';
-    }
+//    private function getObjClassName(){
+//        return class_exists($this->currentObject['name']) ? $this->currentObject['name'] : 'StandPrototype';
+//    }
 
     /**
      * @param array $entity
@@ -234,7 +534,7 @@ class DataBase {
         }
         /*Создаем запрос для удаления записи*/
         $query = 'DELETE FROM ' . $this->currentObject['name'] . ' WHERE  ' . $pk['column_name'] . '=' . $entity[$pk['column_name']] . ' LIMIT 1';
-        $smtp = $this->_execQueryCommad($query);
+        $smtp = $this->_execQueryCommand($query, self::QueryTypeDelete);
         return $smtp->errorCode();
     }
 
@@ -246,58 +546,58 @@ class DataBase {
     public function Insert(
             array $entity
             ) {
-        if (!$this->currentObject) {
-            throw new Exception('Не установлен объект для вставки в БД');
-        }
-        if ($entity === null || gettype($entity) !== gettype($entity) || count($entity) < 1) {
-            throw new Exception('Нет информации для вставки в БД');
-        }
-        $values = array();
-        /*Создаем запрос для вставки записи*/
-        $query = 'INSERT INTO ' . $this->currentObject['name'] . ' (' .
-                join(
-                    ',',
-                    (new linq($this->currentObject['fields'], 'assoc'))
-                    ->where(function($column){ return $column['_primary_key'] ? false : true;})
-                    ->select(function($column){return '`' . $column['column_name'] . '`';})
-                    ->getData()
-                )
-                .') VALUES(' .
-                join(
-                    ',',
-                    (new linq($this->currentObject['fields'], 'assoc'))
-                        ->where(function($column) {return $column['_primary_key'] ? false : true;})
-                        ->select(function($column) use ($entity, &$values) {
-                            $colKey = $column['column_name'];
-                            $values[$colKey] = self::_getValueForQuery(
-                                array_key_exists($colKey, $entity) ? $entity[$colKey] : NULL,
-                                $column
-                            );
-                            return ':' . $colKey;
-                        })
-                    ->getData()
-                )
-                .')';
-
-        $this->_execQueryCommad($query, $values);
-        /*После вставки попробуем вернуть вставленную запись, если данная таблица имеет первичный ключ*/
-        $result = null;
-        if ((new linq($this->currentObject['fields'], 'assoc'))
-        ->first(function($column){ return $column['_primary_key'];})) {
-            $command = 'SELECT last_insert_id() as `liid`';
-            $lastId = $this->query($command)[0]['liid'];
-            $table_name = $this->currentObject['name'];
-            $result = $this->$table_name->getEntity($lastId);
-        }
-        return $result;
+//        if (!$this->currentObject) {
+//            throw new Exception('Не установлен объект для вставки в БД');
+//        }
+//        if ($entity === null || gettype($entity) !== gettype($entity) || count($entity) < 1) {
+//            throw new Exception('Нет информации для вставки в БД');
+//        }
+//        $values = array();
+//        /*Создаем запрос для вставки записи*/
+//        $query = 'INSERT INTO ' . $this->currentObject['name'] . ' (' .
+//                join(
+//                    ',',
+//                    (new linq($this->currentObject['fields'], 'assoc'))
+//                    ->where(function($column){ return $column['_primary_key'] ? false : true;})
+//                    ->select(function($column){return '`' . $column['column_name'] . '`';})
+//                    ->getData()
+//                )
+//                .') VALUES(' .
+//                join(
+//                    ',',
+//                    (new linq($this->currentObject['fields'], 'assoc'))
+//                        ->where(function($column) {return $column['_primary_key'] ? false : true;})
+//                        ->select(function($column) use ($entity, &$values) {
+//                            $colKey = $column['column_name'];
+//                            $values[$colKey] = self::_getValueForQuery(
+//                                array_key_exists($colKey, $entity) ? $entity[$colKey] : NULL,
+//                                $column
+//                            );
+//                            return ':' . $colKey;
+//                        })
+//                    ->getData()
+//                )
+//                .')';
+//
+//        $this->_execQueryCommand($query, self::QueryTypeInsert, $values);
+//        /*После вставки попробуем вернуть вставленную запись, если данная таблица имеет первичный ключ*/
+//        $result = null;
+//        if ((new linq($this->currentObject['fields'], 'assoc'))
+//        ->first(function($column){ return $column['_primary_key'];})) {
+//            $command = 'SELECT last_insert_id() as `liid`';
+//            $lastId = $this->query($command)[0]['liid'];
+//            $table_name = $this->currentObject['name'];
+//            $result = $this->$table_name->getEntity($lastId);
+//        }
+//        return $result;
     }
     
     public function entityPKColumn() {
-        if (!$this->currentObject) {
-            throw new Exception('Не установлен объект для извелечения из БД');
-        }
-        return (new linq($this->currentObject['fields'], 'assoc'))
-        ->first(function($column){ return $column['_primary_key'];});
+//        if (!$this->currentObject) {
+//            throw new Exception('Не установлен объект для извелечения из БД');
+//        }
+//        return (new linq($this->currentObject['fields'], 'assoc'))
+//        ->first(function($column){ return $column['_primary_key'];});
     }
 
     /**
@@ -309,41 +609,41 @@ class DataBase {
     public function Update(
             $entity
             ) {
-        if (!$this->currentObject) {
-            throw new Exception('Не установлен объект для извелечения из БД');
-        }
-        if ($entity === null || gettype($entity) !== gettype($entity) || count($entity) < 1) {
-            throw new Exception('Нет информации для вставки в БД');
-        }
-        /*Проверим наличие первичного ключа в таблице - без него обновление этим методом невозможно*/
-        if (($pk = (new linq($this->currentObject['fields'], 'assoc'))
-        ->first(function($column){ return $column['_primary_key'];})) === null) {
-            throw new Exception('Данная таблица не имеет первичного ключа. Поэтому обновление данным методом невозможно');
-        }
-        if (!array_key_exists($pk['column_name'], $entity)) {
-            throw new Exception('Полученный объект не содержит информации о первичном ключе. Обновление невозможно.');
-        }
-        /*Составляем запрос на обновление*/
-        $columns = $this->currentObject['fields'];
-        $values = array();
-        $query = 'UPDATE ' . $this->currentObject['name'] . ' SET ' .
-            join(
-                ',',
-                (new linq($entity, 'assoc'))
-                ->where(function($v, $k) use ($pk) {
-                    return $k !== $pk['column_name'];
-                })
-                ->select(function($v, $k) use ($columns, $values) {
-                    $values[$k] = self::_getValueForQuery($v, $columns[$k]);
-                    return '`' . $k . '`= :' . $k;
-                })
-                ->getData()
-            ).
-            ' WHERE ' . $pk['column_name'] . '=' . $entity[$pk['column_name']];
-        $this->_execQueryCommad($query, $values);
-        /*Вернем обновленную информацию*/
-        $table_name = $this->currentObject['name'];
-        return $this->$table_name->getEntity($entity[$pk['column_name']]);
+//        if (!$this->currentObject) {
+//            throw new Exception('Не установлен объект для извелечения из БД');
+//        }
+//        if ($entity === null || gettype($entity) !== gettype($entity) || count($entity) < 1) {
+//            throw new Exception('Нет информации для вставки в БД');
+//        }
+//        /*Проверим наличие первичного ключа в таблице - без него обновление этим методом невозможно*/
+//        if (($pk = (new linq($this->currentObject['fields'], 'assoc'))
+//        ->first(function($column){ return $column['_primary_key'];})) === null) {
+//            throw new Exception('Данная таблица не имеет первичного ключа. Поэтому обновление данным методом невозможно');
+//        }
+//        if (!array_key_exists($pk['column_name'], $entity)) {
+//            throw new Exception('Полученный объект не содержит информации о первичном ключе. Обновление невозможно.');
+//        }
+//        /*Составляем запрос на обновление*/
+//        $columns = $this->currentObject['fields'];
+//        $values = array();
+//        $query = 'UPDATE ' . $this->currentObject['name'] . ' SET ' .
+//            join(
+//                ',',
+//                (new linq($entity, 'assoc'))
+//                ->where(function($v, $k) use ($pk) {
+//                    return $k !== $pk['column_name'];
+//                })
+//                ->select(function($v, $k) use ($columns, $values) {
+//                    $values[$k] = self::_getValueForQuery($v, $columns[$k]);
+//                    return '`' . $k . '`= :' . $k;
+//                })
+//                ->getData()
+//            ).
+//            ' WHERE ' . $pk['column_name'] . '=' . $entity[$pk['column_name']];
+//        $this->_execQueryCommand($query, self::QueryTypeUpdate, $values);
+//        /*Вернем обновленную информацию*/
+//        $table_name = $this->currentObject['name'];
+//        return $this->$table_name->getEntity($entity[$pk['column_name']]);
     }
 
     /**
@@ -354,109 +654,109 @@ class DataBase {
      * @throws Exception
      */
     protected static function _getValueForQuery($v, &$column) {
-        if ($v === null) {
-            return 'null';
-        }
-        switch ($column['data_type']) {
-//            case 'int':
-//            case 'year':
-//            case 'bigint':
-//            case 'mediumint':
-//            case 'smallint':
-//            case 'decimal':
-//            case 'dec':
-//            case 'double':
-//            case 'float':
-//            case 'real':
-//            case 'tinyint':
-//                /*
-//                 * Защита от ввода недопустимых значений,
-//                 * которые потенциально опасны для БД
-//                 */
-//                if (!is_numeric($v)) {
-//                    $v = 0;
+//        if ($v === null) {
+//            return 'null';
+//        }
+//        switch ($column['data_type']) {
+////            case 'int':
+////            case 'year':
+////            case 'bigint':
+////            case 'mediumint':
+////            case 'smallint':
+////            case 'decimal':
+////            case 'dec':
+////            case 'double':
+////            case 'float':
+////            case 'real':
+////            case 'tinyint':
+////                /*
+////                 * Защита от ввода недопустимых значений,
+////                 * которые потенциально опасны для БД
+////                 */
+////                if (!is_numeric($v)) {
+////                    $v = 0;
+////                }
+////                return $v;
+////            case 'char':
+////            case 'varchar':
+////            case 'nvarchar':
+////            case 'text':
+////            case 'tinytext':
+////            case 'mediumtext':
+////                /*В строковых значениях необходимо экранировать кавычки и обратные слеши*/
+////                return $v != null ? '\'' . str_replace('\'', '\'\'', str_replace('\\', '\\\\', (string)$v)) . '\'' : 'null';
+////            case 'tinyint(1)':
+////                return $v === TRUE || (gettype($v) === gettype('aaa') && strtolower($v) === 'true') || (int)$v === 1 ? 1 : 0;
+//            case 'bit':
+//                return 'b\'' . (gettype($v) === gettype(true) ?
+//                    ($v ? '1' : '0') :
+//                    (($v = strtolower($v)) && ($v === 'true' || $v === '1') ? '1' : '0')) . '\'';
+//            case 'json':
+//                if (gettype($v) === gettype('') ) {
+//                    /*Это строка, которую надо распарсить перед сохранением*/
+//                    if ($v !== '') {
+//                        $v = json_decode($v);
+//                    }
+//                }
+//                else {
+//                    /*Это готовый объект для сохранения*/
+//                        $v = $v;
 //                }
 //                return $v;
-//            case 'char':
-//            case 'varchar':
-//            case 'nvarchar':
-//            case 'text':
-//            case 'tinytext':
-//            case 'mediumtext':
-//                /*В строковых значениях необходимо экранировать кавычки и обратные слеши*/
-//                return $v != null ? '\'' . str_replace('\'', '\'\'', str_replace('\\', '\\\\', (string)$v)) . '\'' : 'null';
-//            case 'tinyint(1)':
-//                return $v === TRUE || (gettype($v) === gettype('aaa') && strtolower($v) === 'true') || (int)$v === 1 ? 1 : 0;
-            case 'bit':
-                return 'b\'' . (gettype($v) === gettype(true) ?
-                    ($v ? '1' : '0') :
-                    (($v = strtolower($v)) && ($v === 'true' || $v === '1') ? '1' : '0')) . '\'';
-            case 'json':
-                if (gettype($v) === gettype('') ) {
-                    /*Это строка, которую надо распарсить перед сохранением*/
-                    if ($v !== '') {
-                        $v = json_decode($v);
-                    }
-                }
-                else {
-                    /*Это готовый объект для сохранения*/
-                        $v = $v;
-                }
-                return $v;
-            case 'datetime':
-                $formatString = 'Y-m-d H:i:s';
-                if (gettype($v) === gettype('') ) {
-                    if ($v !== '') {
-                        
-                        $v = new DateTime($v);
-                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-                    }
-                }
-                elseif (gettype($v) === gettype(array())) {
-                    if (array_key_exists('date', $v)) {
-                        $v = new DateTime($v['date']);
-                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-                    }
-                    else {
-                        $v = 'null';
-                    }
-                }
-                else {
-                    try {
-                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-                    } catch (Exception $ex) {
-                        $v = 'null';
-                    }
-                }
-                return $v;
-            case 'date':
-                $formatString = 'Y-m-d';
-                if (gettype($v) === gettype('') ) {
-                    if ($v !== '') {
-                        $v = new DateTime($v);
-                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-                    }
-                }
-                elseif (gettype($v) === gettype(array())) {
-                    if (array_key_exists('date', $v)) {
-                        $v = new DateTime($v['date']);
-                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-                    }
-                    else {
-                        $v = 'null';
-                    }
-                }
-                else {
-                    
-                    try {
-                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-                    } catch (Exception $ex) {
-                        $v = 'null';
-                    }
-                }
-                return $v;
-            default: return $v;
-        }
+//            case 'datetime':
+//                $formatString = 'Y-m-d H:i:s';
+//                if (gettype($v) === gettype('') ) {
+//                    if ($v !== '') {
+//
+//                        $v = new DateTime($v);
+//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
+//                    }
+//                }
+//                elseif (gettype($v) === gettype(array())) {
+//                    if (array_key_exists('date', $v)) {
+//                        $v = new DateTime($v['date']);
+//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
+//                    }
+//                    else {
+//                        $v = 'null';
+//                    }
+//                }
+//                else {
+//                    try {
+//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
+//                    } catch (Exception $ex) {
+//                        $v = 'null';
+//                    }
+//                }
+//                return $v;
+//            case 'date':
+//                $formatString = 'Y-m-d';
+//                if (gettype($v) === gettype('') ) {
+//                    if ($v !== '') {
+//                        $v = new DateTime($v);
+//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
+//                    }
+//                }
+//                elseif (gettype($v) === gettype(array())) {
+//                    if (array_key_exists('date', $v)) {
+//                        $v = new DateTime($v['date']);
+//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
+//                    }
+//                    else {
+//                        $v = 'null';
+//                    }
+//                }
+//                else {
+//
+//                    try {
+//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
+//                    } catch (Exception $ex) {
+//                        $v = 'null';
+//                    }
+//                }
+//                return $v;
+//            default: return $v;
+//        }
     }
 
     /**
@@ -468,9 +768,11 @@ class DataBase {
     public function getFirstRow(
             $condition = null, //строка
             $required_fields = null, //массив строк
-            $values = array()
+            $values = array(),
+            $offset = null,
+            $limit = null
             ) {
-        $rows = $this->getRows($condition, $required_fields, $values);
+        $rows = $this->getRows($condition, $required_fields, $values, $offset, $limit);
         return $rows != null  && count($rows) > 0 ? $rows[0] : null;
     }
 
@@ -509,41 +811,41 @@ class DataBase {
      * @return mixed
      * @throws Exception
      */
-    public function getObject(
-            $IdObject
-            ) {
-        if (!$this->currentObject) {
-            throw new Exception('Не установлен объект для извелечения из БД');
-        }
-        
-        $className = $this->getObjClassName();
-        
-        return new $className($this->getEntity($IdObject), $this->currentObject['name']);
-    }
+//    public function getObject(
+//            $IdObject
+//            ) {
+//        if (!$this->currentObject) {
+//            throw new Exception('Не установлен объект для извелечения из БД');
+//        }
+//
+//        $className = $this->getObjClassName();
+//
+//        return new $className($this->getEntity($IdObject), $this->currentObject['name']);
+//    }
 
     /**
      * @param null $values
      * @return array|null
      * @throws Exception
      */
-    public function getEmptyEntity(
-            $values = null
-            ) {
-        if (!$this->currentObject) {
-            throw new Exception('Не установлен объект для извелечения из БД');
-        }
-        $values = gettype($values) === gettype(array()) ? $values : array();
-        $entity = (new linq($this->currentObject['fields'], 'assoc'))
-            ->toAssoc(
-                function($column){ return $column['column_name'];},
-                function($column) use ($values) {
-                    return array_key_exists($column['column_name'], $values) ?
-                        $values[$column['column_name']] : null;
-                }
-            )->getData();
-        self::_convertValue($entity, $this->currentObject['fields']);
-        return $entity;
-    }
+//    public function getEmptyEntity(
+//            $values = null
+//            ) {
+//        if (!$this->currentObject) {
+//            throw new Exception('Не установлен объект для извелечения из БД');
+//        }
+//        $values = gettype($values) === gettype(array()) ? $values : array();
+//        $entity = (new linq($this->currentObject['fields'], 'assoc'))
+//            ->toAssoc(
+//                function($column){ return $column['column_name'];},
+//                function($column) use ($values) {
+//                    return array_key_exists($column['column_name'], $values) ?
+//                        $values[$column['column_name']] : null;
+//                }
+//            )->getData();
+//        self::_convertValue($entity, $this->currentObject['fields']);
+//        return $entity;
+//    }
 
     /**
      * Конвертирует значения в Entity в соответствии с типом полей
@@ -687,6 +989,17 @@ class DataBase {
                 'model' => $extLink['table_name'],
                 'field' => $extLink['column_name'],
             );
+        }
+        return $columns;
+    }
+
+    private function setPDOParamType(array $columns) {
+        foreach ($columns as $columnData) {
+            $dataType = $columnData['data_type'];
+            if (($pos = strpos($dataType, '(')) !== false) {
+                $dataType = substr($dataType, 0, $pos);
+            }
+
         }
         return $columns;
     }

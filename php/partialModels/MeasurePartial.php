@@ -88,6 +88,7 @@ protected static $fieldsInfo = array (
 	public $IsSplit;
 
 	/**
+    * @foreign_key_display_value
 	* @database_column_name measure_name
 	* @alias Обозначение
 	* @var string

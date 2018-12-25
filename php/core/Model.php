@@ -4,14 +4,20 @@ namespace Astkon\Model;
 //find . -exec chown demonius:demonius {} \; -exec chmod a+rw {} \;
 
 use Astkon\DataBase;
+use Astkon\ErrorCode;
 use Astkon\GlobalConst;
 use Astkon\View\View;
 use ReflectionClass;
 use ReflectionProperty;
 
 abstract class Model  {
-
-    public static function UpdateModel() {
+    const ValidStateError = 0;
+    const ValidStateOK = 1;
+    const ValidStateUndefined = 2;
+    /**
+     * Системная функция для переноса изменений структуры БД в код.
+     */
+    public static function UpdateModelPhpCode() {
         $db = new DataBase();
         if (static::class === self::class) {
             $tables = $db->query('select `table_name` from `information_schema`.`tables` where `table_schema`=\'' . GlobalConst::DbName . '\'');
@@ -24,11 +30,31 @@ abstract class Model  {
         else {
             $className = explode('\\', static::class);
             $className = $className[count($className) - 1];
-            if (preg_match('Partial$', $className)) {
+            if (preg_match('/Partial$/', $className)) {
                 $className = substr($className, 0, strlen($className) - strlen('Partial'));
             }
             $db->generateClass($className);
         }
+    }
+
+    public static function PKName() {
+        if (!self::checkIsClassOfModel()) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        $PK = array_filter(static::$fieldsInfo, function($item){
+            return strtoupper($item['column_key']) === GlobalConst::MySqlPKVal;
+        });
+        $PK = array_keys($PK);
+        return array_pop($PK);
     }
 
     /**
@@ -55,9 +81,18 @@ abstract class Model  {
      */
     public static function getFieldAlias(string $fieldName) {
         if (!self::checkIsClassOfModel()) {
-            //Ошибка
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
         }
-        $editedProperties = self::getEditedProperties();
+        $editedProperties = self::getModelPublicProperties();
 
         $editedProperties = array_filter($editedProperties, function(ReflectionProperty $property) use ($fieldName) {
             return $property->name === $fieldName;
@@ -65,8 +100,6 @@ abstract class Model  {
 
         /** @var ReflectionProperty $reflectionProperty */
         $reflectionProperty = array_shift($editedProperties);
-//        var_dump($reflectionProperty);
-//        die();
         $alias = self::extractDocCommentItem($reflectionProperty, 'alias');
         $alias = self::trimDocCommentKey($alias);
         return !!$alias ? $alias : $fieldName;
@@ -76,7 +109,7 @@ abstract class Model  {
      * Метод возвращает набор публичных нестатичных свойств класса Partial
      * @return array
      */
-    protected static function getEditedProperties() {
+    protected static function getModelPublicProperties() {
         $partialClassName = explode('\\', static::class);
         $partialClassName[] = $partialClassName[count($partialClassName) - 1] . 'Partial';
         $partialClassName[count($partialClassName) - 2] = 'Partial';
@@ -96,12 +129,12 @@ abstract class Model  {
         );
         $fieldsInfo = static::$fieldsInfo;
         usort($editedProperties, function(ReflectionProperty $a, ReflectionProperty $b) use ($fieldsInfo) {
-            $aColumnKey = strtolower($fieldsInfo[$a->name]['column_key']);
-            if ($aColumnKey === 'pri') {
+            $aColumnKey = strtoupper($fieldsInfo[$a->name]['column_key']);
+            if ($aColumnKey === GlobalConst::MySqlPKVal) {
                 return -1;
             }
-            $bColumnKey = strtolower($fieldsInfo[$b->name]['column_key']);
-            if ($bColumnKey === 'pri') {
+            $bColumnKey = strtoupper($fieldsInfo[$b->name]['column_key']);
+            if ($bColumnKey === GlobalConst::MySqlPKVal) {
                 return 1;
             }
             return 0;
@@ -147,45 +180,143 @@ abstract class Model  {
     }
 
     /**
+     * Извлекает из DocComment все @параметры и возвращает из них массив (с @ключами)
+     * @param ReflectionProperty $reflectionProperty
+     * @return array
+     */
+    protected static function extractDocCommentParams(ReflectionProperty $reflectionProperty) {
+        $_items = array_filter(
+            explode(PHP_EOL, $reflectionProperty->getDocComment()),
+            function($line){
+                return mb_strpos($line, '@') !== false;
+            }
+        );
+        $_items = array_map(
+            function($line){
+                while (mb_substr($line = trim($line), 0, 1) === '*') {
+                    $line = mb_substr($line, 1);
+                }
+                return $line;
+            },
+            $_items
+        );
+        $_items = array_filter(
+            $_items,
+            function($line){
+                return !!preg_match('/^@[a-z_]/i', $line);
+            }
+        );
+
+        $items = array();
+        array_walk($_items, function($item) use (&$items) {
+            $segments = explode(' ', $item, 2);
+            if (count($segments) < 2) {
+                $segments[] = null;
+            }
+            list($key, $value) = $segments;
+            $items[$key] = $value;
+        });
+        return $items;
+    }
+
+    /**
+     * Метод генерирует форму редактирования экземпляра модели
      * @param array $item
      * @param array $options
      */
     public static function EditForm($item = array(), $options = array()) {
         if (!self::checkIsClassOfModel()) {
-            //Ошибка
-            (new View())->error(1);//Ошибка программиста
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
             die();
         }
 
-        $editedProperties = self::getEditedProperties();
+        $editedProperties = self::getModelPublicProperties();
+
+        $isFormProcessed = is_array($options) && isset($options['validation']);
+
+        $Controller = explode('\\', static::class);
+        $Controller = array_pop($Controller);
 
         // https://getbootstrap.com/docs/4.1/components/forms/
 
         echo '<form action="' . (isset($options['formAction']) ? $options['formAction'] : '') . '" method="post" enctype="multipart/form-data">';
+        if ($isFormProcessed && isset($options['validation']['message'])) {
+            $validationFormClass = 'alert-secondary';
+            if (isset($options['validation']['state'])) {
+                switch ($options['validation']['state']) {
+                    case Model::ValidStateOK:
+                        $validationFormClass = 'alert-success';
+                        break;
+                    case Model::ValidStateError:
+                        $validationFormClass = 'alert-danger';
+                        break;
+                }
+            }
+            $validationFormMessage = $options['validation']['message'];
+            require \Astkon\View\FORM_EDIT_FIELDS_TEMPLATES . DIRECTORY_SEPARATOR . 'common_message.php';
+        }
+        $baseRequirePath = \Astkon\View\FORM_EDIT_FIELDS_TEMPLATES . DIRECTORY_SEPARATOR;
         foreach ($editedProperties as $property) {
             $propName = $property->name;
-            $_prop_name = DataBase::camelCaseToUnderscore($propName);
-            $alias = self::extractDocCommentItem($property, 'alias');
-            $alias = self::trimDocCommentKey($alias);
-            if (!$alias) {
-                $alias = $propName;
+            $docCommentParams = self::extractDocCommentParams($property);
+            if (
+                array_key_exists('@noeditable', $docCommentParams) ||
+                array_key_exists('@autocalc', $docCommentParams)
+
+            ) {
+                continue;
             }
-            $value = $item[$_prop_name];
+            /** @var string $alias - используется во вьюхах*/
+            $alias = isset($docCommentParams['@alias']) ? $docCommentParams['@alias'] : $propName;
+            /** @var mixed $value - используется во вьюхах*/
+            $value = $item[$propName];
+
+            $validMessage = null;
+            $validState = self::ValidStateUndefined;
+            if ($isFormProcessed) {
+                if (isset($options['validation']['fields'][$propName])) {
+                    $validState = $options['validation']['fields'][$propName]['state'];
+                    $validMessage = isset($options['validation']['fields'][$propName]['message']) ?
+                        trim($options['validation']['fields'][$propName]['message']) :
+                        null;
+                }
+            }
+
             /** @var array $fieldInfo */
-            $fieldInfo = static::$fieldsInfo[$property->name];
-//                var_dump($fieldInfo);
-            if ($fieldInfo['column_key'] === 'PRI') {
-                require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'primary_key.php';
+            $fieldInfo = static::$fieldsInfo[$propName];
+
+            if ($fieldInfo['column_key'] === GlobalConst::MySqlPKVal) {
+                require_once $baseRequirePath . 'primary_key.php';
             }
             else  if (isset($fieldInfo['foreign_key'])){
-                require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'foreign_key.php';
-
+                $ForeignKeyParams = $fieldInfo['foreign_key'];
+                $model = $ForeignKeyParams['model'];
+                $refModel = explode('\\', __CLASS__);
+                $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($model);
+                $refItem = (new DataBase())->$model->getFirstRow(
+                    $ForeignKeyParams['field'] . ' = :' . $ForeignKeyParams['field'],
+                    call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys'),
+                    array($ForeignKeyParams['field'] => intval($value))
+                );
+                $displayValue = is_array($refItem) ? implode(' ', $refItem) : '';
+                $dictionaryAction = '';
+                if (isset($docCommentParams['@foreign_key_action'])) {
+                    $dictionaryAction = $docCommentParams['@foreign_key_action'];
+                }
+                require $baseRequirePath . 'foreign_key.php';
             }
             else {
-
                 switch ($fieldInfo['data_type']) {
                     case 'bit':
-                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'boolean.php';
+                        require $baseRequirePath . 'boolean.php';
                         break;
                     case 'int':
                     case 'tinyint':
@@ -196,26 +327,360 @@ abstract class Model  {
                     case 'double':
                     case 'decimal':
                         $inputType = 'number';
-                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
+                        require $baseRequirePath. 'input.php';
                         break;
                     case 'char':
                     case 'varchar':
                     case 'nvarchar':
                         $inputType = 'text';
-                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
+                        require $baseRequirePath . 'input.php';
                         break;
                     case 'text':
                     case 'tinytext':
                     case 'mediumtext':
                     case 'longtext':
-                        require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'textarea.php';
+                        require $baseRequirePath . 'textarea.php';
                         break;
-
+                    case 'json':
+                        require $baseRequirePath . 'json.php';
+                        break;
                 }
             }
         }
-            require getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'submit.php';
+            require $baseRequirePath . 'submit.php';
         echo '</form>';
+        //https://getbootstrap.com/docs/4.1/components/forms/#validation   - проверка формы
+    }
+
+    protected static function getReferenceDisplayedKeys() : array {
+        $editedProperties = self::getModelPublicProperties();
+        $editedProperties = array_map(function (ReflectionProperty $reflectionProperty){
+            $docParams = static::extractDocCommentParams($reflectionProperty);
+            if (!array_key_exists('@foreign_key_display_value', $docParams)) {
+                return null;
+            }
+            return array(
+                'key' => $reflectionProperty->name,
+                'order' => intval($docParams['@foreign_key_display_value'])
+            );
+        }, $editedProperties);
+        $editedProperties = array_filter($editedProperties, function($item) {return !is_null($item);});
+        usort($editedProperties, function($a, $b){ return $a['order'] <=> $b['order']; });
+        $editedProperties = array_map(function($prop){ return $prop['key']; }, $editedProperties);
+        if (count($editedProperties) === 0) {
+            $editedProperties = static::PKName();
+        }
+        return $editedProperties;
+    }
+
+    /**
+     * Метод возвращает список полей, значение которых будет выводиться вместо справочного поля
+     * @return array
+     */
+    public static function ReferenceDisplayedKeys() : array {
+        if (!self::checkIsClassOfModel()) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        return static::getReferenceDisplayedKeys();
+    }
+
+    /**
+     * Метод расшифровывает значения справочных полей, заменяя идентификаторы понятными значениями
+     * @param array $listItems
+     */
+    public static function decodeForeignKeys(array &$listItems) {
+        /*Пока мудрить ради скорости не буду - выбираю более понятный путь вывода значений справочников*/
+        $fieldsInfo = array_filter(static::$fieldsInfo, function($fieldInfo){ return isset($fieldInfo['foreign_key']);});
+        if (count($listItems) && count($fieldsInfo)) {
+            $db = new DataBase();
+            foreach ($fieldsInfo as $fieldKey => $fieldInfo) {
+                $fk = $fieldInfo['foreign_key'];
+                $model = $fk['model'];
+                $refModel = explode('\\', __CLASS__);
+                $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($model);
+                $fk['displayed_keys'] = call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys');
+                foreach ($listItems as &$listItem) {
+                    if (is_null($listItem[$fieldKey])) {
+                        continue;
+                    }
+                    $refItem = $db->$model->getFirstRow(
+                        $fk['field'] . '= :' . $fk['field'],
+                        $fk['displayed_keys'],
+                        array($fk['field'] => $listItem[$fieldKey])
+                    );
+                    if (is_null($refItem)) {
+                        $view = new View();
+                        $view->trace = 'Нарушена целостность БД: элемент ' . $fieldInfo['table_name'] . '#' . $listItem[static::PKName()] .
+                            ' ссылается на несуществующий элемент ' . $fk['model'] . '#' . $listItem[$fieldKey];
+                        $view->error(ErrorCode::BAD_DB_CONSISTENCE);
+                        die();
+                    }
+
+                    $listItem[$fieldKey] = implode(' ', $refItem);
+                }
+            }
+        }
+
+
+//        $fieldsInfo = array_filter(function($fieldInfo){ return isset($fieldInfo['foreign_key']);}, static::$fieldsInfo);
+//        if (count($listItems) && count($fieldsInfo)) {
+//            foreach ($fieldsInfo as $fieldKey => $fieldInfo) {
+//                $fk = &$fieldInfo['foreign_key'];
+//                $model = $fk['model'];
+//                $refModel = explode('\\', __CLASS__);
+//                $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($model);
+//                $fk['displayed_keys'] = call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys');
+//
+//                /*Получим все запрашиваемые идентификаторы*/
+//                $requiredIdList = array_map(function($item) use ($fieldKey) { return $item[$fieldKey];}, $listItems);
+//                $requiredIdList = array_filter($requiredIdList, function($fkId){ return !is_null($fkId);});
+//                $kfValuesDict = array();
+//                foreach (array_chunk($requiredIdList, 50) as $fkIgGroup) {
+//
+//                }
+//
+//            }
+//            $f = function(){};
+//            $itemsDict = array();
+//            $PKName = static::PKName();
+//            foreach ($listItems as &$item) {
+//                $itemsDict[$item[$PKName]] = $item;
+//            }
+//            /*
+//             * Требуется более точный расчет. Однако при 50 записях и предельном буфере в 10 МБ,
+//             * на 1 запись получается 20 КБ - в абсолютном большинстве предостаточно
+//            */
+//            $tmpArray = array_chunk($itemsDict, 50);
+//            $db = new DataBase();
+//            $db->setPDOAttribute(PDO::MYSQL_ATTR_MAX_BUFFER_SIZE, 10 * 2 ** 10);
+//            $refItem = (new DataBase())->$model->getFirstRow(
+//                $fk['field'] . ' = :' . $fk['field'],
+//
+//                array($fk['field'] => intval($value))
+//            );
+//            $displayValue = is_array($refItem) ? implode(' ', $refItem) : '';
+//        }
+    }
+
+    /**
+     * Метод сохраняет данные в БД.
+     * В случае успеха возвращает true В случае ошибки возвращает массив с информацией об ошибке
+     * @return array|bool
+     */
+    public function Save() {
+        $editedProperties = self::getModelPublicProperties();
+        $values = array();
+        foreach ($editedProperties as $referenceProperty) {
+            $propName = $referenceProperty->name;
+            $values[$propName] = $this->$propName;
+        }
+        $result = self::SaveInstance($values);
+        if (array_key_exists('@error', $result)) {
+            return $result;
+        }
+
+        foreach ($result as $fieldKey => $fieldVal) {
+            $this->$fieldKey = $fieldVal;
+        }
+        return true;
+    }
+
+    /**
+     * Метод сохраняет данные в БД.
+     * Возвращает массив - либо поля сохраненного объекта, либо информаццию об ошибке (при наличии ключа @error => true)
+     * @param array $values
+     * @return array
+     */
+    public static function SaveInstance(array $values) {
+        if (!self::checkIsClassOfModel()) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        $primaryFieldInfo = array_filter(
+            static::$fieldsInfo,
+            function($fieldInfo){
+                return strtoupper($fieldInfo['column_key']) === GlobalConst::MySqlPKVal;
+            }
+        );
+        $PKName = array_keys($primaryFieldInfo)[0];
+        if (!array_key_exists($PKName, $values)) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Не передано значение первичного ключа для обновления записи в БД'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        if (!$values[$PKName]) {
+            $values[$PKName] = 0;
+        }
+        $PKVal = $values[$PKName];
+        if (intval($PKVal) != $PKVal) {
+            throw new \Exception('Недопустимое значение первичного ключа');
+        }
+        $PKVal = intval($PKVal);
+        if ($PKVal < 0) {
+            throw new \Exception('Недопустимое значение первичного ключа');
+        }
+        $fieldsInfo = static::$fieldsInfo;
+        $query = $PKVal === 0 ? ' INSERT INTO `' . static::DataTable . '` SET ' : 'UPDATE `' . static::DataTable . '` SET ';
+        $values = array_filter(
+            $values,
+            function($v, $k) use ($PKName, $fieldsInfo ){
+                return $k !== $PKName && array_key_exists($k, $fieldsInfo);
+            },
+            ARRAY_FILTER_USE_BOTH
+        );
+        $values = static::typifyValues($fieldsInfo, $values);
+
+        $autoCalcFields = static::getAutoCalcFields(array_keys($values));
+        /*Здесь потом будем рассчитывать автоматические значения*/
+
+        foreach ($values as $fieldKey => $fieldValue) {
+            $query .= ' `' . $fieldsInfo[$fieldKey]['column_name'] . '` = :' . $fieldKey . ',';
+        }
+
+        $query = mb_substr($query, 0, mb_strlen($query) - 1);
+
+        if ($PKVal > 0) {
+            $query .= ' WHERE `' . $fieldsInfo[$PKName]['column_name'] . '` = :' . $PKName . '';
+            $values[$PKName] = $PKVal;
+        }
+
+        $db = new DataBase();
+        $res = $db->query($query, $values);
+        if ($res === false) {
+            return $db->QueryInfo();
+        }
+        else {
+            return $db->query('SELECT * FROM `' . static::DataTable . '` WHERE `' . $fieldsInfo[$PKName]['column_name'] . '` = ' . $db->LastInsertId())[0];
+        }
+    }
+
+    protected static function typifyValues(array $fieldsInfo, array $values) {
+        foreach ($values as $k => &$v) {
+            if (is_null($v)) {
+                continue;
+            }
+            switch (strtolower($fieldsInfo[$k]['data_type'])) {
+                case 'int':
+                case 'year':
+                case 'bigint':
+                case 'mediumint':
+                case 'smallint':
+                case 'tinyint':
+                    if (is_string($v) && trim($v) === ''/* && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))*/) {
+                        $v = null;
+                    }
+                    else {
+                        $v = (int)$v;
+                    }
+                    break;
+                case 'decimal':
+                case 'dec':
+                case 'double':
+                case 'float':
+                case 'real':
+                    if (is_string($v) && trim($v) ===''/* && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))*/) {
+                        $v = null;
+                    }
+                    else {
+                        $v = (float)$v;
+                    }
+                    break;
+                case 'char':
+                case 'varchar':
+                case 'nvarchar':
+                case 'text':
+                case 'tinytext':
+                case 'mediumtext':
+                case 'longtext':
+                    $v = $v . '';
+                    break;
+                case 'bit':
+                    if (is_string($v) && trim($v) === ''/* && array_key_exists(strtoupper($fieldsInfo[$k]['is_nullable']), array('YES' => true, 'TRUE' => true))*/) {
+                        $v = null;
+                    }
+                    else {
+                        $v = $v === '1' || strtolower($v) === 'true' || $v === 1 || strtolower($v) === 'on';
+                    }
+                    break;
+                case 'json':
+//                    if (is_sting($v) && trim($v) !== '') {
+//                        $v = json_decode($v);
+//                    }
+//                    else {
+//                        $v = null;
+//                    }
+                    break;
+                case 'datetime':
+                case 'date':
+                    $v = $v . '';
+                    break;
+            }
+        }
+        return $values;
+    }
+
+    /**
+     * Метод формирует набор свойств с автоматическим рассчетом
+     * @param array $keys - список наименвоаний свойсвт, среди которых надо искать рассчитываемые автоматически
+     * @return array
+     */
+    protected static function getAutoCalcFields(array $keys) {
+        $autoCalcFields = array_map(function($fieldKey){
+            return new ReflectionProperty(static::class, $fieldKey);
+        }, $keys);
+        $autoCalcFields = array_filter($autoCalcFields, function(ReflectionProperty $reflectionProperty){
+            return mb_strpos($reflectionProperty->getDocComment(), '@autocalc') !== false;
+        });
+        $result = array();
+        foreach ($autoCalcFields as $reflectionProperty) {
+            $calcRule = self::extractDocCommentItem($reflectionProperty, 'autocalc');
+            $result[$reflectionProperty->name] = self::trimDocCommentKey($calcRule);
+        }
+        return $result;
+    }
+
+    const DocCommentKeys = array(
+        'alias' => ' Псевдоним, выводимый на страницы для пользователя вместо реального имени свойства экзепмляра модели',
+        'autocalc' => 'Обозначает, что значение свойства автоматически рассчитывается согласно указанному выражению. Такое свойство не отображается в форме редактирования',
+        'database_column_name' => 'наименование колонки в таблице БД, отвечающей за хранение значения свойства модели',
+        'foreign_key_display_value' => 'Это значение показывается в ссылочных полях вместо идентификатора. Если несколько полей используются для отображения значения, их порядок сортируется значением этого параметра',
+        'foreign_key_action' => 'ссылка на action для справочника',
+        'noeditable' => 'Обозначает, что данное свойство не отображается в форме редактирования',
+    );
+
+    public static function getConfigForListView() {
+        return array_map(function(ReflectionProperty $prop){
+            return array(
+                'key' => $prop->name,
+                'alias' => self::getFieldAlias($prop->name),
+                'primary_key' => static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal,
+                'foreign_key' => isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null
+            );
+        }, self::getModelPublicProperties());
     }
 
 
@@ -274,9 +739,9 @@ abstract class Model  {
      * @param array $fields - массив полей нового объекта
      * @param string $entityName - наименование объекта (наименование таблицы БД, реализующей объект). Регистр имеет значение
      */
-    public function __construct(array $fields, string $entityName) {
-        $this->fields = $fields;
-        $this->entityName = $entityName;
+    public function __construct(/*array $fields, string $entityName*/) {
+//        $this->fields = $fields;
+//        $this->entityName = $entityName;
     }
 
     /**

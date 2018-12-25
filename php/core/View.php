@@ -10,6 +10,10 @@ namespace Astkon\View;
 
 use Astkon\GlobalConst;
 
+define(__NAMESPACE__ . '\FORM_EDIT_FIELDS_TEMPLATES', getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields');
+
+
+
 class View
 {
     /**
@@ -71,7 +75,7 @@ class View
                     $action = strtolower($action);
                 }
                 else if (gettype($item) === gettype(array())) {
-                    $controller = array_key_first();
+                    $controller = array_key_first($item);
                     $action = $item[$controller];
                 }
                 $templates[] = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . "$controller/$action.php";
@@ -81,7 +85,9 @@ class View
             $$varName = $varValue;
         }
         foreach ($templates as $template) {
-            require_once $template;
+            if ($template) {
+                require $template;
+            }
         }
     }
 
@@ -90,6 +96,9 @@ class View
         if (!file_exists($templateName)) {
             $code = 404;
             $templateName = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'errors' . DIRECTORY_SEPARATOR . $code . '.php';
+        }
+        foreach ($this->variables as $varName => $varValue) {
+            $$varName = $varValue;
         }
         require_once $this->defHeaderTemplate;
         require_once $templateName;
@@ -117,28 +126,25 @@ class View
 
     /**
      * @param null|string $template - абсолютный путь до файла шаблона
-     * @return string
      */
-    public function HeaderTemplate($template = null) {
-        if ($template) {
-            $this->defHeaderTemplate = $template;
-        }
-        return $this->defHeaderTemplate;
+    public function setHeaderTemplate($template = null) {
+        $this->defHeaderTemplate = $template;
     }
 
     /**
      * @param null|string $template - абсолютный путь до файла шаблона
-     * @return string
      */
-    public function FooterTemplate($template = null) {
-        if ($template) {
-            $this->defFooterTemplate = $template;
-        }
-        return $this->defFooterTemplate;
+    public function setFooterTemplate($template = null) {
+        $this->defFooterTemplate = $template;
     }
 
     public function __set($name, $value)
     {
         $this->variables[$name] = $value;
+    }
+
+    public static function TableList($config, $items, $options = array()) {
+        define('TABLE_LIST_VIEW_DIRECTORY', getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_table_list_view');
+        require_once TABLE_LIST_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . 'table.php';
     }
 }

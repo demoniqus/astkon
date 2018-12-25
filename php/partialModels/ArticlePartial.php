@@ -100,6 +100,7 @@ protected static $fieldsInfo = array (
   ),
 );
 	/**
+    * @foreign_key_display_value
 	* @database_column_name article_name
 	* @alias Наименование
 	* @var string
@@ -107,6 +108,8 @@ protected static $fieldsInfo = array (
 	public $ArticleName;
 
 	/**
+    * @autocalc auto_calc_rule
+    * @noeditable
 	* @database_column_name balance
 	* @alias Остаток
 	* @var float
@@ -121,6 +124,7 @@ protected static $fieldsInfo = array (
 	public $IdArticle;
 
 	/**
+    * @foreign_key_action Measures/MeasuresDict
 	* @database_column_name id_measure
 	* @alias Единица измерения
 	* @var int

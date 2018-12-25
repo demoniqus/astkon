@@ -15,9 +15,7 @@
             var docBody = document.getElementById('document-body');
             var docFooter = document.getElementById('document-footer');
             var docHeader = document.getElementById('document-header');
-            console.log(document.body.clientHeight + ' - ' + docFooter.offsetHeight + ' - ' + docHeader.offsetHeight)
             $(docBody).height(document.body.clientHeight - docFooter.offsetHeight - docHeader.offsetHeight);
-            console.log(window.innerHeight + ' => ' + docFooter.offsetHeight + ' => ' + docBody.offsetHeight)
         };
         window.addEventListener('resize', f)
         f();
