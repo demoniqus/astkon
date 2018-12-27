@@ -14,10 +14,12 @@ use function Astkon\Lib\array_keys_CameCase;
 use function Astkon\Lib\Redirect;
 use Astkon\Model\Article;
 use Astkon\Model\Model;
+use Astkon\Traits\ListView;
 use Astkon\View\View;
 
 class ArticlesController extends Controller
 {
+    use ListView;
     /**
      * @param string $action - запрашиваемый метод
      * @param array $context - дополнительный контекст
@@ -33,25 +35,15 @@ class ArticlesController extends Controller
 
     public function ArticlesListAction($context) {
         $view = new View();
-        $view->listItemOptions = array(
-            array(
-                'action' => '/Articles/Edit',
-                'click' => null,
-                'icon' => '/icon-edit.png',
-                'title' => 'Редактировать'
-            )
-        );
-        $view->modelConfig = Article::getConfigForListView();
+        $this->ListViewAction($view, Article::class);
+        $view->generate();
+    }
 
-        $rows = array_map(
-            function($row){
-                return array_keys_CameCase($row);
-            },
-            (new DataBase())->article->getRows()
-        );
-        Article::decodeForeignKeys($rows);
-
-        $view->listItems = $rows;
+    public function ArticlesDictAction($context) {
+        $view = new View();
+//        $pageId = isset($context['id']) ? intval($context['id']) : 0;
+//        $pageSize = 5;
+        $this->DictViewAction($view, Article::class);
         $view->generate();
     }
 

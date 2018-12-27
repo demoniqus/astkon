@@ -8,9 +8,7 @@
 
 namespace Astkon\Controller;
 
-use Astkon\DataBase;
 use Astkon\GlobalConst;
-use function Astkon\Lib\array_keys_CameCase;
 use Astkon\linq;
 use Astkon\View\View;
 use ReflectionMethod;
@@ -77,6 +75,43 @@ abstract class Controller
         });
         return $permition;
     }
+
+//    protected function DictAction(View $view, $model) {
+//        $listItemOptions = [];
+//        if (array_key_exists('mode', $_GET) && trim(strtolower($_GET['mode'])) === 'multiple') {
+//            $listItemOptions[] = array(
+//                'action' => null,
+//                'click' => htmlspecialchars('DictionaryItemChangeCheckedState($(this).find("img:first"))'),
+//                'icon' => '/checkbox-unchecked.png',
+//                'title' => 'Отметить элемент'
+//            );
+//        }
+//        $listItemOptions[] = array(
+//            'action' => null,
+//            'click' => 'DictionarySelector.setValue(\'' .
+//                $_POST['dialogId'] . '\', [JSON.parse($(this).parents(\'tr:first\').get(0).dataset.item)],' .
+//                htmlspecialchars(json_encode($model::ReferenceDisplayedKeys())) . ')',
+//            'icon' => '/icon-next.png',
+//            'title' => 'Выбрать элемент'
+//        );
+//        $view->listItemOptions = $listItemOptions;
+//        $view->setHeaderTemplate(null);
+//        $view->setFooterTemplate(null);
+//        $this->configureListView($view, $model);
+//    }
+//
+//    protected function configureListView(View $view, $model) {
+//        $dataTable = $model::DataTable;
+//        $view->modelConfig = $model::getConfigForListView();
+//        $rows = array_map(
+//            function($row){
+//                return array_keys_CameCase($row);
+//            },
+//            (new DataBase())->$dataTable->getRows()
+//        );
+//        $model::decodeForeignKeys($rows);
+//        $view->listItems = $rows;
+//    }
 
     /**
      * @return array

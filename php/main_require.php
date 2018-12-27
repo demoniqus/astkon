@@ -9,6 +9,7 @@ namespace Astkon;
  * Устанавливаем кодировку данных
  */
 header('Content-Type: text/html; charset=utf-8');
+require_once 'traits.php';
 require_once 'core/Model.php';
 require_once 'core/Controller.php';
 require_once 'core/View.php';
@@ -87,6 +88,7 @@ final class GlobalConst {
      * Директория представлений
      */
     const ViewsDirectory = 'php' . DIRECTORY_SEPARATOR . 'views';
+    const TraitsDirectory = 'php' . DIRECTORY_SEPARATOR . 'traits';
     const DefHeaderView = GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_defheader.php';
     const DefFooterView = GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_deffooter.php';
     const ViewDefCharset = 'utf-8';
