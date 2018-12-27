@@ -423,7 +423,7 @@ abstract class Model  {
                         die();
                     }
 
-                    $listItem[$fieldKey] = implode(' ', $refItem);
+                    $listItem['$fk_' . $fieldKey] = implode(' ', $refItem);
                 }
             }
         }
@@ -670,15 +670,29 @@ abstract class Model  {
         'noeditable' => 'Обозначает, что данное свойство не отображается в форме редактирования',
     );
 
-    public static function getConfigForListView() {
-        return array_map(function(ReflectionProperty $prop){
-            return array(
-                'key' => $prop->name,
-                'alias' => self::getFieldAlias($prop->name),
-                'primary_key' => static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal,
-                'foreign_key' => isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null
-            );
-        }, self::getModelPublicProperties());
+    /**
+     * Функция возвращает конфигурацию для табличного представления экземпляров модели
+     * @param null $excludeFields - список полей в CamelCase, которые не нужно выводить на страницу
+     * @return array
+     */
+    public static function getConfigForListView($excludeFields = null) {
+        $excludeFields = is_array($excludeFields) ? array_flip($excludeFields) : array();
+
+        return array_map(
+            function(ReflectionProperty $prop) {
+                return array(
+                    'key' => $prop->name,
+                    'alias' => self::getFieldAlias($prop->name),
+                    'primary_key' => static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal,
+                    'foreign_key' => isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null
+                );
+            },
+            array_filter(
+                self::getModelPublicProperties(),
+                function(ReflectionProperty $prop) use ($excludeFields) {
+                    return !array_key_exists($prop->name, $excludeFields);
+                })
+        );
     }
 
 
