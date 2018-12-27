@@ -1103,6 +1103,14 @@ class DataBase {
 
         $columns = $this->getClassColumns(self::camelCaseToUnderscore($className));
 
+        $primaryColumn = (new linq($columns))->first(function($column){ return $column['column_key'] === GlobalConst::MySqlPKVal;});
+        fwrite($partialHandle, "\t" . 'const PrimaryColumnName = ' . (
+            $primaryColumn ?
+                '\'' .  DataBase::underscoreToCamelCase($primaryColumn['column_name']) . '\'' :
+                'null'
+            ) . ';' . PHP_EOL);
+
+
         $columns = (new linq($columns))->toAssoc(function($column){ return DataBase::underscoreToCamelCase($column['column_name']);})->getData();
 
         $columns = $this->setColumnsForeignKeys($columns, $className);
