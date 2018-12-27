@@ -1,6 +1,9 @@
 <?php
 namespace Astkon;
 /*Класс для работы с массивами данных*/
+
+use Exception;
+
 class linq {
     private $data = null;
     private $mode = 'array';
