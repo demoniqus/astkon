@@ -2,8 +2,6 @@
     border: 1px solid transparent;;
     border-top-left-radius: 10px;
     border-bottom-right-radius: 10px;
-    border-top-color: #add8e6;
-    border-left-color: #add8e6;
     vertical-align: top;
     position: relative;
     box-sizing: border-box;
@@ -18,11 +16,25 @@
     -o-border-top-left-radius: 8px;
     -ms-border-top-left-radius: 8px;
     border-top-left-radius: 8px;
+    margin-bottom: 8px;
+    vertical-align: top;
+    background-color: white;
+}
+
+.tail-item.lightskyblue {
+    border-top-color: #add8e6;
+    border-left-color: #add8e6;
     border-right-color: #add8e6;
     border-bottom-color: #add8e6;
     box-shadow: lightskyblue 3px 3px 5px;
-    margin-bottom: 8px;
-    vertical-align: top;
+}
+.tail-item.lightgrey,
+.tail-item.lightgray {
+    border-top-color: lightgrey;
+    border-left-color: lightgrey;
+    border-right-color: lightgrey;
+    border-bottom-color: lightgrey;
+    box-shadow: lightgrey 3px 3px 5px;
 }
 
 .tail-item img {
