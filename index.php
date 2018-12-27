@@ -7,6 +7,8 @@ session_start();
 
 require_once  '.' . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'main_require.php';
 
+//Astkon\Model\Operation::UpdateModelPhpCode();
+
 $key = 'CurrentUser';
 $user = null;
 unset ($GLOBALS[$key]);
@@ -31,7 +33,11 @@ function setPathPartType($pathPart, $type) {
     }
     return ucfirst(mb_strtolower($pathPart)) . ucfirst($type);
 }
-$requestUri = $_SERVER['PHP_SELF'];
+
+$requestUri = $_SERVER['REQUEST_URI'];
+if (mb_strpos($requestUri, '?') !== false) {
+    $requestUri = explode('?', $requestUri)[0];
+}
 
 if (strpos( $requestUri, '/') === 0) {
     $requestUri = mb_substr($requestUri, 1);
