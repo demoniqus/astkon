@@ -8,6 +8,9 @@
 
 namespace Astkon\Controller;
 
+use Astkon\DataBase;
+use Astkon\GlobalConst;
+use function Astkon\Lib\array_keys_CameCase;
 use Astkon\linq;
 use Astkon\View\View;
 use ReflectionMethod;
@@ -47,7 +50,7 @@ abstract class Controller
     private static function checkPermition($action) {
         $reflectionMethod = new ReflectionMethod(static::class, $action);
         $permition = true;
-        (new linq(explode(PHP_EOL,  $reflectionMethod->getDocComment())))
+        (new linq(explode(GlobalConst::NewLineChar,  $reflectionMethod->getDocComment())))
         ->for_each(function($line) use (&$permition){
             if (strpos($line, '@access') !== false) {
 
@@ -69,6 +72,7 @@ abstract class Controller
 
                     })
                     ->getData();
+//                Метод пока не дописан из-за отсутствия реализации ролевой модели
             }
         });
         return $permition;
@@ -82,8 +86,8 @@ abstract class Controller
         $backtrace = $backtrace[1];
         $classSegments = explode('\\',$backtrace['class']);
         $controller = preg_replace('/Controller$/i', '', array_pop($classSegments));
-        $acttion = preg_replace('/Action$/i', '', $backtrace['function']);
-        return array($controller, $acttion);
+        $action = preg_replace('/Action$/i', '', $backtrace['function']);
+        return array($controller, $action);
     }
 
 }
