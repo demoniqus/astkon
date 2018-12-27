@@ -81,11 +81,11 @@ class PeopleController extends Controller
                 }
             }
             else  {
-                if ($_POST[People::PKName()] == 0) {
+                if ($_POST[People::PrimaryColumnName] == 0) {
                     /*Нужно сменить URL на вновь созданный элемент*/
                     list($controller, $action) = self::ThisAction();
                     Redirect(
-                        $controller, $action, $res[DataBase::camelCaseToUnderscore(People::PKName())]
+                        $controller, $action, $res[DataBase::camelCaseToUnderscore(People::PrimaryColumnName)]
                     );
                 }
                 else {
@@ -109,6 +109,8 @@ class PeopleController extends Controller
                 getFirstRow('id_people = :id_people', null, array('id_people' => $context['id']))
             );
         }
+        $controllerName = self::ThisAction()[0];
+        $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->People = $people;
         $view->options = $options;

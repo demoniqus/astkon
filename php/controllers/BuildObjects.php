@@ -81,11 +81,11 @@ class BuildObjectsController extends Controller
                 }
             }
             else  {
-                if ($_POST[BuildObject::PKName()] == 0) {
+                if ($_POST[BuildObject::PrimaryColumnName] == 0) {
                     /*Нужно сменить URL на вновь созданный элемент*/
                     list($controller, $action) = self::ThisAction();
                     Redirect(
-                        $controller, $action, $res[DataBase::camelCaseToUnderscore(BuildObject::PKName())]
+                        $controller, $action, $res[DataBase::camelCaseToUnderscore(BuildObject::PrimaryColumnName)]
                     );
                 }
                 else {
@@ -109,6 +109,8 @@ class BuildObjectsController extends Controller
                 getFirstRow('id_build_object = :id_build_object', null, array('id_build_object' => $context['id']))
             );
         }
+        $controllerName = self::ThisAction()[0];
+        $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->BuildObject = $buildObject;
         $view->options = $options;

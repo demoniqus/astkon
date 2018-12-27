@@ -81,11 +81,11 @@ class ArticlesController extends Controller
                 }
             }
             else  {
-                if ($_POST[Article::PKName()] == 0) {
+                if ($_POST[Article::PrimaryColumnName] == 0) {
                     /*Нужно сменить URL на вновь созданный элемент*/
                     list($controller, $action) = self::ThisAction();
                     Redirect(
-                        $controller, $action, $res[DataBase::camelCaseToUnderscore(Article::PKName())]
+                        $controller, $action, $res[DataBase::camelCaseToUnderscore(Article::PrimaryColumnName)]
                     );
                 }
                 else {
@@ -109,6 +109,8 @@ class ArticlesController extends Controller
                 getFirstRow('id_article = :id_article', null, array('id_article' => $context['id']))
             );
         }
+        $controllerName = self::ThisAction()[0];
+        $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->Article = $article;
         $view->options = $options;

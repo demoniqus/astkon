@@ -79,11 +79,11 @@ class MeasuresController extends Controller
                 }
             }
             else  {
-                if ($_POST[Measure::PKName()] == 0) {
+                if ($_POST[Measure::PrimaryColumnName] == 0) {
                     /*Нужно сменить URL на вновь созданный элемент*/
                     list($controller, $action) = self::ThisAction();
                     Redirect(
-                        $controller, $action, $res[DataBase::camelCaseToUnderscore(Measure::PKName())]
+                        $controller, $action, $res[DataBase::camelCaseToUnderscore(Measure::PrimaryColumnName)]
                     );
                 }
                 else {
@@ -107,6 +107,8 @@ class MeasuresController extends Controller
                 getFirstRow('id_measure = :id_measure', null, array('id_measure' => $context['id']))
             );
         }
+        $controllerName = self::ThisAction()[0];
+        $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->Measure = $measure;
         $view->options = $options;
