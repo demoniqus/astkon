@@ -7,7 +7,7 @@ session_start();
 
 require_once  '.' . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'main_require.php';
 
-//Astkon\Model\Operation::UpdateModelPhpCode();
+//\Astkon\Model\Model::UpdateAllModelsPhpCode();
 
 $key = 'CurrentUser';
 $user = null;
