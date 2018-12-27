@@ -35,7 +35,7 @@ function TileMenu (array $tiles, int $tileColumnsCount = 0, int $tilesInRow = 0)
             <?php
             foreach ($tilesSet as $tile) {
                 ?>
-                <div class="<?= $cssClass; ?> tail-item p-2 mr-1" onclick="window.location.href ='<?= $tile['Action']; ?>'">
+                <div class="<?= $cssClass; ?> tail-item lightskyblue p-2 mr-1" onclick="window.location.href ='<?= $tile['Action']; ?>'">
                     <?php if (isset($tile['Icon']) && $tile['Icon']) {
                         ?>
                         <img src="<?= $tile['Icon']; ?>"  alt=""/>
