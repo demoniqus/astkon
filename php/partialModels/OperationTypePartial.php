@@ -11,15 +11,15 @@ namespace Astkon\Model\Partial;
 
 use Astkon\Model\Model;
 
-abstract class UserPartial extends Model {
-	const DataTable = 'user';
-	const PrimaryColumnName = 'IdUser';
+abstract class OperationTypePartial extends Model {
+	const DataTable = 'operation_type';
+	const PrimaryColumnName = 'IdOperationType';
 /** @var array */
 protected static $fieldsInfo = array (
-  'IdUser' => 
+  'IdOperationType' => 
   array (
-    'table_name' => 'user',
-    'column_name' => 'id_user',
+    'table_name' => 'operation_type',
+    'column_name' => 'id_operation_type',
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => '10',
@@ -28,13 +28,18 @@ protected static $fieldsInfo = array (
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update',
+    'external_link' => 
+    array (
+      'model' => 'operation',
+      'field' => 'id_operation_type',
+    ),
   ),
-  'Login' => 
+  'OperationName' => 
   array (
-    'table_name' => 'user',
-    'column_name' => 'login',
+    'table_name' => 'operation_type',
+    'column_name' => 'operation_name',
     'data_type' => 'varchar',
-    'max_length' => '255',
+    'max_length' => '25',
     'num_prec' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
@@ -42,12 +47,12 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update',
   ),
-  'Password' => 
+  'OperationLabel' => 
   array (
-    'table_name' => 'user',
-    'column_name' => 'password',
+    'table_name' => 'operation_type',
+    'column_name' => 'operation_label',
     'data_type' => 'varchar',
-    'max_length' => '45',
+    'max_length' => '30',
     'num_prec' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
@@ -55,47 +60,27 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update',
   ),
-  'Config' => 
-  array (
-    'table_name' => 'user',
-    'column_name' => 'config',
-    'data_type' => 'json',
-    'max_length' => NULL,
-    'num_prec' => NULL,
-    'dtime_prec' => NULL,
-    'char_set' => NULL,
-    'column_key' => '',
-    'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update',
-  ),
 );
 	/**
-	* @noeditable true
-	* @database_column_name config
-	* @alias Системная конфигурация
-	* @var array
-	*/
-	public $Config;
-
-	/**
-	* @database_column_name id_user
-	* @alias Идентификатор
+	* @database_column_name id_operation_type
+	* @alias
 	* @var int
 	*/
-	public $IdUser;
+	public $IdOperationType;
 
 	/**
-	* @database_column_name login
-	* @alias Логин
+	* @foreign_key_display_value
+	* @database_column_name operation_label
+	* @alias
 	* @var string
 	*/
-	public $Login;
+	public $OperationLabel;
 
 	/**
-	* @database_column_name password
-	* @alias Пароль
+	* @database_column_name operation_name
+	* @alias
 	* @var string
 	*/
-	public $Password;
+	public $OperationName;
 
 }
