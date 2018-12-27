@@ -62,7 +62,7 @@
                 onclick="new DictionaryField({
                     targetContainer: $('#OperationListItems').find('.container-fluid:first'),
                     extReferencePKName: '<?= Article::PrimaryColumnName; ?>',
-                    dataSourceUrl: '<?= $dictionaryAction . '?mode=multiple'; ?>',
+                    dataSourceUrl: '<?= $dictionaryAction . '?mode=multiple&operation=' . $operationType['OperationName']; ?>',
                     title: '',
                     setValueCallback: 'setSelectedArticles',
                     mode: 'multiple'

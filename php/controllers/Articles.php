@@ -10,10 +10,12 @@ namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
+use Astkon\ErrorCode;
 use function Astkon\Lib\array_keys_CameCase;
 use function Astkon\Lib\Redirect;
 use Astkon\Model\Article;
 use Astkon\Model\Model;
+use Astkon\Model\OperationType;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
 
@@ -41,9 +43,28 @@ class ArticlesController extends Controller
 
     public function ArticlesDictAction($context) {
         $view = new View();
+        $condition = null;
+        $substitution = null;
 //        $pageId = isset($context['id']) ? intval($context['id']) : 0;
 //        $pageSize = 5;
-        $this->DictViewAction($view, Article::class);
+        if (isset($_GET['operation'])) {
+            $dataTableName = OperationType::DataTable;
+            $operationType = (new DataBase())->$dataTableName->getFirstRow('operation_name = :operation_name', null, array('operation_name' => $_GET['operation']));
+            if (!$operationType) {
+                $view->trace = 'Запрошена недопустимая операция';
+                $view->error(ErrorCode::PROGRAMMER_ERROR);
+                die();
+            }
+            switch ($operationType['operation_name']) {
+                case 'Income':
+                    break;
+                default:
+                    $condition = 'balance > 0 && is_archive <> 1';
+                    break;
+            }
+
+        }
+        $this->DictViewAction($view, Article::class, $condition, null, $substitution);
         $view->generate();
     }
 
