@@ -6,6 +6,7 @@ namespace Astkon\Model;
 use Astkon\DataBase;
 use Astkon\ErrorCode;
 use Astkon\GlobalConst;
+use Astkon\linq;
 use Astkon\View\View;
 use ReflectionClass;
 use ReflectionProperty;
@@ -37,24 +38,21 @@ abstract class Model  {
         }
     }
 
-    public static function PKName() {
-        if (!self::checkIsClassOfModel()) {
-            $view = new View();
-            $view->trace = nl2br(
-                'Файл ' . __FILE__ . PHP_EOL .
-                'Класс ' . __CLASS__ . PHP_EOL .
-                'Метод ' . __METHOD__ . PHP_EOL .
-                'Строка ' . __LINE__ . PHP_EOL .
-                'Метод может быть вызван только из класса модели, а не ее родительских классов'
-            );
-            $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
-        }
-        $PK = array_filter(static::$fieldsInfo, function($item){
-            return strtoupper($item['column_key']) === GlobalConst::MySqlPKVal;
-        });
-        $PK = array_keys($PK);
-        return array_pop($PK);
+    public static function UpdateAllModelsPhpCode() {
+        $search = explode('\\', Model::class);
+        array_pop($search);
+        $search = implode('\\', $search);
+        var_dump((new linq(get_declared_classes()))
+            ->where(function(string $className) use ($search) {
+                return
+                    strpos($className, $search) !== false &&
+                    strpos($className, Model::class) === false &&
+                    strpos($className, 'artial') === false;
+            })
+            ->for_each(function(string $className){
+                $className::UpdateModelPhpCode();
+            })
+        );
     }
 
     /**
@@ -150,7 +148,7 @@ abstract class Model  {
      */
     protected static function extractDocCommentItem(ReflectionProperty $reflectionProperty, string $itemName) : string{
         $items = array_filter(
-            explode(PHP_EOL, $reflectionProperty->getDocComment()),
+            explode(GlobalConst::NewLineChar, $reflectionProperty->getDocComment()),
             function($line) use ($itemName) { return mb_strpos($line, '@' . $itemName) > 0; }
         );
         return count($items) > 0 ? array_shift($items) : null;
@@ -186,7 +184,7 @@ abstract class Model  {
      */
     protected static function extractDocCommentParams(ReflectionProperty $reflectionProperty) {
         $_items = array_filter(
-            explode(PHP_EOL, $reflectionProperty->getDocComment()),
+            explode(GlobalConst::NewLineChar, $reflectionProperty->getDocComment()),
             function($line){
                 return mb_strpos($line, '@') !== false;
             }
@@ -368,7 +366,7 @@ abstract class Model  {
         usort($editedProperties, function($a, $b){ return $a['order'] <=> $b['order']; });
         $editedProperties = array_map(function($prop){ return $prop['key']; }, $editedProperties);
         if (count($editedProperties) === 0) {
-            $editedProperties = static::PKName();
+            $editedProperties = [static::PrimaryColumnName];
         }
         return $editedProperties;
     }
@@ -419,7 +417,7 @@ abstract class Model  {
                     );
                     if (is_null($refItem)) {
                         $view = new View();
-                        $view->trace = 'Нарушена целостность БД: элемент ' . $fieldInfo['table_name'] . '#' . $listItem[static::PKName()] .
+                        $view->trace = 'Нарушена целостность БД: элемент ' . $fieldInfo['table_name'] . '#' . $listItem[static::PrimaryColumnName] .
                             ' ссылается на несуществующий элемент ' . $fk['model'] . '#' . $listItem[$fieldKey];
                         $view->error(ErrorCode::BAD_DB_CONSISTENCE);
                         die();
