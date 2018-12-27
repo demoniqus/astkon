@@ -317,6 +317,7 @@ class DataBase {
      * @return array
      */
     protected static function errorMessageParser(array $errInfo, array $fieldNames) {
+        $expectedErrorColumn = [];
         switch ($errInfo['errorCode']) {
             case 'HY093':
                 $view = new View();
@@ -762,6 +763,8 @@ class DataBase {
     /**
      * @param string $condition
      * @param string $required_fields
+     * @param array $values
+     * @param null $offset
      * @return array|null
      * @throws Exception
      */
@@ -769,10 +772,9 @@ class DataBase {
             $condition = null, //строка
             $required_fields = null, //массив строк
             $values = array(),
-            $offset = null,
-            $limit = null
+            $offset = null
             ) {
-        $rows = $this->getRows($condition, $required_fields, $values, $offset, $limit);
+        $rows = $this->getRows($condition, $required_fields, $values, $offset, 1);
         return $rows != null  && count($rows) > 0 ? $rows[0] : null;
     }
 
@@ -1011,9 +1013,10 @@ class DataBase {
 
     /**
      * Метод генерирует Partial-класс указанной сущности из БД. Используется для разработки
-     * @param string $className Имя таблицы из БД, для которой необходимо сгенерировать базовый класс для использования в PHP
+     * @param string $className Имя таблицы из БД в CamelCase, для которой необходимо сгенерировать базовый класс для использования в PHP
      */
     public function generateClass(string $className) {
+        $className = self::underscoreToCamelCase($className);
 
         $tableName = self::camelCaseToUnderscore($className);
 
@@ -1033,7 +1036,7 @@ class DataBase {
             }
 
             $doc = array_filter(
-                explode( PHP_EOL, $reflectionProperty->getDocComment() ?? ''),
+                explode( GlobalConst::NewLineChar, $reflectionProperty->getDocComment() ?? ''),
                 function($docLine){ return !array_key_exists(trim($docLine), array('/**' => true, '*/' => true));}
             );
 
