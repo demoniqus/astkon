@@ -40,8 +40,8 @@ final class GlobalConst {
      * Логин и пароль для подключения к БД
      * @var string
      */
-    const HostUser = 'root';
-    const HostPass = '1';
+    const HostUser = 'developer';
+    const HostPass = '1234567890';
     /**
      * Наименование параметра, определяющего тип запроса - получение данных или получение html-страницы
      * @var string
@@ -93,6 +93,12 @@ final class GlobalConst {
     const FOpenMode = 'wt';
 
     const MySqlPKVal = 'PRI';
+    /**
+     * Проект разрабатывается под управлением Linux - в нем PHP_EOL = \n
+     * При демонстрации проекта под управлением Windows константа PHP_EOL фактически равна \n\r .
+     * Поэтому функция explode(PHP_EOL, $string) может е сработать
+     */
+    const NewLineChar = "\n";
 
 }
 
