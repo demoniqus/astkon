@@ -625,12 +625,12 @@ abstract class Model  {
                     }
                     break;
                 case 'json':
-//                    if (is_sting($v) && trim($v) !== '') {
-//                        $v = json_decode($v);
-//                    }
-//                    else {
-//                        $v = null;
-//                    }
+                    /*Строки разработчик должен сам приводить в json*/
+                    if (!is_string($v)) {
+                        if (!is_null($v)) {
+                            $v = json_encode($v);
+                        }
+                    }
                     break;
                 case 'datetime':
                 case 'date':
