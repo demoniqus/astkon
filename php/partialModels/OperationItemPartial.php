@@ -47,45 +47,6 @@ protected static $fieldsInfo = array (
       'field' => 'id_article',
     ),
   ),
-  'BeforeOperationCount' => 
-  array (
-    'table_name' => 'operation_item',
-    'column_name' => 'before_operation_count',
-    'data_type' => 'double',
-    'max_length' => NULL,
-    'num_prec' => '22',
-    'dtime_prec' => NULL,
-    'char_set' => NULL,
-    'column_key' => '',
-    'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
-  ),
-  'OperationCount' => 
-  array (
-    'table_name' => 'operation_item',
-    'column_name' => 'operation_count',
-    'data_type' => 'double',
-    'max_length' => NULL,
-    'num_prec' => '22',
-    'dtime_prec' => NULL,
-    'char_set' => NULL,
-    'column_key' => '',
-    'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
-  ),
-  'AfterOperationCount' => 
-  array (
-    'table_name' => 'operation_item',
-    'column_name' => 'after_operation_count',
-    'data_type' => 'double',
-    'max_length' => NULL,
-    'num_prec' => '22',
-    'dtime_prec' => NULL,
-    'char_set' => NULL,
-    'column_key' => '',
-    'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
-  ),
   'IdOperation' => 
   array (
     'table_name' => 'operation_item',
@@ -104,20 +65,52 @@ protected static $fieldsInfo = array (
       'field' => 'id_operation',
     ),
   ),
+  'OperationCount' => 
+  array (
+    'table_name' => 'operation_item',
+    'column_name' => 'operation_count',
+    'data_type' => 'double',
+    'max_length' => NULL,
+    'num_prec' => '22',
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update',
+  ),
+  'ConsignmentBalance' => 
+  array (
+    'table_name' => 'operation_item',
+    'column_name' => 'consignment_balance',
+    'data_type' => 'double',
+    'max_length' => NULL,
+    'num_prec' => '22',
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update',
+  ),
+  'OperationItemInfo' => 
+  array (
+    'table_name' => 'operation_item',
+    'column_name' => 'operation_item_info',
+    'data_type' => 'json',
+    'max_length' => NULL,
+    'num_prec' => NULL,
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'YES',
+    'privileges' => 'select,insert,update',
+  ),
 );
 	/**
-	* @database_column_name after_operation_count
+	* @database_column_name consignment_balance
 	* @alias
 	* @var float
 	*/
-	public $AfterOperationCount;
-
-	/**
-	* @database_column_name before_operation_count
-	* @alias
-	* @var float
-	*/
-	public $BeforeOperationCount;
+	public $ConsignmentBalance;
 
 	/**
 	* @database_column_name id_article
@@ -146,5 +139,12 @@ protected static $fieldsInfo = array (
 	* @var float
 	*/
 	public $OperationCount;
+
+	/**
+	* @database_column_name operation_item_info
+	* @alias
+	* @var array
+	*/
+	public $OperationItemInfo;
 
 }
