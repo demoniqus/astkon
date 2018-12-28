@@ -74,16 +74,16 @@ final class GlobalConst {
      * Каталог для создания частичных классов, реализующих сущности базы данных
      * @var string
      */
-    const PartialClassDirectory = 'php' . DIRECTORY_SEPARATOR . 'partialModels';
+    const PartialModelsDirectory = 'php' . DIRECTORY_SEPARATOR . 'partialModels';
     /**
      * Каталог для классов, реализующих частичные классы
      * @var string
      */
-    const ClassDirectory = 'php' . DIRECTORY_SEPARATOR . 'models';
+    const ModelsDirectory = 'php' . DIRECTORY_SEPARATOR . 'models';
     /**
      * Файл для регистрации моделей, реализующих сущности базы данных
      */
-    const ClassRegistry = 'php' . DIRECTORY_SEPARATOR . 'models.php';
+    const ModelsRegistry = 'php' . DIRECTORY_SEPARATOR . 'models.php';
     /**
      * Директория представлений
      */

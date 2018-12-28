@@ -7,53 +7,16 @@ use Astkon\DataBase;
 use Astkon\ErrorCode;
 use Astkon\GlobalConst;
 use Astkon\linq;
+use Astkon\Traits\ModelUpdate;
 use Astkon\View\View;
 use ReflectionClass;
 use ReflectionProperty;
 
 abstract class Model  {
+    use ModelUpdate;
     const ValidStateError = 0;
     const ValidStateOK = 1;
     const ValidStateUndefined = 2;
-    /**
-     * Системная функция для переноса изменений структуры БД в код.
-     */
-    public static function UpdateModelPhpCode() {
-        $db = new DataBase();
-        if (static::class === self::class) {
-            $tables = $db->query('select `table_name` from `information_schema`.`tables` where `table_schema`=\'' . GlobalConst::DbName . '\'');
-            foreach ($tables as $table) {
-                $tableName = DataBase::underscoreToCamelCase($table['table_name']);
-                $db->generateClass($tableName);
-            }
-            die();
-        }
-        else {
-            $className = explode('\\', static::class);
-            $className = $className[count($className) - 1];
-            if (preg_match('/Partial$/', $className)) {
-                $className = substr($className, 0, strlen($className) - strlen('Partial'));
-            }
-            $db->generateClass($className);
-        }
-    }
-
-    public static function UpdateAllModelsPhpCode() {
-        $search = explode('\\', Model::class);
-        array_pop($search);
-        $search = implode('\\', $search);
-        var_dump((new linq(get_declared_classes()))
-            ->where(function(string $className) use ($search) {
-                return
-                    strpos($className, $search) !== false &&
-                    strpos($className, Model::class) === false &&
-                    strpos($className, 'artial') === false;
-            })
-            ->for_each(function(string $className){
-                $className::UpdateModelPhpCode();
-            })
-        );
-    }
 
     /**
      * Метод проверяет, что метод, вызвавший проверку checkIsClassOfModel, вызван не из Model или Partial классов, а
