@@ -3,7 +3,6 @@ namespace Astkon;
 /*Класс для работы с массивами данных*/
 
 use Astkon\View\View;
-use Exception;
 
 class linq {
     private $data = null;
