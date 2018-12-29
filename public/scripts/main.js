@@ -222,3 +222,33 @@ function DictionaryItemChangeCheckedState(/*DOM img*/img) {
 
 }
 
+
+function saveOperation(/*bool*/ setFixedState) {
+    let errCount = 0;
+    var setFieldState = function(row, state){
+        let input = row.find('input[type=number]:first');
+        // Сначала очищаем статус поля на случай, если проверка уже повторная и статус был установлен,
+        // а затем проставляем статус для полей с ошибкой
+        input.removeClass('is-invalid')
+        input.parent().find('.invalid-feedback').remove();
+        if (state === 'invalid') {
+            input.addClass('is-invalid');
+            input.parent().append('<div class="invalid-feedback">Недопустимое количество</div>');
+        }
+    };
+    let selectedItems = linq($('#OperationListItems').find('.row[data-item]')).select(function(row){
+        let state = 'valid';
+        let item = JSON.parse(row.dataset.item);
+        let result = {
+            IdArticle: item.IdArticle,
+            count: $(row).find('input[type=number]:first').val()
+        };
+        if (result.count <= 0) {
+            errCount++;
+            state = 'invalid';
+        }
+        setFieldState($(row), state)
+        return result;
+    }).collection;
+    console.log(selectedItems);
+}
