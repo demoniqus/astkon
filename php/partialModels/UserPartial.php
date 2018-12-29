@@ -100,6 +100,19 @@ protected static $fieldsInfo = array (
       'field' => 'id_user_group',
     ),
   ),
+  'UserName' => 
+  array (
+    'table_name' => 'user',
+    'column_name' => 'user_name',
+    'data_type' => 'varchar',
+    'max_length' => '100',
+    'num_prec' => NULL,
+    'dtime_prec' => NULL,
+    'char_set' => 'utf8',
+    'column_key' => '',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update',
+  ),
 );
 	/**
 	* @noeditable true
@@ -143,5 +156,12 @@ protected static $fieldsInfo = array (
 	* @var string
 	*/
 	public $Password;
+
+	/**
+	* @database_column_name user_name
+	* @alias Имя пользователя
+	* @var string
+	*/
+	public $UserName;
 
 }
