@@ -57,6 +57,9 @@ class ArticlesController extends Controller
             }
             switch ($operationType['operation_name']) {
                 case 'Income':
+//                    Обозначение архивности нужно для того, чтобы не захламлять справочник артикулов, когда
+//                    остатки по нему нулевые и поступлений не ожидается, по крайней мере некоторое время
+                    $condition = 'is_archive <> 1';
                     break;
                 default:
                     $condition = 'balance > 0 && is_archive <> 1';
