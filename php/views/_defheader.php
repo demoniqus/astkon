@@ -41,6 +41,9 @@ $jqueryUIVers = '1.12.1';
         }
         #document-body {
             overflow: auto !important;
+            background-image: url('/astkon_logo_extralight_small.png');
+            background-repeat: no-repeat;
+            background-position: center center
         }
         #document-header {
             overflow: hidden !important;
