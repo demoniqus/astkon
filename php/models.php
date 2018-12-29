@@ -8,3 +8,4 @@ require_once getcwd() . '/php/models/Operation.php';
 require_once getcwd() . '/php/models/OperationType.php';
 require_once getcwd() . '/php/models/OperationItem.php';
 require_once getcwd() . '/php/models/OperationState.php';
+require_once getcwd() . '/php/models/UserGroup.php';

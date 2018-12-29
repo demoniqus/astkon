@@ -69,6 +69,37 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'YES',
     'privileges' => 'select,insert,update',
   ),
+  'HasAccount' => 
+  array (
+    'table_name' => 'user',
+    'column_name' => 'has_account',
+    'data_type' => 'bit',
+    'max_length' => NULL,
+    'num_prec' => '1',
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update',
+  ),
+  'IdUserGroup' => 
+  array (
+    'table_name' => 'user',
+    'column_name' => 'id_user_group',
+    'data_type' => 'int',
+    'max_length' => NULL,
+    'num_prec' => '10',
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => 'MUL',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update',
+    'foreign_key' => 
+    array (
+      'model' => 'user_group',
+      'field' => 'id_user_group',
+    ),
+  ),
 );
 	/**
 	* @noeditable true
@@ -79,11 +110,25 @@ protected static $fieldsInfo = array (
 	public $Config;
 
 	/**
+	* @database_column_name has_account
+	* @alias Пользователь имеет аккаунт
+	* @var bool
+	*/
+	public $HasAccount;
+
+	/**
 	* @database_column_name id_user
 	* @alias Идентификатор
 	* @var int
 	*/
 	public $IdUser;
+
+	/**
+	* @database_column_name id_user_group
+	* @alias Группа
+	* @var int
+	*/
+	public $IdUserGroup;
 
 	/**
 	* @database_column_name login
