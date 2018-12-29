@@ -68,6 +68,7 @@ final class GlobalConst {
      * @var string
      */
     const TmpDirName = 'tmp';
+    const ControllersDirectory = 'php' . DIRECTORY_SEPARATOR . 'controllers';
     /**
      * Каталог для создания частичных классов, реализующих сущности базы данных
      * @var string

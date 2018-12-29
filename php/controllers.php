@@ -1,9 +1,13 @@
 <?php
-require_once __DIR__ . '/../php/controllers/Articles.php';
-require_once __DIR__ . '/../php/controllers/BuildObjects.php';
-require_once __DIR__ . '/../php/controllers/Index.php';
-require_once __DIR__ . '/../php/controllers/Measures.php';
-require_once __DIR__ . '/../php/controllers/Operations.php';
-require_once __DIR__ . '/../php/controllers/People.php';
-require_once __DIR__ . '/../php/controllers/Dictionaries.php';
-require_once __DIR__ . '/../php/controllers/Users.php';
+
+use Astkon\GlobalConst;
+
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Articles.php';
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'ArticleCategories.php';
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'BuildObjects.php';
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Index.php';
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Measures.php';
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Operations.php';
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'People.php';
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Dictionaries.php';
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Users.php';
