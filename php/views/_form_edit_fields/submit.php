@@ -6,5 +6,5 @@
         <?php
     }
     ?>
-    <button type="button" class="btn btn-outline-danger ml-3" style="display: none !important;" onclick="document.location.href='<?= isset($options['Rollback']) ? $options['Rollback'] : $_SERVER['HTTP_REFERER']; ?>'">Oтмена</button>
+    <button type="button" class="btn btn-outline-danger ml-3" style="display: none !important;" onclick="document.location.href='<?= isset($options['Rollback']) ? $options['Rollback'] : (isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/'); ?>'">Oтмена</button>
 </div>
