@@ -64,21 +64,22 @@ protected static $fieldsInfo = array (
 );
 	/**
 	* @database_column_name comment
-	* @alias
+	* @alias Комментарий
 	* @var string
 	*/
 	public $Comment;
 
 	/**
 	* @database_column_name id_user_group
-	* @alias
+	* @alias Идентификатор
 	* @var int
 	*/
 	public $IdUserGroup;
 
 	/**
+    * @foreign_key_display_value
 	* @database_column_name user_group_name
-	* @alias
+	* @alias Наименование группы
 	* @var string
 	*/
 	public $UserGroupName;
