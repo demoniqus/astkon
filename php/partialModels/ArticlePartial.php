@@ -66,19 +66,6 @@ protected static $fieldsInfo = array (
       'field' => 'id_measure',
     ),
   ),
-  'Balance' => 
-  array (
-    'table_name' => 'article',
-    'column_name' => 'balance',
-    'data_type' => 'double',
-    'max_length' => NULL,
-    'num_prec' => '22',
-    'dtime_prec' => NULL,
-    'char_set' => NULL,
-    'column_key' => '',
-    'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
-  ),
   'VendorCode' => 
   array (
     'table_name' => 'article',
@@ -131,15 +118,6 @@ protected static $fieldsInfo = array (
 	* @var string
 	*/
 	public $ArticleName;
-
-	/**
-	* @autocalc auto_calc_rule
-	* @noeditable
-	* @database_column_name balance
-	* @alias Остаток
-	* @var float
-	*/
-	public $Balance;
 
 	/**
 	* @database_column_name id_article

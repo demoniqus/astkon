@@ -7,7 +7,20 @@ session_start();
 
 require_once  '.' . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'main_require.php';
 
-//\Astkon\Model\Model::UpdateModelPhpCode();
+//try {
+//    \Astkon\Model\Model::UpdateModelPhpCode();
+//}
+//catch (\Exception $exception) {
+//    $view = new View();
+//    $view->trace = array(
+//        'errorCode' => $exception->getCode(),
+//        'errorMessage' => $exception->getMessage(),
+//        'trace' => $exception->getTrace()
+//    );
+//
+//    $view->error(ErrorCode::PROGRAMMER_ERROR);
+//    die();
+//}
 
 $key = 'CurrentUser';
 $user = null;

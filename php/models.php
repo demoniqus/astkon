@@ -10,3 +10,4 @@ require_once getcwd() . '/php/models/OperationItem.php';
 require_once getcwd() . '/php/models/OperationState.php';
 require_once getcwd() . '/php/models/UserGroup.php';
 require_once getcwd() . '/php/models/ArticleCategory.php';
+require_once getcwd() . '/php/models/ArticleBalance.php';
