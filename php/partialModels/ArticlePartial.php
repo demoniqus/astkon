@@ -105,6 +105,24 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update',
   ),
+  'IdArticleCategory' => 
+  array (
+    'table_name' => 'article',
+    'column_name' => 'id_article_category',
+    'data_type' => 'int',
+    'max_length' => NULL,
+    'num_prec' => '10',
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => 'MUL',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update',
+    'foreign_key' => 
+    array (
+      'model' => 'article_category',
+      'field' => 'id_article_category',
+    ),
+  ),
 );
 	/**
 	* @foreign_key_display_value
@@ -129,6 +147,13 @@ protected static $fieldsInfo = array (
 	* @var int
 	*/
 	public $IdArticle;
+
+	/**
+	* @database_column_name id_article_category
+	* @alias Категория
+	* @var int
+	*/
+	public $IdArticleCategory;
 
 	/**
 	* @foreign_key_action Measures/MeasuresDict
