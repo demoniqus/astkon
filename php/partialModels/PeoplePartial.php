@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class PeoplePartial extends Model {
 	const DataTable = 'people';
 	const PrimaryColumnName = 'IdPeople';
+
 /** @var array */
 protected static $fieldsInfo = array (
   'IdPeople' => 

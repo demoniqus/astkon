@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class OperationPartial extends Model {
 	const DataTable = 'operation';
 	const PrimaryColumnName = 'IdOperation';
+
 /** @var array */
 protected static $fieldsInfo = array (
   'IdOperation' => 
@@ -34,10 +35,10 @@ protected static $fieldsInfo = array (
       'field' => 'id_operation',
     ),
   ),
-  'OperationDatetime' => 
+  'CreateDatetime' => 
   array (
     'table_name' => 'operation',
-    'column_name' => 'operation_datetime',
+    'column_name' => 'create_datetime',
     'data_type' => 'datetime',
     'max_length' => NULL,
     'num_prec' => NULL,
@@ -96,7 +97,34 @@ protected static $fieldsInfo = array (
       'field' => 'id_operation_state',
     ),
   ),
+  'FixDatetime' => 
+  array (
+    'table_name' => 'operation',
+    'column_name' => 'fix_datetime',
+    'data_type' => 'datetime',
+    'max_length' => NULL,
+    'num_prec' => NULL,
+    'dtime_prec' => '0',
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'YES',
+    'privileges' => 'select,insert,update',
+  ),
 );
+	/**
+	* @database_column_name create_datetime
+	* @alias Дата создания операции
+	* @var DateTime
+	*/
+	public $CreateDatetime;
+
+	/**
+	* @database_column_name fix_datetime
+	* @alias Дата фиксации операции
+	* @var DateTime
+	*/
+	public $FixDatetime;
+
 	/**
 	* @database_column_name id_operation
 	* @alias Идентификатор
@@ -118,13 +146,6 @@ protected static $fieldsInfo = array (
 	* @var int
 	*/
 	public $IdOperationType;
-
-	/**
-	* @database_column_name operation_datetime
-	* @alias Дата
-	* @var DateTime
-	*/
-	public $OperationDatetime;
 
 	/**
 	* @noeditable

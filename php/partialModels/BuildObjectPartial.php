@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class BuildObjectPartial extends Model {
 	const DataTable = 'build_object';
 	const PrimaryColumnName = 'IdBuildObject';
+
 /** @var array */
 protected static $fieldsInfo = array (
   'IdBuildObject' => 

@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class MeasurePartial extends Model {
 	const DataTable = 'measure';
 	const PrimaryColumnName = 'IdMeasure';
+
 /** @var array */
 protected static $fieldsInfo = array (
   'IdMeasure' => 

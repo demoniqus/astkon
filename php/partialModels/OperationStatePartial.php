@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class OperationStatePartial extends Model {
 	const DataTable = 'operation_state';
 	const PrimaryColumnName = 'IdOperationState';
+
 /** @var array */
 protected static $fieldsInfo = array (
   'IdOperationState' => 
