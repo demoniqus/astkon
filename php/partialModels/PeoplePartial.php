@@ -13,6 +13,8 @@ use Astkon\Model\Model;
 
 abstract class PeoplePartial extends Model {
 	const DataTable = 'people';
+	const PrimaryColumnName = 'IdPeople';
+
 /** @var array */
 protected static $fieldsInfo = array (
   'IdPeople' => 
@@ -21,38 +23,38 @@ protected static $fieldsInfo = array (
     'column_name' => 'id_people',
     'data_type' => 'int',
     'max_length' => NULL,
-    'num_prec' => 10,
+    'num_prec' => '10',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
   ),
   'PeopleName' => 
   array (
     'table_name' => 'people',
     'column_name' => 'people_name',
     'data_type' => 'varchar',
-    'max_length' => 200,
+    'max_length' => '200',
     'num_prec' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
   ),
   'PostName' => 
   array (
     'table_name' => 'people',
     'column_name' => 'post_name',
     'data_type' => 'varchar',
-    'max_length' => 200,
+    'max_length' => '200',
     'num_prec' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
   ),
 );
 	/**

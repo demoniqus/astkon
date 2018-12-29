@@ -1,34 +1,50 @@
 
 <div class="row mx-0">
-    <?php use Astkon\GlobalConst;
+    <?php
 
-    require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php'; ?>
+    use Astkon\DataBase;
+    use Astkon\GlobalConst;
+    use Astkon\linq;
+
+    require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php';
+    ?>
     <div class="col-lg text-center">
         <div class="container-fluid">
 
 
             <?php
+            $operationTypes = (new linq((new DataBase())->operation_type->getRows()))
+                ->toAssoc(
+                    function($operationType){return $operationType['operation_name'];},
+                    function($operationType){return $operationType['id_operation_type'];}
+                )
+                ->getData();
             $menu = array(
                 array(
-                    'Action' => '/Operations/IncomeForm',
+                    'Action' => '/Operations/OperationsList/' . $operationTypes['Income'],
                     'Caption' => 'Поступление на склад',
                     'Icon' => '/receipt.jpg',
                 ),
                 array(
-                    'Action' => '/Operations/ExpenditureForm',
+                    'Action' => '/Operations/OperationsList/' . $operationTypes['Sale'],
                     'Caption' => 'Расход со склада',
                     'Icon' => '/leaving.png',
                 ),
                 array(
-                    'Action' => '/Operations/WriteoffForm',
+                    'Action' => '/Operations/OperationsList/' . $operationTypes['WriteOff'],
                     'Caption' => 'Списание',
                     'Icon' => '/write-off.png',
                     'NewRow' => true,
                 ),
                 array(
-                    'Action' => '/Operations/FreeRentForm',
+                    'Action' => '/Operations/OperationsList/' . $operationTypes['Reserving'],
                     'Caption' => 'Временное пользование',
                     'Icon' => '/tools-pict-time.png',
+                ),
+                array(
+                    'Action' => '/Operations/OperationsList/' . $operationTypes['Inventory'],
+                    'Caption' => 'Инвентаризация',
+                    'Icon' => '/invent.jpeg',
                 ),
             );
 

@@ -12,13 +12,14 @@ use Astkon\Controller\Controller;
 use Astkon\DataBase;
 use function Astkon\Lib\array_keys_CameCase;
 use function Astkon\Lib\Redirect;
-use Astkon\Model\Measure;
 use Astkon\Model\Model;
 use Astkon\Model\User;
+use Astkon\Traits\ListView;
 use Astkon\View\View;
 
 class UsersController extends Controller
 {
+    use ListView;
     /**
      * @param string $action - запрашиваемый метод
      * @param array $context - дополнительный контекст
@@ -30,21 +31,7 @@ class UsersController extends Controller
 
     public function UsersListAction($context) {
         $view = new View();
-        $view->listItemOptions = array(
-            array(
-                'action' => '/Users/Edit',
-                'click' => null,
-                'icon' => '/icon-edit.png',
-                'title' => 'Редактировать'
-            )
-        );
-        $view->modelConfig = User::getConfigForListView();
-        $view->listItems = array_map(
-            function($row){
-                return array_keys_CameCase($row);
-            },
-            (new DataBase())->user->getRows()
-        );
+        $this->ListViewAction($view, User::class);
         $view->generate();
     }
 
@@ -82,11 +69,11 @@ class UsersController extends Controller
                 }
             }
             else  {
-                if ($_POST[User::PKName()] == 0) {
+                if ($_POST[User::PrimaryColumnName] == 0) {
                     /*Нужно сменить URL на вновь созданный элемент*/
                     list($controller, $action) = self::ThisAction();
                     Redirect(
-                        $controller, $action, $res[DataBase::camelCaseToUnderscore(User::PKName())]
+                        $controller, $action, $res[DataBase::camelCaseToUnderscore(User::PrimaryColumnName)]
                     );
                 }
                 else {
@@ -110,6 +97,8 @@ class UsersController extends Controller
                 getFirstRow('id_user = :id_user', null, array('id_user' => $context['id']))
             );
         }
+        $controllerName = self::ThisAction()[0];
+        $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->User = $user;
         $view->options = $options;

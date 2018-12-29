@@ -1,6 +1,10 @@
 <?php
 namespace Astkon;
 /*Класс для работы с массивами данных*/
+
+use Astkon\View\View;
+use Exception;
+
 class linq {
     private $data = null;
     private $mode = 'array';
@@ -14,7 +18,26 @@ class linq {
             $mode = 'assoc';
         }
         if (gettype($data) !== gettype(array())) {
-            throw new Exception('Linq может работать только с объектами типа Array');
+            $view = new View();
+            $debugTrace = debug_backtrace(2);
+            if (is_array($debugTrace)) {
+                $debugTrace = (new linq($debugTrace))
+                    ->select(function($traceItem){
+                        unset($traceItem['file']);
+                        return $traceItem;
+                    })
+                    ->getData();
+            }
+            else {
+                $debugTrace = null;
+            }
+            $view->trace = array(
+                'message' => 'Linq может работать только с объектами типа Array',
+                'data' => $data,
+                'trace' => $debugTrace
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
         }
         $this->data = $data;
         $this->mode = strtolower($mode ? $mode . '' : 'array') !== 'assoc' ? 'array' : 'assoc';

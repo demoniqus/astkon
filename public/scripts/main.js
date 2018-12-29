@@ -34,6 +34,25 @@ DictionarySelector = (function(){
         if (url[1] !== '/') {
             url = '/' + url;
         }
+        var dialogButtons = [];
+        if (options.dialogButtons) {
+            for (let i in options.dialogButtons) {
+                let dlgBtn = options.dialogButtons[i];
+                dlgBtn.click = dlgBtn.click.bind({this: this, storage: __data});
+                dialogButtons.push(dlgBtn);
+            }
+        }
+        dialogButtons.push({
+            'class': 'btn btn-light',
+            text: 'Закрыть',
+            click: function (){
+                if (typeof function(){} === typeof options.onClose) {
+                    options.onClose();
+                }
+                this.this.close(this.storage);
+            }.bind({this: this, storage: __data})
+        });
+
         $.post(
             url,
             {dialogId : __data.id},
@@ -50,14 +69,7 @@ DictionarySelector = (function(){
                         maxHeight: document.body.clientHeight * .8,
                         maxWidth: document.body.clientWidth * .8,
                         modal: true,
-                        buttons: {
-                            'Закрыть': function (){
-                                if (typeof function(){} === typeof options.onClose) {
-                                    options.onClose();
-                                }
-                                _self.close(__data);
-                            }
-                        }
+                        buttons: dialogButtons
                     })
                 }
 
@@ -93,35 +105,150 @@ DictionarySelector = (function(){
 
 DictionaryField = (function(){
 
-    var DF = function(/*DOM.form-group*/ formGroupElement, /*string*/ extReferencePKName, /*string*/ dataSourceUrl){
+    var DF = function(options){
         var __data = {
             id: this.getID(),
         };
         this.setValue = function(objectsData, fields){
-            var objectData = objectsData[0];
-            var visibleValue = linq(fields)
-                .select(function(fieldName){
-                    return objectData[fieldName] === undefined || objectData[fieldName] === null ? '': objectData[fieldName];
-                })
-                .collection.join(' ');
-
-            $(formGroupElement).find('.visible-value:first').html(visibleValue);
-            $(formGroupElement).find('.form-control[type=hidden]:first').val(objectData[extReferencePKName]);
+            var setValueCallback = options.setValueCallback;
+            if (typeof setValueCallback === typeof 'aaa') {
+                setValueCallback = linq(setValueCallback.split('.')).reduce(function(o, key){ return o[key]; }, window)
+            }
+            setValueCallback(options.targetContainer, options.extReferencePKName, objectsData, fields);
             this.unregisterId(__data.id);
         };
 
-        __data.DictionarySelector = new DictionarySelector({
-            url: dataSourceUrl,
-            title: $(formGroupElement).find('.col-form-label:first').text(),
+        var dsOptions = {
+            url: options.dataSourceUrl,
+            title: $(options.targetContainer).find('.col-form-label:first').text(),
             onSelect: this.setValue.bind(this),
             onClose: function(){ this.unregisterId(__data.id);}.bind(this)
-        });
+        };
+
+        if (options.mode === 'multiple') {
+            dsOptions.dialogButtons = [
+                {
+                    'class': 'btn btn-light',
+                    text: 'Добавить отмеченные',
+                    click: function(){
+                        let objectsData = linq(this.storage.modalWindow.find('tr[data-checked_state=checked]'))
+                            .select(
+                                function(tr){
+                                    return JSON.parse(tr.dataset.item);
+                                }
+                            ).collection;
+                        this.this.setValue(objectsData);
+
+                        // if (typeof function(){} === typeof options.onClose) {
+                        //     options.onClose();
+                        // }
+                        // this.this.close(this.storage);
+                    }
+                }
+            ]
+        }
+
+        __data.DictionarySelector = new DictionarySelector(dsOptions);
     };
 
     DF.prototype = baseInstansablePrototype();
     return DF;
 })();
 
+function setSingleReferenceValue (/*DOM.form-group*/ formGroupElement, /*string*/ extReferencePKName, /*array*/ objectsData, /*array*/ fields){
+    var objectData = objectsData[0];
+    var visibleValue = linq(fields)
+        .select(function(fieldName){
+            return objectData[fieldName] === undefined || objectData[fieldName] === null ? '': objectData[fieldName];
+        })
+        .collection.join(' ');
+
+    $(formGroupElement).find('.visible-value:first').html(visibleValue);
+    $(formGroupElement).find('.form-control[type=hidden]:first').val(objectData[extReferencePKName]);
+}
+
+function setSelectedArticles(/*DOM.form-group*/ selectedArticlesContainer, /*string*/ extReferencePKName, /*array*/ objectsData, /*array*/ fields) {
+    if (!('selectedArticles' in window)) {
+        window.selectedArticles = {};
+    }
+    linq(objectsData).foreach(function(articleData){
+        if (articleData.IdArticle in window.selectedArticles) {
+            return;
+        }
+        var row = $('<div class="row mb-2 text-left"></div>');
+        row.get(0).dataset.item = JSON.stringify(articleData);
+        var cell = $('<div class="col">' + articleData.ArticleName + '</div>');
+        row.append(cell);
+
+        cell = $('<div class="col-md-3"><input type="number" class="form-control" value="0" /></div>');
+        row.append(cell);
+        cell.find('input:first').blur(function(){
+            let val = $(this).val();
+            let measure = Measures[articleData.IdMeasure];
+            if (measure.IsSplit) {
+                val = val.replace(',', '.');
+                val = val.match(new RegExp('^-?\\d+(?:\\.\\d{0,' + measure.Precision + '})?'));
+                val = val ? val[0] : 0;
+            }
+            else {
+                val = val.match(/^-?\d+/);
+                val = val ? val[0] : 0;
+            }
+            $(this).val(val);
+
+        });
+
+        cell = $('<div class="col-md-2"></div>');
+        row.append(cell);
+        var optionDelete = $('<a href="javascript: void(0)"><img src="/trash-empty-icon.png" class="action-icon"  title="Удалить"/></a>');
+        cell.append(optionDelete);
+        optionDelete.click(function(){
+            row.remove();
+            delete window.selectedArticles[articleData.IdArticle];
+        });
+
+        $(selectedArticlesContainer).append(row);
+
+        window.selectedArticles[articleData.IdArticle] = articleData;
+    })
+}
+
+function DictionaryItemChangeCheckedState(/*DOM img*/img) {
+    let tr = $(img).parents('tr:first').get(0);
+    let state = tr.dataset.checked_state || 'unchecked';
+    state = state === 'unchecked' ? 'checked' : 'unchecked';
+    tr.dataset.checked_state = state;
+    $(img).attr('src', '/checkbox-' + state + '.png');
+
+}
 
 
-
+function saveOperation(/*bool*/ setFixedState) {
+    let errCount = 0;
+    var setFieldState = function(row, state){
+        let input = row.find('input[type=number]:first');
+        // Сначала очищаем статус поля на случай, если проверка уже повторная и статус был установлен,
+        // а затем проставляем статус для полей с ошибкой
+        input.removeClass('is-invalid')
+        input.parent().find('.invalid-feedback').remove();
+        if (state === 'invalid') {
+            input.addClass('is-invalid');
+            input.parent().append('<div class="invalid-feedback">Недопустимое количество</div>');
+        }
+    };
+    let selectedItems = linq($('#OperationListItems').find('.row[data-item]')).select(function(row){
+        let state = 'valid';
+        let item = JSON.parse(row.dataset.item);
+        let result = {
+            IdArticle: item.IdArticle,
+            count: $(row).find('input[type=number]:first').val()
+        };
+        if (result.count <= 0) {
+            errCount++;
+            state = 'invalid';
+        }
+        setFieldState($(row), state)
+        return result;
+    }).collection;
+    console.log(selectedItems);
+}

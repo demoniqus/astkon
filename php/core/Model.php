@@ -6,56 +6,17 @@ namespace Astkon\Model;
 use Astkon\DataBase;
 use Astkon\ErrorCode;
 use Astkon\GlobalConst;
+use Astkon\linq;
+use Astkon\Traits\ModelUpdate;
 use Astkon\View\View;
 use ReflectionClass;
 use ReflectionProperty;
 
 abstract class Model  {
+    use ModelUpdate;
     const ValidStateError = 0;
     const ValidStateOK = 1;
     const ValidStateUndefined = 2;
-    /**
-     * Системная функция для переноса изменений структуры БД в код.
-     */
-    public static function UpdateModelPhpCode() {
-        $db = new DataBase();
-        if (static::class === self::class) {
-            $tables = $db->query('select `table_name` from `information_schema`.`tables` where `table_schema`=\'' . GlobalConst::DbName . '\'');
-            foreach ($tables as $table) {
-                $tableName = DataBase::underscoreToCamelCase($table['table_name']);
-                $db->generateClass($tableName);
-            }
-            die();
-        }
-        else {
-            $className = explode('\\', static::class);
-            $className = $className[count($className) - 1];
-            if (preg_match('/Partial$/', $className)) {
-                $className = substr($className, 0, strlen($className) - strlen('Partial'));
-            }
-            $db->generateClass($className);
-        }
-    }
-
-    public static function PKName() {
-        if (!self::checkIsClassOfModel()) {
-            $view = new View();
-            $view->trace = nl2br(
-                'Файл ' . __FILE__ . PHP_EOL .
-                'Класс ' . __CLASS__ . PHP_EOL .
-                'Метод ' . __METHOD__ . PHP_EOL .
-                'Строка ' . __LINE__ . PHP_EOL .
-                'Метод может быть вызван только из класса модели, а не ее родительских классов'
-            );
-            $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
-        }
-        $PK = array_filter(static::$fieldsInfo, function($item){
-            return strtoupper($item['column_key']) === GlobalConst::MySqlPKVal;
-        });
-        $PK = array_keys($PK);
-        return array_pop($PK);
-    }
 
     /**
      * Метод проверяет, что метод, вызвавший проверку checkIsClassOfModel, вызван не из Model или Partial классов, а
@@ -150,7 +111,7 @@ abstract class Model  {
      */
     protected static function extractDocCommentItem(ReflectionProperty $reflectionProperty, string $itemName) : string{
         $items = array_filter(
-            explode(PHP_EOL, $reflectionProperty->getDocComment()),
+            explode(GlobalConst::NewLineChar, $reflectionProperty->getDocComment()),
             function($line) use ($itemName) { return mb_strpos($line, '@' . $itemName) > 0; }
         );
         return count($items) > 0 ? array_shift($items) : null;
@@ -186,7 +147,7 @@ abstract class Model  {
      */
     protected static function extractDocCommentParams(ReflectionProperty $reflectionProperty) {
         $_items = array_filter(
-            explode(PHP_EOL, $reflectionProperty->getDocComment()),
+            explode(GlobalConst::NewLineChar, $reflectionProperty->getDocComment()),
             function($line){
                 return mb_strpos($line, '@') !== false;
             }
@@ -368,7 +329,7 @@ abstract class Model  {
         usort($editedProperties, function($a, $b){ return $a['order'] <=> $b['order']; });
         $editedProperties = array_map(function($prop){ return $prop['key']; }, $editedProperties);
         if (count($editedProperties) === 0) {
-            $editedProperties = static::PKName();
+            $editedProperties = [static::PrimaryColumnName];
         }
         return $editedProperties;
     }
@@ -419,13 +380,13 @@ abstract class Model  {
                     );
                     if (is_null($refItem)) {
                         $view = new View();
-                        $view->trace = 'Нарушена целостность БД: элемент ' . $fieldInfo['table_name'] . '#' . $listItem[static::PKName()] .
+                        $view->trace = 'Нарушена целостность БД: элемент ' . $fieldInfo['table_name'] . '#' . $listItem[static::PrimaryColumnName] .
                             ' ссылается на несуществующий элемент ' . $fk['model'] . '#' . $listItem[$fieldKey];
                         $view->error(ErrorCode::BAD_DB_CONSISTENCE);
                         die();
                     }
 
-                    $listItem[$fieldKey] = implode(' ', $refItem);
+                    $listItem['$fk_' . $fieldKey] = implode(' ', $refItem);
                 }
             }
         }
@@ -627,12 +588,12 @@ abstract class Model  {
                     }
                     break;
                 case 'json':
-//                    if (is_sting($v) && trim($v) !== '') {
-//                        $v = json_decode($v);
-//                    }
-//                    else {
-//                        $v = null;
-//                    }
+                    /*Строки разработчик должен сам приводить в json*/
+                    if (!is_string($v)) {
+                        if (!is_null($v)) {
+                            $v = json_encode($v);
+                        }
+                    }
                     break;
                 case 'datetime':
                 case 'date':
@@ -672,15 +633,29 @@ abstract class Model  {
         'noeditable' => 'Обозначает, что данное свойство не отображается в форме редактирования',
     );
 
-    public static function getConfigForListView() {
-        return array_map(function(ReflectionProperty $prop){
-            return array(
-                'key' => $prop->name,
-                'alias' => self::getFieldAlias($prop->name),
-                'primary_key' => static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal,
-                'foreign_key' => isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null
-            );
-        }, self::getModelPublicProperties());
+    /**
+     * Функция возвращает конфигурацию для табличного представления экземпляров модели
+     * @param null $excludeFields - список полей в CamelCase, которые не нужно выводить на страницу
+     * @return array
+     */
+    public static function getConfigForListView($excludeFields = null) {
+        $excludeFields = is_array($excludeFields) ? array_flip($excludeFields) : array();
+
+        return array_map(
+            function(ReflectionProperty $prop) {
+                return array(
+                    'key' => $prop->name,
+                    'alias' => self::getFieldAlias($prop->name),
+                    'primary_key' => static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal,
+                    'foreign_key' => isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null
+                );
+            },
+            array_filter(
+                self::getModelPublicProperties(),
+                function(ReflectionProperty $prop) use ($excludeFields) {
+                    return !array_key_exists($prop->name, $excludeFields);
+                })
+        );
     }
 
 

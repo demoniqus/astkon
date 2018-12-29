@@ -9,6 +9,7 @@ namespace Astkon;
  * Устанавливаем кодировку данных
  */
 header('Content-Type: text/html; charset=utf-8');
+require_once 'traits.php';
 require_once 'core/Model.php';
 require_once 'core/Controller.php';
 require_once 'core/View.php';
@@ -40,8 +41,8 @@ final class GlobalConst {
      * Логин и пароль для подключения к БД
      * @var string
      */
-    const HostUser = 'root';
-    const HostPass = '1';
+    const HostUser = 'developer';
+    const HostPass = '1234567890';
     /**
      * Наименование параметра, определяющего тип запроса - получение данных или получение html-страницы
      * @var string
@@ -73,26 +74,33 @@ final class GlobalConst {
      * Каталог для создания частичных классов, реализующих сущности базы данных
      * @var string
      */
-    const PartialClassDirectory = 'php' . DIRECTORY_SEPARATOR . 'partialModels';
+    const PartialModelsDirectory = 'php' . DIRECTORY_SEPARATOR . 'partialModels';
     /**
      * Каталог для классов, реализующих частичные классы
      * @var string
      */
-    const ClassDirectory = 'php' . DIRECTORY_SEPARATOR . 'models';
+    const ModelsDirectory = 'php' . DIRECTORY_SEPARATOR . 'models';
     /**
      * Файл для регистрации моделей, реализующих сущности базы данных
      */
-    const ClassRegistry = 'php' . DIRECTORY_SEPARATOR . 'models.php';
+    const ModelsRegistry = 'php' . DIRECTORY_SEPARATOR . 'models.php';
     /**
      * Директория представлений
      */
     const ViewsDirectory = 'php' . DIRECTORY_SEPARATOR . 'views';
+    const TraitsDirectory = 'php' . DIRECTORY_SEPARATOR . 'traits';
     const DefHeaderView = GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_defheader.php';
     const DefFooterView = GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_deffooter.php';
     const ViewDefCharset = 'utf-8';
     const FOpenMode = 'wt';
 
     const MySqlPKVal = 'PRI';
+    /**
+     * Проект разрабатывается под управлением Linux - в нем PHP_EOL = \n
+     * При демонстрации проекта под управлением Windows константа PHP_EOL фактически равна \n\r .
+     * Поэтому функция explode(PHP_EOL, $string) может е сработать
+     */
+    const NewLineChar = "\n";
 
 }
 

@@ -13,6 +13,8 @@ use Astkon\Model\Model;
 
 abstract class BuildObjectPartial extends Model {
 	const DataTable = 'build_object';
+	const PrimaryColumnName = 'IdBuildObject';
+
 /** @var array */
 protected static $fieldsInfo = array (
   'IdBuildObject' => 
@@ -21,38 +23,38 @@ protected static $fieldsInfo = array (
     'column_name' => 'id_build_object',
     'data_type' => 'int',
     'max_length' => NULL,
-    'num_prec' => 10,
+    'num_prec' => '10',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
   ),
   'BuildObjectName' => 
   array (
     'table_name' => 'build_object',
     'column_name' => 'build_object_name',
     'data_type' => 'varchar',
-    'max_length' => 500,
+    'max_length' => '500',
     'num_prec' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
   ),
   'Comment' => 
   array (
     'table_name' => 'build_object',
     'column_name' => 'comment',
     'data_type' => 'text',
-    'max_length' => 65535,
+    'max_length' => '65535',
     'num_prec' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
   ),
 );
 	/**

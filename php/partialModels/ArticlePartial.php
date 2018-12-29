@@ -13,6 +13,8 @@ use Astkon\Model\Model;
 
 abstract class ArticlePartial extends Model {
 	const DataTable = 'article';
+	const PrimaryColumnName = 'IdArticle';
+
 /** @var array */
 protected static $fieldsInfo = array (
   'IdArticle' => 
@@ -21,25 +23,30 @@ protected static $fieldsInfo = array (
     'column_name' => 'id_article',
     'data_type' => 'bigint',
     'max_length' => NULL,
-    'num_prec' => 20,
+    'num_prec' => '20',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
+    'external_link' => 
+    array (
+      'model' => 'operation_item',
+      'field' => 'id_article',
+    ),
   ),
   'ArticleName' => 
   array (
     'table_name' => 'article',
     'column_name' => 'article_name',
     'data_type' => 'varchar',
-    'max_length' => 300,
+    'max_length' => '300',
     'num_prec' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
   ),
   'IdMeasure' => 
   array (
@@ -47,12 +54,12 @@ protected static $fieldsInfo = array (
     'column_name' => 'id_measure',
     'data_type' => 'int',
     'max_length' => NULL,
-    'num_prec' => 10,
+    'num_prec' => '10',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
     'foreign_key' => 
     array (
       'model' => 'measure',
@@ -65,25 +72,25 @@ protected static $fieldsInfo = array (
     'column_name' => 'balance',
     'data_type' => 'double',
     'max_length' => NULL,
-    'num_prec' => 22,
+    'num_prec' => '22',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
   ),
   'VendorCode' => 
   array (
     'table_name' => 'article',
     'column_name' => 'vendor_code',
     'data_type' => 'varchar',
-    'max_length' => 50,
+    'max_length' => '50',
     'num_prec' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => 'MUL',
     'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
   ),
   'IsArchive' => 
   array (
@@ -91,16 +98,16 @@ protected static $fieldsInfo = array (
     'column_name' => 'is_archive',
     'data_type' => 'bit',
     'max_length' => NULL,
-    'num_prec' => 1,
+    'num_prec' => '1',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
+    'privileges' => 'select,insert,update',
   ),
 );
 	/**
-    * @foreign_key_display_value
+	* @foreign_key_display_value
 	* @database_column_name article_name
 	* @alias Наименование
 	* @var string
@@ -108,8 +115,8 @@ protected static $fieldsInfo = array (
 	public $ArticleName;
 
 	/**
-    * @autocalc auto_calc_rule
-    * @noeditable
+	* @autocalc auto_calc_rule
+	* @noeditable
 	* @database_column_name balance
 	* @alias Остаток
 	* @var float
@@ -124,7 +131,7 @@ protected static $fieldsInfo = array (
 	public $IdArticle;
 
 	/**
-    * @foreign_key_action Measures/MeasuresDict
+	* @foreign_key_action Measures/MeasuresDict
 	* @database_column_name id_measure
 	* @alias Единица измерения
 	* @var int

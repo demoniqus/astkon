@@ -16,7 +16,17 @@
                     ?>
                 </th>
                 <?php
-            } else {
+            } else if ($fieldConfig['foreign_key']) {
+                ?>
+                <td>
+                    <?php
+                    $fkName = '$fk_' . $fieldConfig['key'];
+                    $val = isset($item[$fkName]) ? $item[$fkName]: $item[$fieldConfig['key']];
+                    echo $val;
+                    ?>
+                </td>
+                <?php
+            }else {
                 ?>
                 <td>
                     <?= $val; ?>

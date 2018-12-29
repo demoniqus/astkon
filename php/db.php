@@ -68,6 +68,7 @@ class DataBase {
         $pass = GlobalConst::HostPass
     ) {
         $this->connect($host, $dbName, $login, $pass);
+        $this->_execQueryCommand = '_standardExecQueryCommandFunction';
     }
 
     /**
@@ -106,15 +107,21 @@ class DataBase {
     }
 
     /**
-     * @param string $query - строка запроса к выполнению
-     * @param array $values - значения для подстановки в запрос на место placeholder'ов. Ключи в CamelCase
-     * @param string $mode - метод формирования списка значений
-     * @return array|false
+     * Контейнер для запросов транзакции
+     * @var array
+     */
+    private $PDOStatementsQueue = array();
+
+    /**
+     * @param string $query       - строка запроса к выполнению
+     * @param array $substitution - значения для подстановки в запрос на место placeholder'ов. Ключи в CamelCase
+     * @param string $mode        - метод формирования списка значений
+     * @return array|false        - возвращает false в случае возникновения ошибок. Информацию об ошибке можно получить через $db->QueryInfo
      */
     public function query(
-            $query,
-            $values = array(),
-            $mode = 'assoc'
+        string $query,
+        $substitution = array(),
+        string $mode = 'assoc'
     ) {
         $data = array();
         if ($query) {
@@ -125,74 +132,141 @@ class DataBase {
             if($queryType === self::QueryTypeDenied) {
                 $this->lastQueryState = array(
                     '@error' => true,
-                    'errorType' => 'PHP',
-                    'errorCode' => 0,
-                    'errorMessage' => 'Запрещенная команда',
-                );;
+                    'errors' => array(
+                        array(
+                            'errorType' => 'PHP',
+                            'errorCode' => 0,
+                            'errorMessage' => 'Запрещенная команда',
+                        )
+                    ),
+                );
                 return false;
             }
-            $result = $this->_execQueryCommand($query, $queryType, $values);
-            if (is_array($result)) {
-                $this->lastQueryState = $result;
-                return false;
-            }
-            if ($queryType === self::QueryTypeSelect) {
-                while ($row = $result->fetch($mode === 'assoc' ? PDO::FETCH_ASSOC : PDO::FETCH_NUM)) {
-                    $data[] = $row;
+            else {
+                $result = $this->_prepareQueryCommand($query, $queryType, $substitution);
+                if (is_array($result)) {
+                    if ($this->PDO->inTransaction()) {
+                        $this->PDO->rollback();
+                    }
+                    $this->lastQueryState = $result;
+                    return false;
                 }
+
+                $data = self::_fetchResult($result, $queryType, $mode);
             }
         }
         return $data;
     }
 
-    public function QueryState() {
-        return $this->lastQueryState === 0;
-    }
-
-    public function QueryInfo() {
-        return is_array($this->lastQueryState) ? $this->lastQueryState : array();
-    }
-
-    public function LastInsertId() {
-        return $this->lastInsertId;
-    }
-
-    protected static function getQueryType(string $query) : int {
-        $queryType = strtolower(mb_substr($query, 0, mb_strpos($query, ' ')));
-        switch ($queryType) {
-            case 'select':
-                return self::QueryTypeSelect;
-            case 'insert':
-                return self::QueryTypeInsert;
-            case 'update':
-                return self::QueryTypeUpdate;
-            case 'delete':
-                return self::QueryTypeDelete;
-            default:
-                return self::QueryTypeDenied;
-
+    /**
+     * @param null|PDOStatement$result
+     * @param int $queryType
+     * @param string $mode
+     * @return array
+     */
+    protected static function _fetchResult($result, int $queryType, string $mode) : array {
+        $data = [];
+        if ($queryType === self::QueryTypeSelect && $result) {
+            while ($row = $result->fetch($mode === 'assoc' ? PDO::FETCH_ASSOC : PDO::FETCH_NUM)) {
+                $data[] = $row;
+            }
         }
-    }
-
-    public function setPDOAttribute(int $attribute, mixed $value) {
-        $this->PDO->setAttribute($attribute, $value);
+        return $data;
     }
 
     /**
-     * @param array $values - значения для подстановки. Ключи в CamelCase
-     * @param int $queryType
-     * @param string $query
-     * @return bool|PDOStatement|array
+     * Метод начинает транзакцию.
+     * Все запросы для транзакции передаются через $db->query().
+     * При этом в случае успеха каждый $db->query() вернет пустой массив, в случае ошибки вернет false
      */
-    protected function _execQueryCommand($query, int $queryType, $values = null) {
+    public function beginTransaction() {
+        $this->PDOStatementsQueue = array();
+        $this->_execQueryCommand = '_transactionExecQueryCommandFunction';
+    }
+
+    /**
+     * Метод запускает фиксацию транзакции.
+     * Если последний запрос в транзакции был SELECT, метод вернет его результат
+     * @param string $mode
+     * @return array
+     */
+    public function commit(string $mode = 'assoc') {
+        /** @var PDOStatement $stmt */
+        $stmt = null;
+        $substitution = null;
+        $queryType = null;
+        $this->lastQueryState = 0;
+        try {
+            $this->PDO->beginTransaction();
+            foreach ($this->PDOStatementsQueue as $statementData) {
+                $queryType = $statementData['queryType'];
+                $substitution = $statementData['substitution'];
+                $stmt = $statementData['statement'];
+                $stmt->execute();
+            }
+            $this->PDO->commit();
+        }
+        catch (\PDOException $PDOException) {
+            $errInfo = array(
+                '@error' => true,
+                'errors' => array(
+                    array(
+                        'errorType' => 'PDO',
+                        'errorCode' => $PDOException->getCode(),
+                        'errorMessage' => $PDOException->getMessage(),
+                        'errorInfo' => $PDOException->errorInfo
+                    ),
+                ),
+            );
+            try {
+                if ($this->PDO->inTransaction()) {
+                    $this->PDO->rollback();
+                }
+            }
+            catch (\PDOException $PDOExceptionRollback) {
+                $errInfo['errors'][] =  array(
+                    'errorType' => 'PDO',
+                    'errorCode' => $PDOExceptionRollback->getCode(),
+                    'errorMessage' => $PDOExceptionRollback->getMessage(),
+                );
+            }
+
+            $errInfo = self::errorMessageParser($errInfo, array_keys($substitution));
+
+            $this->lastQueryState = $errInfo;
+            return false;
+        }
+
+        $result = self::_fetchResult($stmt, $queryType, $mode);
+        $this->setDefConfiguration();
+        return $result;
+
+    }
+
+    public function rollback() {
+        if ($this->PDO->inTransaction()) {
+            $this->PDO->rollback();
+        }
+        $this->setDefConfiguration();
+    }
+
+    /**
+     * Метод возвращает экземпляр класса к работе без транзакций
+     */
+    protected function setDefConfiguration() {
+        $this->_execQueryCommand = '_standardExecQueryCommandFunction';
+        $this->PDOStatementsQueue = [];
+    }
+
+    protected function _execQueryCommandTransaction($query, int $queryType, $substitution = null) {
         $query = trim($query);
 
 
-        /** @var \PDOStatement $stmt */
+        /** @var PDOStatement $stmt */
         try {
             $stmt = $this->PDO->prepare($query);
         }
-        catch (\PDOException $PDOException) {
+        catch (PDOException $PDOException) {
             switch ($PDOException->getCode()) {
                 case '42S22':
                     $view = new View();
@@ -221,9 +295,9 @@ class DataBase {
             );
         }
         // Альтернатива PDO - https://habr.com/post/141127/
-        if (is_array($values)) {
+        if (is_array($substitution)) {
             try {
-                foreach ($values as $k => $v) {
+                foreach ($substitution as $k => $v) {
                     $paramType = false;
                     if (is_int($v)) {
                         $paramType = PDO::PARAM_INT;
@@ -295,7 +369,7 @@ class DataBase {
                 'errorInfo' => $PDOException->errorInfo
             );
 
-            $errInfo = self::errorMessageParser($errInfo, array_keys($values));
+            $errInfo = self::errorMessageParser($errInfo, array_keys($substitution));
 
             return $errInfo;
         }
@@ -311,100 +385,367 @@ class DataBase {
     }
 
     /**
+     * Имя функции для работы с подготовленным выражением PDO - либо стандартная функция, либо функция для накопления запросов
+     * @var string|null
+     */
+    protected $_execQueryCommand = null;
+
+    /**
+     * Cтандартная функция выполнения одного запроса вне транзакций
+     * @param PDOStatement $stmt
+     * @param int $queryType
+     * @param array|null $substitution
+     * @return array|PDOStatement
+     */
+    protected function _standardExecQueryCommandFunction (PDOStatement $stmt, int $queryType, $substitution){
+        try {
+
+            if ($queryType === self::QueryTypeInsert) {
+                $this->PDO->beginTransaction();
+                $stmt->execute();
+                $this->lastInsertId = $this->PDO->lastInsertId();
+                $this->PDO->commit();
+            }
+            else {
+                $stmt->execute();
+            }
+        }
+        catch (\PDOException $PDOException) {
+            $errInfo = array(
+                '@error' => true,
+
+                'errors' => array(
+                    array(
+                        'errorType' => 'PDO',
+                        'errorCode' => $PDOException->getCode(),
+                        'errorMessage' => $PDOException->getMessage(),
+                        'errorInfo' => $PDOException->errorInfo
+                    ),
+                ),
+            );
+            try {
+                if ($this->PDO->inTransaction()) {
+                    $this->PDO->rollback();
+                }
+            }
+            catch (\PDOException $PDOExceptionRollback) {
+                $errInfo['errors'][] = array(
+                    'errorType' => 'PDO',
+                    'errorCode' => $PDOExceptionRollback->getCode(),
+                    'errorMessage' => $PDOExceptionRollback->getMessage(),
+                );
+            }
+
+            $errInfo = self::errorMessageParser($errInfo, array_keys($substitution));
+
+            return $errInfo;
+        }
+        catch(\Exception $exception) {
+            return array(
+                '@error' => true,
+                'errorType' => 'PHP',
+                'errorCode' => $exception->getCode(),
+                'errorMessage' => $exception->getMessage(),
+            );
+        }
+        return $stmt;
+    }
+
+    /**
+     * Метод накапливает запросы для транзакции
+     * @param PDOStatement $stmt
+     * @param int $queryType
+     * @param null|array $substitution
+     * @return null
+     */
+    protected function _transactionExecQueryCommandFunction (PDOStatement $stmt, int $queryType, $substitution) {
+        $this->PDOStatementsQueue[] = array(
+            'statement' => $stmt,
+            'queryType' => $queryType,
+            'substitution' => $substitution
+        );
+        return null;
+    }
+
+
+
+
+    /**
+     * @param array|null $substitution - значения для подстановки. Ключи в CamelCase
+     * @param int $queryType
+     * @param string $query
+     * @return bool|PDOStatement|array
+     */
+    protected function _prepareQueryCommand($query, int $queryType, $substitution = null) {
+        $query = trim($query);
+        /** @var \PDOStatement $stmt */
+        try {
+            $stmt = $this->PDO->prepare($query);
+        }
+        catch (PDOException $PDOException) {
+            switch ($PDOException->getCode()) {
+                case '42S22':
+                    if ($this->PDO->inTransaction()) {
+                        $this->PDO->rollback();
+                    }
+                    $view = new View();
+                    $view->trace = array(
+                        'errorCode' => $PDOException->getCode(),
+                        'errorMessage' => $PDOException->getMessage(),
+                        'errorInfo' => $PDOException->errorInfo,
+                    );
+                    $view->error(ErrorCode::PROGRAMMER_ERROR);
+                    die();
+                default:
+                    return array(
+                        '@error' => true,
+                        'errors' => array(
+                            array(
+                                'errorType' => 'PDO',
+                                'errorCode' => $PDOException->getCode(),
+                                'errorMessage' => $PDOException->getMessage(),
+                            ),
+                        ),
+                    );
+            }
+        }
+        catch (\Exception $exception) {
+            return array(
+                '@error' => true,
+                'errors' => array(
+                    array(
+                        'errorType' => 'PHP',
+                        'errorCode' => $exception->getCode(),
+                        'errorMessage' => $exception->getMessage(),
+                    ),
+                ),
+            );
+        }
+        return $this->_bindParamsQueryCommand($stmt, $queryType, $substitution);
+    }
+
+    /**
+     * @param PDOStatement $stmt
+     * @param int $queryType
+     * @param null|array $substitution
+     * @return array
+     */
+    protected function _bindParamsQueryCommand(PDOStatement $stmt, int $queryType, $substitution = null) {
+        // Альтернатива PDO - https://habr.com/post/141127/
+        if (is_array($substitution)) {
+            try {
+                foreach ($substitution as $k => $v) {
+                    $paramType = false;
+                    if (is_int($v)) {
+                        $paramType = PDO::PARAM_INT;
+                    }
+                    else if (is_bool($v)) {
+                        $paramType = PDO::PARAM_BOOL;
+                    }
+                    else if (is_null($v)) {
+                        $paramType = PDO::PARAM_NULL;
+                    }
+                    else if(is_array($v)) {
+                        $paramType = PDO::PARAM_STR;
+                        $v = json_encode($v);
+                    }
+                    else if (is_string($v)) {
+                        $paramType = PDO::PARAM_STR;
+                    }
+                    if ($paramType !== false) {
+                        (function($v) use ($stmt, $k, $paramType) {
+                            $stmt->bindParam(':' . $k, $v, $paramType);
+
+                        })($v);
+                    }
+                }
+            } catch (\PDOException $PDOException) {
+                return array(
+                    '@error' => true,
+                    'errors' => array(
+                        array(
+                            'errorType' => 'PDO',
+                            'errorCode' => $PDOException->getCode(),
+                            'errorMessage' => $PDOException->getMessage(),
+                        ),
+                    ),
+                );
+            }
+        }
+        $nextCommand =$this->_execQueryCommand;
+        return $this->$nextCommand($stmt, $queryType, $substitution);
+    }
+
+    /**
+     * Метод возвращает статус последнего запроса
+     * true - запрос выполнен без ошибок
+     * false - при выполнении были обнаружены ошибки
+     * @return bool
+     */
+    public function QueryState() {
+        return $this->lastQueryState === 0;
+    }
+
+    /**
+     * Метод возвращает информацию о результатах последнего запроса
+     * 0 - если запрос успешен
+     * array ( ... ) - в случае ошибок массив с информацией об ошибках
+     * @return array|int
+     */
+    public function QueryInfo() {
+        return is_array($this->lastQueryState) ? $this->lastQueryState : array();
+    }
+
+    public function LastInsertId() {
+        return $this->lastInsertId;
+    }
+
+    /**
+     * Пока позволены только 4 типа запросов, не влияющих на структуру БД
+     * @param string $query
+     * @return int
+     */
+    protected static function getQueryType(string $query) : int {
+        $queryType = strtolower(mb_substr($query, 0, mb_strpos($query, ' ')));
+        switch ($queryType) {
+            case 'select':
+                return self::QueryTypeSelect;
+            case 'insert':
+                return self::QueryTypeInsert;
+            case 'update':
+                return self::QueryTypeUpdate;
+            case 'delete':
+                return self::QueryTypeDelete;
+            default:
+                return self::QueryTypeDenied;
+
+        }
+    }
+
+    public function setPDOAttribute(int $attribute, mixed $value) {
+        $this->PDO->setAttribute($attribute, $value);
+    }
+
+    /**
      * Метод обрабатывает ошибки, возникшие при работе с PDO (подготовкой и отправкой запроса)
-     * @param array $errInfo
+     * @param array $errorInfo
      * @param array $fieldNames - наименования полей в CamelCase
      * @return array
      */
-    protected static function errorMessageParser(array $errInfo, array $fieldNames) {
-        switch ($errInfo['errorCode']) {
-            case 'HY093':
-                $view = new View();
-                $view->trace = array(
-                    'errorCode' => $errInfo['errorCode'],
-                    'errorMessage' => $errInfo['errorMessage'],
-                    'errorInfo' => $errInfo['errorInfo'],
-                    'class' => __CLASS__,
-                    'line' => __LINE__,
-                );
-                $view->error(ErrorCode::PROGRAMMER_ERROR);
-                die();
-            case 'HY000':
-                if ($errInfo['errorMessage']) {
-
-                    /*
-                     * Попробуем получить колонку из сообщения об ошибке
-                    */
-
-                    foreach ($fieldNames as $fieldName) {
-                        $_field_name = self::camelCaseToUnderscore($fieldName);
-                        if (
-                            mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
-                            mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
-                        ) {
-                            $expectedErrorColumn[] = $fieldName;
-                        }
-                    }
-                }
-                if (count($expectedErrorColumn) > 0) {
-                    $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
-                    $errInfo['err_code_explain'] = 'Недопустимое значение';
-                }
-                break;
-            case '23000':
-                //1048 - not null ; 1062 - unique
-                $keySuffix = '';
-                $keyPrefix = '';
-                $errCodeExplain = 'Ошибка при сохранении значения';
-                if ($errInfo['errorMessage']) {
-                    $errMessage = strtolower($errInfo['errorMessage']);
+    protected static function errorMessageParser(array $errorInfo, array $fieldNames) {
+        $programmerErrorProcessor = function(array $errInfo) use ($errorInfo) {
+            $backtrace = (new linq(debug_backtrace(2, 6)))
+                ->select(function($item){
+                    unset($item['file']);
+                    return $item;
+                })
+                ->getData();
+            $view = new View();
+            $view->trace = array(
+                'errorCode' => $errInfo['errorCode'],
+                'errorMessage' => $errInfo['errorMessage'],
+                'errorInfo' => $errInfo['errorInfo'],
+                'class' => __CLASS__,
+                'line' => __LINE__,
+                'backtrace' => $backtrace,
+                'errors' => $errorInfo
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        };
+        foreach ($errorInfo['errors'] as &$errInfo) {
+            $expectedErrorColumn = [];
+            switch ($errInfo['errorCode']) {
+                case '42S02':
                     if(is_array($errInfo['errorInfo']) && count($errInfo['errorInfo']) > 1) {
                         switch ($errInfo['errorInfo'][1]) {
-                            case 1062:
-                                $keySuffix = '_unique';
-                                $errCodeExplain = 'Значение поля должно быть уникальным';
-                                break;
-                            case 1048:
-                                $errCodeExplain = 'Значение поля не может быть пустым';
-                                break;
-                            case 1452:
-                                $keySuffix = $keyPrefix = '`';
-                                $errCodeExplain = 'Необходимо выбрать значение из справочника';
+                            case 1146:
+                                $programmerErrorProcessor($errInfo);
                                 break;
                         }
                     }
-                }
-                foreach ($fieldNames as $fieldName) {
-                    $_field_name = self::camelCaseToUnderscore($fieldName);
-                    if (mb_strpos($errMessage, $keyPrefix . $_field_name . $keySuffix) !== false) {
-                        $expectedErrorColumn[] = $fieldName;
+                    break;
+                case 'HY093':
+                    $programmerErrorProcessor($errInfo);
+                    die();
+                case 'HY000':
+                    if ($errInfo['errorMessage']) {
+
+                        /*
+                         * Попробуем получить колонку из сообщения об ошибке
+                        */
+
+                        foreach ($fieldNames as $fieldName) {
+                            $_field_name = self::camelCaseToUnderscore($fieldName);
+                            if (
+                                mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
+                                mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
+                            ) {
+                                $expectedErrorColumn[] = $fieldName;
+                            }
+                        }
                     }
-                }
-                if (count($expectedErrorColumn) > 0) {
-                    $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
-                    $errInfo['err_code_explain'] = $errCodeExplain;
-                }
-                break;
-            default:
-                if ($errInfo['errorMessage']) {
+                    if (count($expectedErrorColumn) > 0) {
+                        $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
+                        $errInfo['err_code_explain'] = 'Недопустимое значение';
+                    }
+                    break;
+                case '23000':
+                    //1048 - not null ; 1062 - unique
+                    $keySuffix = '';
+                    $keyPrefix = '';
+                    $errMessage = '';
+                    $errCodeExplain = 'Ошибка при сохранении значения';
+                    if ($errInfo['errorMessage']) {
+                        $errMessage = strtolower($errInfo['errorMessage']);
+                        if(is_array($errInfo['errorInfo']) && count($errInfo['errorInfo']) > 1) {
+                            switch ($errInfo['errorInfo'][1]) {
+                                case 1062:
+                                    $keySuffix = '_unique';
+                                    $errCodeExplain = 'Значение поля должно быть уникальным';
+                                    break;
+                                case 1048:
+                                    $errCodeExplain = 'Значение поля не может быть пустым';
+                                    break;
+                                case 1452:
+                                    $keySuffix = $keyPrefix = '`';
+                                    $errCodeExplain = 'Необходимо выбрать значение из справочника';
+                                    break;
+                            }
+                        }
+                    }
                     foreach ($fieldNames as $fieldName) {
                         $_field_name = self::camelCaseToUnderscore($fieldName);
-                        if (
-                            mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
-                            mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
-                        ) {
+                        if (mb_strpos($errMessage, $keyPrefix . $_field_name . $keySuffix) !== false) {
                             $expectedErrorColumn[] = $fieldName;
                         }
                     }
-                }
-                if (count($expectedErrorColumn) > 0) {
-                    $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
-                    $errInfo['err_code_explain'] = 'Непредвиденная ошибка';
-                }
-                break;
+                    if (count($expectedErrorColumn) > 0) {
+                        $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
+                        $errInfo['err_code_explain'] = $errCodeExplain;
+                    }
+                    break;
+                default:
+                    if ($errInfo['errorMessage']) {
+                        foreach ($fieldNames as $fieldName) {
+                            $_field_name = self::camelCaseToUnderscore($fieldName);
+                            if (
+                                mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
+                                mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
+                            ) {
+                                $expectedErrorColumn[] = $fieldName;
+                            }
+                        }
+                    }
+                    if (count($expectedErrorColumn) > 0) {
+                        $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
+                        $errInfo['err_code_explain'] = 'Непредвиденная ошибка';
+                    }
+                    break;
+            }
         }
 
-        return $errInfo;
+        return $errorInfo;
 
     }
 
@@ -518,24 +859,24 @@ class DataBase {
     public function Delete(
             array $entity
             ) {
-        if (!$this->currentObject) {
-            throw new Exception('Не установлен объект для удаления из БД');
-        }
-        if ($entity === null || gettype($entity) !== gettype($entity) || count($entity) < 1) {
-            throw new Exception('Нет информации для удаления из БД');
-        }
-        /*Проверим наличие первичного ключа в таблице - без него удаление этим методом невозможно*/
-        if (($pk = (new linq($this->currentObject['fields'], 'assoc'))
-        ->first(function($column){ return $column['_primary_key'];})) === null) {
-            throw new Exception('Данная таблица не имеет первичного ключа. Поэтому удаление данным методом невозможно');
-        }
-        if (!array_key_exists($pk['column_name'], $entity)) {
-            throw new Exception('Полученный объект не содержит информации о первичном ключе. Удаление невозможно.');
-        }
-        /*Создаем запрос для удаления записи*/
-        $query = 'DELETE FROM ' . $this->currentObject['name'] . ' WHERE  ' . $pk['column_name'] . '=' . $entity[$pk['column_name']] . ' LIMIT 1';
-        $smtp = $this->_execQueryCommand($query, self::QueryTypeDelete);
-        return $smtp->errorCode();
+//        if (!$this->currentObject) {
+//            throw new Exception('Не установлен объект для удаления из БД');
+//        }
+//        if ($entity === null || gettype($entity) !== gettype($entity) || count($entity) < 1) {
+//            throw new Exception('Нет информации для удаления из БД');
+//        }
+//        /*Проверим наличие первичного ключа в таблице - без него удаление этим методом невозможно*/
+//        if (($pk = (new linq($this->currentObject['fields'], 'assoc'))
+//        ->first(function($column){ return $column['_primary_key'];})) === null) {
+//            throw new Exception('Данная таблица не имеет первичного ключа. Поэтому удаление данным методом невозможно');
+//        }
+//        if (!array_key_exists($pk['column_name'], $entity)) {
+//            throw new Exception('Полученный объект не содержит информации о первичном ключе. Удаление невозможно.');
+//        }
+//        /*Создаем запрос для удаления записи*/
+//        $query = 'DELETE FROM ' . $this->currentObject['name'] . ' WHERE  ' . $pk['column_name'] . '=' . $entity[$pk['column_name']] . ' LIMIT 1';
+//        $smtp = $this->_execQueryCommand($query, self::QueryTypeDelete);
+//        return $smtp->errorCode();
     }
 
     /**
@@ -762,6 +1103,8 @@ class DataBase {
     /**
      * @param string $condition
      * @param string $required_fields
+     * @param array $values
+     * @param null $offset
      * @return array|null
      * @throws Exception
      */
@@ -769,10 +1112,9 @@ class DataBase {
             $condition = null, //строка
             $required_fields = null, //массив строк
             $values = array(),
-            $offset = null,
-            $limit = null
+            $offset = null
             ) {
-        $rows = $this->getRows($condition, $required_fields, $values, $offset, $limit);
+        $rows = $this->getRows($condition, $required_fields, $values, $offset, 1);
         return $rows != null  && count($rows) > 0 ? $rows[0] : null;
     }
 
@@ -783,27 +1125,27 @@ class DataBase {
      * @return array|null
      * @throws Exception
      */
-    public function getEntity(            
-            $IdEntity//Идентификатор записи
-            ) {
-        if (!$this->currentObject) {
-            throw new Exception('Не установлен объект для извелечения из БД');
-        }
-        /*Найдем ключевую колонку*/
-        $primaryKey = (new linq($this->currentObject['fields'], 'assoc'))->first(function($col){ return $col['_primary_key'] === true;});
-        $rows = array();
-        if ($primaryKey) {
-            /*Отберем список колонок, которым надо преобразовать тип из строкового*/
-            $columns = $this->currentObject['fields'];
-            /*Запросим строки и сразу произведем типизацию*/
-            $rows = (new linq($this->query('select * from ' . $this->currentObject['name'] . ' WHERE ' . $primaryKey['column_name'] . '=' . $IdEntity)))
-                ->where(function($row){ return count($row) > 0;})
-                ->for_each(function(&$row) use ($columns){
-                    self::_convertValue($row, $this->currentObject['fields']);
-                })->getData();
-        }
-        return count($rows) > 0 ? $rows[0] : null;
-    }
+//    public function getEntity(
+//            $IdEntity//Идентификатор записи
+//            ) {
+//        if (!$this->currentObject) {
+//            throw new Exception('Не установлен объект для извелечения из БД');
+//        }
+//        /*Найдем ключевую колонку*/
+//        $primaryKey = (new linq($this->currentObject['fields'], 'assoc'))->first(function($col){ return $col['_primary_key'] === true;});
+//        $rows = array();
+//        if ($primaryKey) {
+//            /*Отберем список колонок, которым надо преобразовать тип из строкового*/
+//            $columns = $this->currentObject['fields'];
+//            /*Запросим строки и сразу произведем типизацию*/
+//            $rows = (new linq($this->query('select * from ' . $this->currentObject['name'] . ' WHERE ' . $primaryKey['column_name'] . '=' . $IdEntity)))
+//                ->where(function($row){ return count($row) > 0;})
+//                ->for_each(function(&$row) use ($columns){
+//                    self::_convertValue($row, $this->currentObject['fields']);
+//                })->getData();
+//        }
+//        return count($rows) > 0 ? $rows[0] : null;
+//    }
 
     /**
      * Возвращает экземпляр класса
@@ -940,7 +1282,7 @@ class DataBase {
         return $this;
     }
 
-    private function getClassColumns(string $className) {
+    public function getClassColumns(string $className) {
         $columns = $this->query('select '
             . 'table_name, '
             . 'column_name, '
@@ -957,42 +1299,6 @@ class DataBase {
         return array_filter($columns, function($line){ return count($line) > 0 ;});
     }
 
-    private function setColumnsForeignKeys(array $columns, string $className) {
-        $references = $this->query('select '
-            . '`table_name`, '
-            . '`column_name`, '
-            . '`referenced_table_name`, '
-            . '`referenced_column_name`  '
-            . ' from `information_schema`.`key_column_usage` where table_schema = \'' . GlobalConst::DbName .
-            '\' AND table_name=\'' . self::camelCaseToUnderscore($className) . '\' AND `referenced_column_name` IS NOT NULL'
-        );
-        foreach ($references as $reference) {
-            $columns[DataBase::underscoreToCamelCase($reference['column_name'])]['foreign_key'] = array(
-                'model' => $reference['referenced_table_name'],
-                'field' => $reference['referenced_column_name'],
-            );
-        }
-        return $columns;
-    }
-
-    private function setColumnsExtLinks(array $columns, string $className) {
-        $extLinks = $this->query('select '
-            . '`table_name`, '
-            . '`column_name`, '
-            . '`referenced_table_name`, '
-            . '`referenced_column_name`  '
-            . ' from `information_schema`.`key_column_usage` where table_schema = \'' . GlobalConst::DbName .
-            '\' AND referenced_table_name=\'' . self::camelCaseToUnderscore($className) . '\''
-        );
-        foreach ($extLinks as $extLink) {
-            $columns[DataBase::underscoreToCamelCase($extLink['referenced_column_name'])]['external_link'] = array(
-                'model' => $extLink['table_name'],
-                'field' => $extLink['column_name'],
-            );
-        }
-        return $columns;
-    }
-
     private function setPDOParamType(array $columns) {
         foreach ($columns as $columnData) {
             $dataType = $columnData['data_type'];
@@ -1002,302 +1308,6 @@ class DataBase {
 
         }
         return $columns;
-    }
-
-    private static function getRootNameSpace() : string
-    {
-        return explode('\\', __NAMESPACE__)[0];
-    }
-
-    /**
-     * Метод генерирует Partial-класс указанной сущности из БД. Используется для разработки
-     * @param string $className Имя таблицы из БД, для которой необходимо сгенерировать базовый класс для использования в PHP
-     */
-    public function generateClass(string $className) {
-
-        $tableName = self::camelCaseToUnderscore($className);
-
-        $this->generatePartialModel($className, $tableName);
-
-        $this->generateModel($className);
-
-        $this->registerModel($className);
-    }
-
-    private function getPartialModelFieldsDocBlock(string $className) {
-        $reflectClass = new \ReflectionClass(self::getRootNameSpace() . '\\Model\\Partial\\' . $className . 'Partial');
-        $fieldsDocs = array();
-        foreach ($reflectClass->getProperties(ReflectionProperty::IS_PUBLIC) as $reflectionProperty) {
-            if ($reflectionProperty->isStatic()) {
-                continue;
-            }
-
-            $doc = array_filter(
-                explode( PHP_EOL, $reflectionProperty->getDocComment() ?? ''),
-                function($docLine){ return !array_key_exists(trim($docLine), array('/**' => true, '*/' => true));}
-            );
-
-            array_walk($doc, function(&$line){
-                $line = trim($line);
-                if (mb_substr($line, 0, 1) === '*') {
-                    $line = trim(mb_substr($line, 1));
-                }
-            });
-
-            $fieldsDocs[$reflectionProperty->name] = array(
-                'doc' => $doc
-            );
-        }
-        return $fieldsDocs;
-    }
-
-    /**
-     * @param resource $fileHandler
-     */
-    private static function PartialModelInstruction($fileHandler) {
-        fwrite($fileHandler, '/** ');
-        fwrite($fileHandler,  PHP_EOL);
-        fwrite($fileHandler, ' * Файл генерируется автоматически.');
-        fwrite($fileHandler,  PHP_EOL);
-        fwrite($fileHandler, ' * Не допускаются произвольные изменения вручную.');
-        fwrite($fileHandler,  PHP_EOL);
-        fwrite($fileHandler, ' * Допускается вручную только расширять doc-блок публичный полей класса. ');
-        fwrite($fileHandler,  PHP_EOL);
-        fwrite($fileHandler, ' * При этом разделы @var и @database_column_name будут автоматически перезаписываться.');
-        fwrite($fileHandler, ' */');
-        fwrite($fileHandler,  PHP_EOL);
-
-    }
-
-    /**
-     * Метод генерирует базовую модель сущности БД
-     * @param string $className
-     * @param string $tableName
-     */
-    private function generatePartialModel(string $className, string $tableName) {
-        $partialModelFileName = getcwd() . DIRECTORY_SEPARATOR .
-            GlobalConst::PartialClassDirectory . DIRECTORY_SEPARATOR .
-            $className . 'Partial.php';
-        if (file_exists($partialModelFileName)) {
-            $fieldsDoc = $this->getPartialModelFieldsDocBlock($className);
-        }
-        $partialHandle = fopen(
-            $partialModelFileName,
-            'wt'
-        );
-        fwrite($partialHandle, '<?php ');
-        fwrite($partialHandle,  PHP_EOL);
-        fwrite($partialHandle,  PHP_EOL);
-        static::PartialModelInstruction($partialHandle);
-        fwrite($partialHandle,  PHP_EOL);
-        fwrite($partialHandle,  PHP_EOL);
-        fwrite($partialHandle, 'namespace ' . self::getRootNameSpace() . '\\Model\\Partial;' . PHP_EOL);
-        fwrite($partialHandle,  PHP_EOL);
-        fwrite($partialHandle, 'use ' . self::getRootNameSpace() . '\\Model\\Model;' . PHP_EOL);
-        fwrite($partialHandle,  PHP_EOL);
-        fwrite($partialHandle, 'abstract class ' . ucfirst($className) . 'Partial extends Model {' . PHP_EOL);
-        fwrite($partialHandle, "\t" . 'const DataTable = \'' . $tableName . '\';' . PHP_EOL);
-
-        $columns = $this->getClassColumns(self::camelCaseToUnderscore($className));
-
-        $columns = (new linq($columns))->toAssoc(function($column){ return DataBase::underscoreToCamelCase($column['column_name']);})->getData();
-
-        $columns = $this->setColumnsForeignKeys($columns, $className);
-
-        $columns = $this->setColumnsExtLinks($columns, $className);
-
-        fwrite($partialHandle, '/** @var array */' . PHP_EOL);
-        fwrite($partialHandle, 'protected static $fieldsInfo = ' . var_export($columns, true) . ';' . PHP_EOL);
-
-        $columns = array_values($columns);
-
-        uasort($columns, function($a, $b){ return $a['column_name'] <=> $b['column_name'];});
-
-        array_walk($columns, function($line) use ($partialHandle, $fieldsDoc){
-            $_column_name = $line['column_name'];
-            $columnName = self::underscoreToCamelCase($_column_name);
-            if (isset($fieldsDoc[$columnName])) {
-//                echo __LINE__;
-//                echo '<br />';
-//                var_dump($fieldsDoc[$columnName]);
-//                echo '<hr />';
-
-                $var = '';
-                $databaseColumnName = $_column_name;
-                switch ($line['data_type']) {
-                    case 'int':
-                    case 'year':
-                    case 'bigint':
-                    case 'mediumint':
-                    case 'smallint':
-                    case 'tinyint':
-                        $var = 'int';
-                        break;
-                    case 'decimal':
-                    case 'dec':
-                    case 'double':
-                    case 'float':
-                    case 'real':
-                        $var = 'float';
-                        break;
-                    case 'char':
-                    case 'varchar':
-                    case 'nvarchar':
-                    case 'text':
-                    case 'tinytext':
-                    case 'mediumtext':
-                        $var = 'string';
-                        break;
-                    case 'tinyint(1)':
-                    case 'bit':
-                        $var = 'bool';
-                        break;
-                    case 'json':
-                        $var = 'array';
-                        break;
-                    case 'datetime':
-                    case 'date':
-                        $var = 'DateTime';
-                        break;
-                }
-
-                fwrite($partialHandle, "\t" . '/**' . PHP_EOL);
-                foreach ($fieldsDoc[$columnName]['doc'] as $line){
-                    if (mb_strpos($line, '@var') === 0) {
-                        $line = '@var ' . $var;
-                    }
-                    else if (mb_strpos($line, '@database_column_name') === 0) {
-                        $line = '@database_column_name ' . $databaseColumnName;
-                    }
-                    fwrite($partialHandle, "\t" . '* ' . $line . PHP_EOL);
-                };
-                fwrite($partialHandle, "\t" . '*/' . PHP_EOL);
-            }
-            else {
-                fwrite($partialHandle, "\t" . '/**' . PHP_EOL);
-                fwrite($partialHandle, "\t" . '* @database_column_name ' . $_column_name . PHP_EOL);
-                fwrite($partialHandle, "\t" . '* @alias' . PHP_EOL);
-                switch ($line['data_type']) {
-                    case 'int':
-                    case 'year':
-                    case 'bigint':
-                    case 'mediumint':
-                    case 'smallint':
-                    case 'tinyint':
-                        fwrite($partialHandle, "\t" . '* @var int');
-                        break;
-                    case 'decimal':
-                    case 'dec':
-                    case 'double':
-                    case 'float':
-                    case 'real':
-                        fwrite($partialHandle, "\t" . '* @var float');
-                        break;
-                    case 'char':
-                    case 'varchar':
-                    case 'nvarchar':
-                    case 'text':
-                    case 'tinytext':
-                    case 'mediumtext':
-                        fwrite($partialHandle, "\t" . '* @var string');
-                        break;
-                    case 'tinyint(1)':
-                    case 'bit':
-                        fwrite($partialHandle, "\t" . '* @var bool');
-                        break;
-                    case 'json':
-                        fwrite($partialHandle, "\t" . '* @var array');
-                        break;
-                    case 'datetime':
-                    case 'date':
-                        fwrite($partialHandle, "\t" . '* @var DateTime');
-                        break;
-                }
-                fwrite($partialHandle, PHP_EOL . "\t*/" . PHP_EOL);
-            }
-
-            fwrite($partialHandle, "\t" . 'public $' . $columnName . ';' . PHP_EOL . PHP_EOL);
-        });
-
-        fwrite($partialHandle, '}' . PHP_EOL);
-        fclose($partialHandle);
-    }
-
-    /**
-     * Метод формирует php-класс для использования в коде проекта
-     * @param string $className
-     */
-    private function generateModel(string $className) {
-        $classFileName = getcwd() . DIRECTORY_SEPARATOR .
-            GlobalConst::ClassDirectory. DIRECTORY_SEPARATOR .
-            $className . '.php';
-        if (!file_exists($classFileName)) {
-            $classFileHandle = fopen($classFileName, 'wt');
-
-            $partialClassRelativePath = DIRECTORY_SEPARATOR . GlobalConst::PartialClassDirectory . DIRECTORY_SEPARATOR .
-                $className . 'Partial.php';
-            fwrite($classFileHandle, '<?php');
-            fwrite($classFileHandle, PHP_EOL);
-            fwrite($classFileHandle, 'namespace ' . self::getRootNameSpace() . '\\Model;');
-            fwrite($classFileHandle, PHP_EOL . PHP_EOL);
-            fwrite($classFileHandle, 'require_once getcwd() . \'/' . $partialClassRelativePath . '\';');
-            fwrite($classFileHandle, PHP_EOL . PHP_EOL);
-            fwrite($classFileHandle, 'use  ' . self::getRootNameSpace() . '\\DataBase;');
-            fwrite($classFileHandle, PHP_EOL . PHP_EOL);
-            fwrite($classFileHandle, 'use  ' . self::getRootNameSpace() . '\\Model\\Partial\\' . ucfirst($className) . 'Partial;');
-            fwrite($classFileHandle, PHP_EOL . PHP_EOL);
-            fwrite($classFileHandle, '/**');
-            fwrite($classFileHandle, PHP_EOL);
-            fwrite($classFileHandle, '* В этом классе реализуются все особенности поведения и строения соответствующего типа');
-            fwrite($classFileHandle, PHP_EOL);
-            fwrite($classFileHandle, '*/');
-            fwrite($classFileHandle, PHP_EOL . PHP_EOL);
-            fwrite($classFileHandle, 'class ' . ucfirst($className) . ' extends ' . ucfirst($className) . 'Partial {');
-            fwrite($classFileHandle, PHP_EOL . PHP_EOL);
-            fwrite($classFileHandle, "\t" . 'public function __construct (array $fields = array()) {');
-            fwrite($classFileHandle, PHP_EOL);
-            fwrite($classFileHandle, "\t\t" . 'parent::__construct($fields, DataBase::camelCaseToUnderscore(__CLASS__));');
-            fwrite($classFileHandle, PHP_EOL);
-            fwrite($classFileHandle, "\t" . '}');
-            fwrite($classFileHandle, PHP_EOL);
-            fwrite($classFileHandle, '}');
-            fwrite($classFileHandle, PHP_EOL);
-            fclose($classFileHandle);
-
-        }
-        else {
-            $classFileHandle = fopen($classFileName, 'r+t');
-            $lines = [];
-            while (!feof($classFileHandle)) {
-                $line = fgets($classFileHandle);
-                if (preg_match('/class\s+' . ucfirst($className) . '/', $line)) {
-                    $lines[] = 'class ' . ucfirst($className) . ' extends ' . ucfirst($className) . 'Partial {' . PHP_EOL;
-                }
-                else {
-                    $lines[] = $line;
-                }
-            }
-            fclose($classFileHandle);
-            file_put_contents($classFileName, $lines);
-        }
-    }
-
-    private function registerModel(string $className) {
-        /*Регистрируем созданный класс*/
-        $classRelativePath = DIRECTORY_SEPARATOR . GlobalConst::ClassDirectory . DIRECTORY_SEPARATOR . $className . '.php';
-        $classRegisterHandle = fopen(getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ClassRegistry, 'r+t');
-        if (strpos(fgets($classRegisterHandle), '<?php') === false) {
-            fwrite($classRegisterHandle, '<?php' . PHP_EOL);
-        }
-        /*Ищем информацию о том, что файл уже зарегистрирован*/
-        $newline = 'require_once getcwd() . \'' . $classRelativePath . '\';';
-        while (trim($line = fgets($classRegisterHandle)) !== $newline) {
-            if(feof($classRegisterHandle)) {
-                fwrite($classRegisterHandle, $newline . PHP_EOL);
-                break;
-            }
-        }
-        fclose($classRegisterHandle);
     }
 
     /**

@@ -3,7 +3,7 @@
     <?php
     foreach ($config as $fieldConfig) {
         ?>
-        <th scope="col">
+        <th scope="col" class="align-top">
             <?= $fieldConfig['alias'] ? $fieldConfig['alias'] : $fieldConfig['key']; ?>
         </th>
         <?php

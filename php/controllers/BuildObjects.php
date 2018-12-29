@@ -14,10 +14,12 @@ use function Astkon\Lib\array_keys_CameCase;
 use function Astkon\Lib\Redirect;
 use Astkon\Model\BuildObject;
 use Astkon\Model\Model;
+use Astkon\Traits\ListView;
 use Astkon\View\View;
 
 class BuildObjectsController extends Controller
 {
+    use ListView;
     /**
      * @param string $action - запрашиваемый метод
      * @param array $context - дополнительный контекст
@@ -33,21 +35,15 @@ class BuildObjectsController extends Controller
 
     public function BuildObjectsListAction($context) {
         $view = new View();
-        $view->listItemOptions = array(
-            array(
-                'action' => '/BuildObjects/Edit',
-                'click' => null,
-                'icon' => '/icon-edit.png',
-                'title' => 'Редактировать'
-            )
-        );
-        $view->modelConfig = BuildObject::getConfigForListView();
-        $view->listItems = array_map(
-            function($row){
-                return array_keys_CameCase($row);
-            },
-            (new DataBase())->build_object->getRows()
-        );
+        $this->ListViewAction($view, BuildObject::class);
+        $view->generate();
+    }
+
+    public function BuildObjectsDictAction($context) {
+        $view = new View();
+//        $pageId = isset($context['id']) ? intval($context['id']) : 0;
+//        $pageSize = 5;
+        $this->DictViewAction($view, BuildObject::class);
         $view->generate();
     }
 
@@ -85,11 +81,11 @@ class BuildObjectsController extends Controller
                 }
             }
             else  {
-                if ($_POST[BuildObject::PKName()] == 0) {
+                if ($_POST[BuildObject::PrimaryColumnName] == 0) {
                     /*Нужно сменить URL на вновь созданный элемент*/
                     list($controller, $action) = self::ThisAction();
                     Redirect(
-                        $controller, $action, $res[DataBase::camelCaseToUnderscore(BuildObject::PKName())]
+                        $controller, $action, $res[DataBase::camelCaseToUnderscore(BuildObject::PrimaryColumnName)]
                     );
                 }
                 else {
@@ -113,6 +109,8 @@ class BuildObjectsController extends Controller
                 getFirstRow('id_build_object = :id_build_object', null, array('id_build_object' => $context['id']))
             );
         }
+        $controllerName = self::ThisAction()[0];
+        $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->BuildObject = $buildObject;
         $view->options = $options;

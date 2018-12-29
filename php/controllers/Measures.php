@@ -14,10 +14,12 @@ use function Astkon\Lib\array_keys_CameCase;
 use function Astkon\Lib\Redirect;
 use Astkon\Model\Measure;
 use Astkon\Model\Model;
+use Astkon\Traits\ListView;
 use Astkon\View\View;
 
 class MeasuresController extends Controller
 {
+    use ListView;
     /**
      * @param string $action - запрашиваемый метод
      * @param array $context - дополнительный контекст
@@ -31,15 +33,7 @@ class MeasuresController extends Controller
         $view = new View();
 //        $pageId = isset($context['id']) ? intval($context['id']) : 0;
 //        $pageSize = 5;
-        $view->listItemOptions = array(
-            array(
-            'action' => '/Measures/Edit',
-            'click' => null,
-            'icon' => '/icon-edit.png',
-            'title' => 'Редактировать'
-            )
-        );
-        $this->configureListView($view);
+        $this->ListViewAction($view, Measure::class);
         $view->generate();
     }
 
@@ -47,30 +41,8 @@ class MeasuresController extends Controller
         $view = new View();
 //        $pageId = isset($context['id']) ? intval($context['id']) : 0;
 //        $pageSize = 5;
-        $view->listItemOptions = array(
-            array(
-                'action' => null,
-                'click' => 'DictionarySelector.setValue(\'' .
-                    $_POST['dialogId'] . '\', [JSON.parse($(this).parents(\'tr:first\').get(0).dataset.item)],' .
-                    htmlspecialchars(json_encode(Measure::ReferenceDisplayedKeys())) . ')',
-                'icon' => '/icon-ok-green.png',
-                'title' => 'Выбрать элемент'
-            )
-        );
-        $view->setHeaderTemplate(null);
-        $view->setFooterTemplate(null);
-        $this->configureListView($view);
+        $this->DictViewAction($view, Measure::class);
         $view->generate();
-    }
-
-    protected function configureListView(View $view) {
-        $view->modelConfig = Measure::getConfigForListView();
-        $view->listItems = array_map(
-            function($row){
-                return array_keys_CameCase($row);
-            },
-            (new DataBase())->measure->getRows()
-        );
     }
 
     public function EditAction($context) {
@@ -107,11 +79,11 @@ class MeasuresController extends Controller
                 }
             }
             else  {
-                if ($_POST[Measure::PKName()] == 0) {
+                if ($_POST[Measure::PrimaryColumnName] == 0) {
                     /*Нужно сменить URL на вновь созданный элемент*/
                     list($controller, $action) = self::ThisAction();
                     Redirect(
-                        $controller, $action, $res[DataBase::camelCaseToUnderscore(Measure::PKName())]
+                        $controller, $action, $res[DataBase::camelCaseToUnderscore(Measure::PrimaryColumnName)]
                     );
                 }
                 else {
@@ -135,6 +107,8 @@ class MeasuresController extends Controller
                 getFirstRow('id_measure = :id_measure', null, array('id_measure' => $context['id']))
             );
         }
+        $controllerName = self::ThisAction()[0];
+        $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->Measure = $measure;
         $view->options = $options;

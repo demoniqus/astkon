@@ -10,14 +10,18 @@ namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
+use Astkon\ErrorCode;
 use function Astkon\Lib\array_keys_CameCase;
 use function Astkon\Lib\Redirect;
 use Astkon\Model\Article;
 use Astkon\Model\Model;
+use Astkon\Model\OperationType;
+use Astkon\Traits\ListView;
 use Astkon\View\View;
 
 class ArticlesController extends Controller
 {
+    use ListView;
     /**
      * @param string $action - запрашиваемый метод
      * @param array $context - дополнительный контекст
@@ -33,25 +37,37 @@ class ArticlesController extends Controller
 
     public function ArticlesListAction($context) {
         $view = new View();
-        $view->listItemOptions = array(
-            array(
-                'action' => '/Articles/Edit',
-                'click' => null,
-                'icon' => '/icon-edit.png',
-                'title' => 'Редактировать'
-            )
-        );
-        $view->modelConfig = Article::getConfigForListView();
+        $this->ListViewAction($view, Article::class);
+        $view->generate();
+    }
 
-        $rows = array_map(
-            function($row){
-                return array_keys_CameCase($row);
-            },
-            (new DataBase())->article->getRows()
-        );
-        Article::decodeForeignKeys($rows);
+    public function ArticlesDictAction($context) {
+        $view = new View();
+        $condition = null;
+        $substitution = null;
+//        $pageId = isset($context['id']) ? intval($context['id']) : 0;
+//        $pageSize = 5;
+        if (isset($_GET['operation'])) {
+            $dataTableName = OperationType::DataTable;
+            $operationType = (new DataBase())->$dataTableName->getFirstRow('operation_name = :operation_name', null, array('operation_name' => $_GET['operation']));
+            if (!$operationType) {
+                $view->trace = 'Запрошена недопустимая операция';
+                $view->error(ErrorCode::PROGRAMMER_ERROR);
+                die();
+            }
+            switch ($operationType['operation_name']) {
+                case 'Income':
+//                    Обозначение архивности нужно для того, чтобы не захламлять справочник артикулов, когда
+//                    остатки по нему нулевые и поступлений не ожидается, по крайней мере некоторое время
+                    $condition = 'is_archive <> 1';
+                    break;
+                default:
+                    $condition = 'balance > 0 && is_archive <> 1';
+                    break;
+            }
 
-        $view->listItems = $rows;
+        }
+        $this->DictViewAction($view, Article::class, $condition, null, $substitution);
         $view->generate();
     }
 
@@ -89,11 +105,11 @@ class ArticlesController extends Controller
                 }
             }
             else  {
-                if ($_POST[Article::PKName()] == 0) {
+                if ($_POST[Article::PrimaryColumnName] == 0) {
                     /*Нужно сменить URL на вновь созданный элемент*/
                     list($controller, $action) = self::ThisAction();
                     Redirect(
-                        $controller, $action, $res[DataBase::camelCaseToUnderscore(Article::PKName())]
+                        $controller, $action, $res[DataBase::camelCaseToUnderscore(Article::PrimaryColumnName)]
                     );
                 }
                 else {
@@ -117,6 +133,8 @@ class ArticlesController extends Controller
                 getFirstRow('id_article = :id_article', null, array('id_article' => $context['id']))
             );
         }
+        $controllerName = self::ThisAction()[0];
+        $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->Article = $article;
         $view->options = $options;
