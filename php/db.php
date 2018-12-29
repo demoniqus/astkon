@@ -68,6 +68,7 @@ class DataBase {
         $pass = GlobalConst::HostPass
     ) {
         $this->connect($host, $dbName, $login, $pass);
+        $this->_execQueryCommand = '_standardExecQueryCommandFunction';
     }
 
     /**
@@ -106,15 +107,21 @@ class DataBase {
     }
 
     /**
+     * Контейнер для запросов транзакции
+     * @var array
+     */
+    private $PDOStatementsQueue = array();
+
+    /**
      * @param string $query       - строка запроса к выполнению
      * @param array $substitution - значения для подстановки в запрос на место placeholder'ов. Ключи в CamelCase
      * @param string $mode        - метод формирования списка значений
-     * @return array|false
+     * @return array|false        - возвращает false в случае возникновения ошибок. Информацию об ошибке можно получить через $db->QueryInfo
      */
     public function query(
-        $query,
+        string $query,
         $substitution = array(),
-        $mode = 'assoc'
+        string $mode = 'assoc'
     ) {
         $data = array();
         if ($query) {
@@ -125,74 +132,141 @@ class DataBase {
             if($queryType === self::QueryTypeDenied) {
                 $this->lastQueryState = array(
                     '@error' => true,
-                    'errorType' => 'PHP',
-                    'errorCode' => 0,
-                    'errorMessage' => 'Запрещенная команда',
-                );;
+                    'errors' => array(
+                        array(
+                            'errorType' => 'PHP',
+                            'errorCode' => 0,
+                            'errorMessage' => 'Запрещенная команда',
+                        )
+                    ),
+                );
                 return false;
             }
-            $result = $this->_execQueryCommand($query, $queryType, $substitution);
-            if (is_array($result)) {
-                $this->lastQueryState = $result;
-                return false;
-            }
-            if ($queryType === self::QueryTypeSelect) {
-                while ($row = $result->fetch($mode === 'assoc' ? PDO::FETCH_ASSOC : PDO::FETCH_NUM)) {
-                    $data[] = $row;
+            else {
+                $result = $this->_prepareQueryCommand($query, $queryType, $substitution);
+                if (is_array($result)) {
+                    if ($this->PDO->inTransaction()) {
+                        $this->PDO->rollback();
+                    }
+                    $this->lastQueryState = $result;
+                    return false;
                 }
+
+                $data = self::_fetchResult($result, $queryType, $mode);
             }
         }
         return $data;
     }
 
-    public function QueryState() {
-        return $this->lastQueryState === 0;
-    }
-
-    public function QueryInfo() {
-        return is_array($this->lastQueryState) ? $this->lastQueryState : array();
-    }
-
-    public function LastInsertId() {
-        return $this->lastInsertId;
-    }
-
-    protected static function getQueryType(string $query) : int {
-        $queryType = strtolower(mb_substr($query, 0, mb_strpos($query, ' ')));
-        switch ($queryType) {
-            case 'select':
-                return self::QueryTypeSelect;
-            case 'insert':
-                return self::QueryTypeInsert;
-            case 'update':
-                return self::QueryTypeUpdate;
-            case 'delete':
-                return self::QueryTypeDelete;
-            default:
-                return self::QueryTypeDenied;
-
+    /**
+     * @param null|PDOStatement$result
+     * @param int $queryType
+     * @param string $mode
+     * @return array
+     */
+    protected static function _fetchResult($result, int $queryType, string $mode) : array {
+        $data = [];
+        if ($queryType === self::QueryTypeSelect && $result) {
+            while ($row = $result->fetch($mode === 'assoc' ? PDO::FETCH_ASSOC : PDO::FETCH_NUM)) {
+                $data[] = $row;
+            }
         }
-    }
-
-    public function setPDOAttribute(int $attribute, mixed $value) {
-        $this->PDO->setAttribute($attribute, $value);
+        return $data;
     }
 
     /**
-     * @param array $values - значения для подстановки. Ключи в CamelCase
-     * @param int $queryType
-     * @param string $query
-     * @return bool|PDOStatement|array
+     * Метод начинает транзакцию.
+     * Все запросы для транзакции передаются через $db->query().
+     * При этом в случае успеха каждый $db->query() вернет пустой массив, в случае ошибки вернет false
      */
-    protected function _execQueryCommand($query, int $queryType, $values = null) {
+    public function beginTransaction() {
+        $this->PDOStatementsQueue = array();
+        $this->_execQueryCommand = '_transactionExecQueryCommandFunction';
+    }
+
+    /**
+     * Метод запускает фиксацию транзакции.
+     * Если последний запрос в транзакции был SELECT, метод вернет его результат
+     * @param string $mode
+     * @return array
+     */
+    public function commit(string $mode = 'assoc') {
+        /** @var PDOStatement $stmt */
+        $stmt = null;
+        $substitution = null;
+        $queryType = null;
+        $this->lastQueryState = 0;
+        try {
+            $this->PDO->beginTransaction();
+            foreach ($this->PDOStatementsQueue as $statementData) {
+                $queryType = $statementData['queryType'];
+                $substitution = $statementData['substitution'];
+                $stmt = $statementData['statement'];
+                $stmt->execute();
+            }
+            $this->PDO->commit();
+        }
+        catch (\PDOException $PDOException) {
+            $errInfo = array(
+                '@error' => true,
+                'errors' => array(
+                    array(
+                        'errorType' => 'PDO',
+                        'errorCode' => $PDOException->getCode(),
+                        'errorMessage' => $PDOException->getMessage(),
+                        'errorInfo' => $PDOException->errorInfo
+                    ),
+                ),
+            );
+            try {
+                if ($this->PDO->inTransaction()) {
+                    $this->PDO->rollback();
+                }
+            }
+            catch (\PDOException $PDOExceptionRollback) {
+                $errInfo['errors'][] =  array(
+                    'errorType' => 'PDO',
+                    'errorCode' => $PDOExceptionRollback->getCode(),
+                    'errorMessage' => $PDOExceptionRollback->getMessage(),
+                );
+            }
+
+            $errInfo = self::errorMessageParser($errInfo, array_keys($substitution));
+
+            $this->lastQueryState = $errInfo;
+            return false;
+        }
+
+        $result = self::_fetchResult($stmt, $queryType, $mode);
+        $this->setDefConfiguration();
+        return $result;
+
+    }
+
+    public function rollback() {
+        if ($this->PDO->inTransaction()) {
+            $this->PDO->rollback();
+        }
+        $this->setDefConfiguration();
+    }
+
+    /**
+     * Метод возвращает экземпляр класса к работе без транзакций
+     */
+    protected function setDefConfiguration() {
+        $this->_execQueryCommand = '_standardExecQueryCommandFunction';
+        $this->PDOStatementsQueue = [];
+    }
+
+    protected function _execQueryCommandTransaction($query, int $queryType, $substitution = null) {
         $query = trim($query);
 
 
-        /** @var \PDOStatement $stmt */
+        /** @var PDOStatement $stmt */
         try {
             $stmt = $this->PDO->prepare($query);
         }
-        catch (\PDOException $PDOException) {
+        catch (PDOException $PDOException) {
             switch ($PDOException->getCode()) {
                 case '42S22':
                     $view = new View();
@@ -221,9 +295,9 @@ class DataBase {
             );
         }
         // Альтернатива PDO - https://habr.com/post/141127/
-        if (is_array($values)) {
+        if (is_array($substitution)) {
             try {
-                foreach ($values as $k => $v) {
+                foreach ($substitution as $k => $v) {
                     $paramType = false;
                     if (is_int($v)) {
                         $paramType = PDO::PARAM_INT;
@@ -295,7 +369,7 @@ class DataBase {
                 'errorInfo' => $PDOException->errorInfo
             );
 
-            $errInfo = self::errorMessageParser($errInfo, array_keys($values));
+            $errInfo = self::errorMessageParser($errInfo, array_keys($substitution));
 
             return $errInfo;
         }
@@ -311,101 +385,367 @@ class DataBase {
     }
 
     /**
+     * Имя функции для работы с подготовленным выражением PDO - либо стандартная функция, либо функция для накопления запросов
+     * @var string|null
+     */
+    protected $_execQueryCommand = null;
+
+    /**
+     * Cтандартная функция выполнения одного запроса вне транзакций
+     * @param PDOStatement $stmt
+     * @param int $queryType
+     * @param array|null $substitution
+     * @return array|PDOStatement
+     */
+    protected function _standardExecQueryCommandFunction (PDOStatement $stmt, int $queryType, $substitution){
+        try {
+
+            if ($queryType === self::QueryTypeInsert) {
+                $this->PDO->beginTransaction();
+                $stmt->execute();
+                $this->lastInsertId = $this->PDO->lastInsertId();
+                $this->PDO->commit();
+            }
+            else {
+                $stmt->execute();
+            }
+        }
+        catch (\PDOException $PDOException) {
+            $errInfo = array(
+                '@error' => true,
+
+                'errors' => array(
+                    array(
+                        'errorType' => 'PDO',
+                        'errorCode' => $PDOException->getCode(),
+                        'errorMessage' => $PDOException->getMessage(),
+                        'errorInfo' => $PDOException->errorInfo
+                    ),
+                ),
+            );
+            try {
+                if ($this->PDO->inTransaction()) {
+                    $this->PDO->rollback();
+                }
+            }
+            catch (\PDOException $PDOExceptionRollback) {
+                $errInfo['errors'][] = array(
+                    'errorType' => 'PDO',
+                    'errorCode' => $PDOExceptionRollback->getCode(),
+                    'errorMessage' => $PDOExceptionRollback->getMessage(),
+                );
+            }
+
+            $errInfo = self::errorMessageParser($errInfo, array_keys($substitution));
+
+            return $errInfo;
+        }
+        catch(\Exception $exception) {
+            return array(
+                '@error' => true,
+                'errorType' => 'PHP',
+                'errorCode' => $exception->getCode(),
+                'errorMessage' => $exception->getMessage(),
+            );
+        }
+        return $stmt;
+    }
+
+    /**
+     * Метод накапливает запросы для транзакции
+     * @param PDOStatement $stmt
+     * @param int $queryType
+     * @param null|array $substitution
+     * @return null
+     */
+    protected function _transactionExecQueryCommandFunction (PDOStatement $stmt, int $queryType, $substitution) {
+        $this->PDOStatementsQueue[] = array(
+            'statement' => $stmt,
+            'queryType' => $queryType,
+            'substitution' => $substitution
+        );
+        return null;
+    }
+
+
+
+
+    /**
+     * @param array|null $substitution - значения для подстановки. Ключи в CamelCase
+     * @param int $queryType
+     * @param string $query
+     * @return bool|PDOStatement|array
+     */
+    protected function _prepareQueryCommand($query, int $queryType, $substitution = null) {
+        $query = trim($query);
+        /** @var \PDOStatement $stmt */
+        try {
+            $stmt = $this->PDO->prepare($query);
+        }
+        catch (PDOException $PDOException) {
+            switch ($PDOException->getCode()) {
+                case '42S22':
+                    if ($this->PDO->inTransaction()) {
+                        $this->PDO->rollback();
+                    }
+                    $view = new View();
+                    $view->trace = array(
+                        'errorCode' => $PDOException->getCode(),
+                        'errorMessage' => $PDOException->getMessage(),
+                        'errorInfo' => $PDOException->errorInfo,
+                    );
+                    $view->error(ErrorCode::PROGRAMMER_ERROR);
+                    die();
+                default:
+                    return array(
+                        '@error' => true,
+                        'errors' => array(
+                            array(
+                                'errorType' => 'PDO',
+                                'errorCode' => $PDOException->getCode(),
+                                'errorMessage' => $PDOException->getMessage(),
+                            ),
+                        ),
+                    );
+            }
+        }
+        catch (\Exception $exception) {
+            return array(
+                '@error' => true,
+                'errors' => array(
+                    array(
+                        'errorType' => 'PHP',
+                        'errorCode' => $exception->getCode(),
+                        'errorMessage' => $exception->getMessage(),
+                    ),
+                ),
+            );
+        }
+        return $this->_bindParamsQueryCommand($stmt, $queryType, $substitution);
+    }
+
+    /**
+     * @param PDOStatement $stmt
+     * @param int $queryType
+     * @param null|array $substitution
+     * @return array
+     */
+    protected function _bindParamsQueryCommand(PDOStatement $stmt, int $queryType, $substitution = null) {
+        // Альтернатива PDO - https://habr.com/post/141127/
+        if (is_array($substitution)) {
+            try {
+                foreach ($substitution as $k => $v) {
+                    $paramType = false;
+                    if (is_int($v)) {
+                        $paramType = PDO::PARAM_INT;
+                    }
+                    else if (is_bool($v)) {
+                        $paramType = PDO::PARAM_BOOL;
+                    }
+                    else if (is_null($v)) {
+                        $paramType = PDO::PARAM_NULL;
+                    }
+                    else if(is_array($v)) {
+                        $paramType = PDO::PARAM_STR;
+                        $v = json_encode($v);
+                    }
+                    else if (is_string($v)) {
+                        $paramType = PDO::PARAM_STR;
+                    }
+                    if ($paramType !== false) {
+                        (function($v) use ($stmt, $k, $paramType) {
+                            $stmt->bindParam(':' . $k, $v, $paramType);
+
+                        })($v);
+                    }
+                }
+            } catch (\PDOException $PDOException) {
+                return array(
+                    '@error' => true,
+                    'errors' => array(
+                        array(
+                            'errorType' => 'PDO',
+                            'errorCode' => $PDOException->getCode(),
+                            'errorMessage' => $PDOException->getMessage(),
+                        ),
+                    ),
+                );
+            }
+        }
+        $nextCommand =$this->_execQueryCommand;
+        return $this->$nextCommand($stmt, $queryType, $substitution);
+    }
+
+    /**
+     * Метод возвращает статус последнего запроса
+     * true - запрос выполнен без ошибок
+     * false - при выполнении были обнаружены ошибки
+     * @return bool
+     */
+    public function QueryState() {
+        return $this->lastQueryState === 0;
+    }
+
+    /**
+     * Метод возвращает информацию о результатах последнего запроса
+     * 0 - если запрос успешен
+     * array ( ... ) - в случае ошибок массив с информацией об ошибках
+     * @return array|int
+     */
+    public function QueryInfo() {
+        return is_array($this->lastQueryState) ? $this->lastQueryState : array();
+    }
+
+    public function LastInsertId() {
+        return $this->lastInsertId;
+    }
+
+    /**
+     * Пока позволены только 4 типа запросов, не влияющих на структуру БД
+     * @param string $query
+     * @return int
+     */
+    protected static function getQueryType(string $query) : int {
+        $queryType = strtolower(mb_substr($query, 0, mb_strpos($query, ' ')));
+        switch ($queryType) {
+            case 'select':
+                return self::QueryTypeSelect;
+            case 'insert':
+                return self::QueryTypeInsert;
+            case 'update':
+                return self::QueryTypeUpdate;
+            case 'delete':
+                return self::QueryTypeDelete;
+            default:
+                return self::QueryTypeDenied;
+
+        }
+    }
+
+    public function setPDOAttribute(int $attribute, mixed $value) {
+        $this->PDO->setAttribute($attribute, $value);
+    }
+
+    /**
      * Метод обрабатывает ошибки, возникшие при работе с PDO (подготовкой и отправкой запроса)
-     * @param array $errInfo
+     * @param array $errorInfo
      * @param array $fieldNames - наименования полей в CamelCase
      * @return array
      */
-    protected static function errorMessageParser(array $errInfo, array $fieldNames) {
-        $expectedErrorColumn = [];
-        switch ($errInfo['errorCode']) {
-            case 'HY093':
-                $view = new View();
-                $view->trace = array(
-                    'errorCode' => $errInfo['errorCode'],
-                    'errorMessage' => $errInfo['errorMessage'],
-                    'errorInfo' => $errInfo['errorInfo'],
-                    'class' => __CLASS__,
-                    'line' => __LINE__,
-                );
-                $view->error(ErrorCode::PROGRAMMER_ERROR);
-                die();
-            case 'HY000':
-                if ($errInfo['errorMessage']) {
-
-                    /*
-                     * Попробуем получить колонку из сообщения об ошибке
-                    */
-
-                    foreach ($fieldNames as $fieldName) {
-                        $_field_name = self::camelCaseToUnderscore($fieldName);
-                        if (
-                            mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
-                            mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
-                        ) {
-                            $expectedErrorColumn[] = $fieldName;
-                        }
-                    }
-                }
-                if (count($expectedErrorColumn) > 0) {
-                    $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
-                    $errInfo['err_code_explain'] = 'Недопустимое значение';
-                }
-                break;
-            case '23000':
-                //1048 - not null ; 1062 - unique
-                $keySuffix = '';
-                $keyPrefix = '';
-                $errCodeExplain = 'Ошибка при сохранении значения';
-                if ($errInfo['errorMessage']) {
-                    $errMessage = strtolower($errInfo['errorMessage']);
+    protected static function errorMessageParser(array $errorInfo, array $fieldNames) {
+        $programmerErrorProcessor = function(array $errInfo) use ($errorInfo) {
+            $backtrace = (new linq(debug_backtrace(2, 6)))
+                ->select(function($item){
+                    unset($item['file']);
+                    return $item;
+                })
+                ->getData();
+            $view = new View();
+            $view->trace = array(
+                'errorCode' => $errInfo['errorCode'],
+                'errorMessage' => $errInfo['errorMessage'],
+                'errorInfo' => $errInfo['errorInfo'],
+                'class' => __CLASS__,
+                'line' => __LINE__,
+                'backtrace' => $backtrace,
+                'errors' => $errorInfo
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        };
+        foreach ($errorInfo['errors'] as &$errInfo) {
+            $expectedErrorColumn = [];
+            switch ($errInfo['errorCode']) {
+                case '42S02':
                     if(is_array($errInfo['errorInfo']) && count($errInfo['errorInfo']) > 1) {
                         switch ($errInfo['errorInfo'][1]) {
-                            case 1062:
-                                $keySuffix = '_unique';
-                                $errCodeExplain = 'Значение поля должно быть уникальным';
-                                break;
-                            case 1048:
-                                $errCodeExplain = 'Значение поля не может быть пустым';
-                                break;
-                            case 1452:
-                                $keySuffix = $keyPrefix = '`';
-                                $errCodeExplain = 'Необходимо выбрать значение из справочника';
+                            case 1146:
+                                $programmerErrorProcessor($errInfo);
                                 break;
                         }
                     }
-                }
-                foreach ($fieldNames as $fieldName) {
-                    $_field_name = self::camelCaseToUnderscore($fieldName);
-                    if (mb_strpos($errMessage, $keyPrefix . $_field_name . $keySuffix) !== false) {
-                        $expectedErrorColumn[] = $fieldName;
+                    break;
+                case 'HY093':
+                    $programmerErrorProcessor($errInfo);
+                    die();
+                case 'HY000':
+                    if ($errInfo['errorMessage']) {
+
+                        /*
+                         * Попробуем получить колонку из сообщения об ошибке
+                        */
+
+                        foreach ($fieldNames as $fieldName) {
+                            $_field_name = self::camelCaseToUnderscore($fieldName);
+                            if (
+                                mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
+                                mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
+                            ) {
+                                $expectedErrorColumn[] = $fieldName;
+                            }
+                        }
                     }
-                }
-                if (count($expectedErrorColumn) > 0) {
-                    $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
-                    $errInfo['err_code_explain'] = $errCodeExplain;
-                }
-                break;
-            default:
-                if ($errInfo['errorMessage']) {
+                    if (count($expectedErrorColumn) > 0) {
+                        $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
+                        $errInfo['err_code_explain'] = 'Недопустимое значение';
+                    }
+                    break;
+                case '23000':
+                    //1048 - not null ; 1062 - unique
+                    $keySuffix = '';
+                    $keyPrefix = '';
+                    $errMessage = '';
+                    $errCodeExplain = 'Ошибка при сохранении значения';
+                    if ($errInfo['errorMessage']) {
+                        $errMessage = strtolower($errInfo['errorMessage']);
+                        if(is_array($errInfo['errorInfo']) && count($errInfo['errorInfo']) > 1) {
+                            switch ($errInfo['errorInfo'][1]) {
+                                case 1062:
+                                    $keySuffix = '_unique';
+                                    $errCodeExplain = 'Значение поля должно быть уникальным';
+                                    break;
+                                case 1048:
+                                    $errCodeExplain = 'Значение поля не может быть пустым';
+                                    break;
+                                case 1452:
+                                    $keySuffix = $keyPrefix = '`';
+                                    $errCodeExplain = 'Необходимо выбрать значение из справочника';
+                                    break;
+                            }
+                        }
+                    }
                     foreach ($fieldNames as $fieldName) {
                         $_field_name = self::camelCaseToUnderscore($fieldName);
-                        if (
-                            mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
-                            mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
-                        ) {
+                        if (mb_strpos($errMessage, $keyPrefix . $_field_name . $keySuffix) !== false) {
                             $expectedErrorColumn[] = $fieldName;
                         }
                     }
-                }
-                if (count($expectedErrorColumn) > 0) {
-                    $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
-                    $errInfo['err_code_explain'] = 'Непредвиденная ошибка';
-                }
-                break;
+                    if (count($expectedErrorColumn) > 0) {
+                        $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
+                        $errInfo['err_code_explain'] = $errCodeExplain;
+                    }
+                    break;
+                default:
+                    if ($errInfo['errorMessage']) {
+                        foreach ($fieldNames as $fieldName) {
+                            $_field_name = self::camelCaseToUnderscore($fieldName);
+                            if (
+                                mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
+                                mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
+                            ) {
+                                $expectedErrorColumn[] = $fieldName;
+                            }
+                        }
+                    }
+                    if (count($expectedErrorColumn) > 0) {
+                        $errInfo['expected_error_column_name'] = implode(',', $expectedErrorColumn);
+                        $errInfo['err_code_explain'] = 'Непредвиденная ошибка';
+                    }
+                    break;
+            }
         }
 
-        return $errInfo;
+        return $errorInfo;
 
     }
 
@@ -519,24 +859,24 @@ class DataBase {
     public function Delete(
             array $entity
             ) {
-        if (!$this->currentObject) {
-            throw new Exception('Не установлен объект для удаления из БД');
-        }
-        if ($entity === null || gettype($entity) !== gettype($entity) || count($entity) < 1) {
-            throw new Exception('Нет информации для удаления из БД');
-        }
-        /*Проверим наличие первичного ключа в таблице - без него удаление этим методом невозможно*/
-        if (($pk = (new linq($this->currentObject['fields'], 'assoc'))
-        ->first(function($column){ return $column['_primary_key'];})) === null) {
-            throw new Exception('Данная таблица не имеет первичного ключа. Поэтому удаление данным методом невозможно');
-        }
-        if (!array_key_exists($pk['column_name'], $entity)) {
-            throw new Exception('Полученный объект не содержит информации о первичном ключе. Удаление невозможно.');
-        }
-        /*Создаем запрос для удаления записи*/
-        $query = 'DELETE FROM ' . $this->currentObject['name'] . ' WHERE  ' . $pk['column_name'] . '=' . $entity[$pk['column_name']] . ' LIMIT 1';
-        $smtp = $this->_execQueryCommand($query, self::QueryTypeDelete);
-        return $smtp->errorCode();
+//        if (!$this->currentObject) {
+//            throw new Exception('Не установлен объект для удаления из БД');
+//        }
+//        if ($entity === null || gettype($entity) !== gettype($entity) || count($entity) < 1) {
+//            throw new Exception('Нет информации для удаления из БД');
+//        }
+//        /*Проверим наличие первичного ключа в таблице - без него удаление этим методом невозможно*/
+//        if (($pk = (new linq($this->currentObject['fields'], 'assoc'))
+//        ->first(function($column){ return $column['_primary_key'];})) === null) {
+//            throw new Exception('Данная таблица не имеет первичного ключа. Поэтому удаление данным методом невозможно');
+//        }
+//        if (!array_key_exists($pk['column_name'], $entity)) {
+//            throw new Exception('Полученный объект не содержит информации о первичном ключе. Удаление невозможно.');
+//        }
+//        /*Создаем запрос для удаления записи*/
+//        $query = 'DELETE FROM ' . $this->currentObject['name'] . ' WHERE  ' . $pk['column_name'] . '=' . $entity[$pk['column_name']] . ' LIMIT 1';
+//        $smtp = $this->_execQueryCommand($query, self::QueryTypeDelete);
+//        return $smtp->errorCode();
     }
 
     /**

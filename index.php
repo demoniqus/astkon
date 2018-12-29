@@ -21,7 +21,7 @@ if (!isset($_SESSION[$key]) || !isset($GLOBALS[$key]) || !$_SESSION[$key] || !$G
 
 
 /**
- * Функция дополняет части запрошенного пути соответствующими ими обозначениями типа Controller, Action
+ * Функция дополняет части запрошенного пути соответствующими им обозначениями типа Controller, Action
  * @param $pathPart
  * @param $type
  * @return string
