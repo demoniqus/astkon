@@ -11,7 +11,7 @@ namespace Astkon\Controllers;
 use Astkon\Controller\Controller;
 use Astkon\View\View;
 
-class SettingsController extends Controller
+class DictionariesController extends Controller
 {
     /**
      * @param string $action - запрашиваемый метод

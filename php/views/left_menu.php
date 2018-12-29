@@ -18,7 +18,7 @@
                     'Icon' => '/operations-icon.png',
                 ),
                 array(
-                    'Action' => '/Settings/Index',
+                    'Action' => '/Dictionaries/Index',
                     'Caption' => 'Справочники',
                     'Icon' => '/refbook.png',
                 ),
