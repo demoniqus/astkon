@@ -647,7 +647,8 @@ abstract class Model  {
                     'key' => $prop->name,
                     'alias' => self::getFieldAlias($prop->name),
                     'primary_key' => static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal,
-                    'foreign_key' => isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null
+                    'foreign_key' => isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null,
+                    'data_type' => static::$fieldsInfo[$prop->name]['data_type'],
                 );
             },
             array_filter(
