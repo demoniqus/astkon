@@ -10,4 +10,5 @@ require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Measures
 require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Operations.php';
 require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'People.php';
 require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Dictionaries.php';
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'UserGroups.php';
 require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Users.php';
