@@ -11,6 +11,6 @@
         <div class="alert alert-info text-center">
             Редактирование единицы измерения
         </div>
-        <?= \Astkon\Model\Measure::EditForm($Measure, $options); ?>
+        <?= $Model::EditForm($Entity, $options); ?>
     </div>
 </div>

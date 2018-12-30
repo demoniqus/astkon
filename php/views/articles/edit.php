@@ -11,7 +11,7 @@
         <div class="alert alert-info text-center">
             Редактирование артикула
         </div>
-        <?= \Astkon\Model\Article::EditForm($Article, $options); ?>
+        <?= $Model::EditForm($Entity, $options); ?>
     </div>
 </div>
 

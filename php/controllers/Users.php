@@ -31,7 +31,7 @@ class UsersController extends Controller
 
     public function UsersListAction($context) {
         $view = new View();
-        $this->ListViewAction($view, User::class);
+        $this->ListViewAction($view, User::class, __CLASS__);
         $view->generate();
     }
 

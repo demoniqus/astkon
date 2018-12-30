@@ -10,17 +10,13 @@ namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
-use Astkon\ErrorCode;
 use function Astkon\Lib\array_keys_CameCase;
-use function Astkon\Lib\Redirect;
-use Astkon\Model\Article;
-use Astkon\Model\Model;
-use Astkon\Model\OperationType;
+use Astkon\Model\ArticleCategory;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
 
-class ArticlesController extends Controller
+class ArticleCategoriesController extends Controller
 {
     use ListView;
     use EditAction;
@@ -37,61 +33,45 @@ class ArticlesController extends Controller
         (new View())->generate();
     }
 
-    public function ArticlesListAction($context) {
+    public function ArticleCategoriesListAction($context) {
         $view = new View();
-        $this->ListViewAction($view, Article::class);
+        $this->ListViewAction($view, ArticleCategory::class, __CLASS__);
         $view->generate();
     }
 
-    public function ArticlesDictAction($context) {
+    public function ArticleCategoriesDictAction($context) {
         $view = new View();
-        $condition = null;
-        $substitution = null;
-//        $pageId = isset($context['id']) ? intval($context['id']) : 0;
-//        $pageSize = 5;
-        if (isset($_GET['operation'])) {
-            $dataTableName = OperationType::DataTable;
-            $operationType = (new DataBase())->$dataTableName->getFirstRow('operation_name = :operation_name', null, array('operation_name' => $_GET['operation']));
-            if (!$operationType) {
-                $view->trace = 'Запрошена недопустимая операция';
-                $view->error(ErrorCode::PROGRAMMER_ERROR);
-                die();
-            }
-            switch ($operationType['operation_name']) {
-                case 'Income':
-//                    Обозначение архивности нужно для того, чтобы не захламлять справочник артикулов, когда
-//                    остатки по нему нулевые и поступлений не ожидается, по крайней мере некоторое время
-                    $condition = 'is_archive <> 1';
-                    break;
-                default:
-                    $condition = 'balance > 0 && is_archive <> 1';
-                    break;
-            }
-
-        }
-        $this->DictViewAction($view, Article::class, $condition, null, $substitution);
+        $this->DictViewAction($view, ArticleCategory::class);
         $view->generate();
     }
 
     public function EditAction($context) {
         $options = array();
-        $article = array();
+        $entity = array();
+        $model = ArticleCategory::class;
         if (array_key_exists('submit', $_POST)) {
-            $this->processPostData($article, $option, Article::class, $context);
+            $this->processPostData($entity, $options, $model, $context);
 
         }
         else {
-            $article = array_keys_CameCase(
+            $dataTable = $model::DataTable;
+            $entity = array_keys_CameCase(
                 (new DataBase())->
-                article->
-                getFirstRow('id_article = :id_article', null, array('id_article' => $context['id']))
+                    $dataTable->
+                    getFirstRow(
+                        $model::PrimaryColumnKey . ' = :' . $model::PrimaryColumnKey,
+                        null, array(
+                            $model::PrimaryColumnKey => $context['id']
+                        )
+                )
             );
         }
         $controllerName = self::ThisAction()[0];
         $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
-        $view->Article = $article;
+        $view->Entity = $entity;
         $view->options = $options;
+        $view->Model = $model;
         $view->generate();
     }
 }

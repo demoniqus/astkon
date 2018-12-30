@@ -11,15 +11,15 @@ namespace Astkon\Controllers;
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
 use function Astkon\Lib\array_keys_CameCase;
-use function Astkon\Lib\Redirect;
 use Astkon\Model\BuildObject;
-use Astkon\Model\Model;
+use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
 
 class BuildObjectsController extends Controller
 {
     use ListView;
+    use EditAction;
     /**
      * @param string $action - запрашиваемый метод
      * @param array $context - дополнительный контекст
@@ -35,7 +35,7 @@ class BuildObjectsController extends Controller
 
     public function BuildObjectsListAction($context) {
         $view = new View();
-        $this->ListViewAction($view, BuildObject::class);
+        $this->ListViewAction($view, BuildObject::class, __CLASS__);
         $view->generate();
     }
 
@@ -49,71 +49,31 @@ class BuildObjectsController extends Controller
 
     public function EditAction($context) {
         $options = array();
-        $buildObject = array();
+        $entity = array();
+        $model = BuildObject::class;
         if (array_key_exists('submit', $_POST)) {
-            $inputValues = array_filter($_POST, function($v, $k){ return $k !== 'submit'; }, ARRAY_FILTER_USE_BOTH);
-            $res = BuildObject::SaveInstance($inputValues);
-            if (isset($res['@error'])) {
-                //Заполняем все значения обратно
-                $buildObject = $inputValues;
-                //Выделяем поля, в которых возникла ошибка, либо выводим общее сообщение об ошибке, если не удалось определить конктретное поле
-                $options['validation'] = array(
-                    'state' => Model::ValidStateError,
-                    'message' => 'Ошибка при сохранении данных'
-                );
-                if (isset($res['expected_error_column_name'])) {
-                    $message = isset($res['err_code_explain']) ? $res['err_code_explain'] : 'Недопустимое значение';
-                    $options['validation']['fields'] =  array();
-                    $errorColumns = explode(',', $res['expected_error_column_name']);
-                    foreach ($errorColumns as $errorColumn) {
-                        $options['validation']['fields'][$errorColumn] = array(
-                            'state' => Model::ValidStateError,
-                            'message' => $message
-                        );
-                    }
-                    foreach (array_keys($buildObject) as $fieldName) {
-                        if (!array_key_exists($fieldName, $options['validation']['fields'])) {
-                            $options['validation']['fields'][$fieldName] = array(
-                                'state' => Model::ValidStateOK
-                            );
-                        }
-                    }
-                }
-            }
-            else  {
-                if ($_POST[BuildObject::PrimaryColumnName] == 0) {
-                    /*Нужно сменить URL на вновь созданный элемент*/
-                    list($controller, $action) = self::ThisAction();
-                    Redirect(
-                        $controller, $action, $res[DataBase::camelCaseToUnderscore(BuildObject::PrimaryColumnName)]
-                    );
-                }
-                else {
-                    $options['validation'] = array(
-                        'state' => Model::ValidStateOK,
-                        'message' => 'Данные успешно сохранены'
-                    );
-                    $buildObject = array_keys_CameCase(
-                        (new DataBase())->
-                        build_object->
-                        getFirstRow('id_build_object = :id_build_object', null, array('id_build_object' => $context['id']))
-                    );
-                }
-            }
+            $this->processPostData($entity, $options, $model, $context);
 
         }
         else {
-            $buildObject = array_keys_CameCase(
+            $dataTable = $model::DataTable;
+            $entity = array_keys_CameCase(
                 (new DataBase())->
-                build_object->
-                getFirstRow('id_build_object = :id_build_object', null, array('id_build_object' => $context['id']))
+                $dataTable->
+                getFirstRow(
+                    $model::PrimaryColumnKey . ' = :' . $model::PrimaryColumnKey,
+                    null, array(
+                        $model::PrimaryColumnKey => $context['id']
+                    )
+                )
             );
         }
         $controllerName = self::ThisAction()[0];
         $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
-        $view->BuildObject = $buildObject;
+        $view->Entity = $entity;
         $view->options = $options;
+        $view->Model = $model;
         $view->generate();
     }
 }

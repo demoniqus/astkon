@@ -9,9 +9,9 @@
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php'; ?>
     <div class="col-lg text-left">
         <div class="alert alert-info text-center">
-            Редактирование артикула
+            Редактирование группы пользователей
         </div>
-        <?= \Astkon\Model\Article::EditForm($Article, $options); ?>
+        <?= $Model::EditForm($Entity, $options); ?>
     </div>
 </div>
 

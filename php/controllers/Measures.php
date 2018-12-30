@@ -11,15 +11,15 @@ namespace Astkon\Controllers;
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
 use function Astkon\Lib\array_keys_CameCase;
-use function Astkon\Lib\Redirect;
 use Astkon\Model\Measure;
-use Astkon\Model\Model;
+use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
 
 class MeasuresController extends Controller
 {
     use ListView;
+    use EditAction;
     /**
      * @param string $action - запрашиваемый метод
      * @param array $context - дополнительный контекст
@@ -33,7 +33,7 @@ class MeasuresController extends Controller
         $view = new View();
 //        $pageId = isset($context['id']) ? intval($context['id']) : 0;
 //        $pageSize = 5;
-        $this->ListViewAction($view, Measure::class);
+        $this->ListViewAction($view, Measure::class, __CLASS__);
         $view->generate();
     }
 
@@ -47,71 +47,31 @@ class MeasuresController extends Controller
 
     public function EditAction($context) {
         $options = array();
-        $measure = array();
+        $entity = array();
+        $model = Measure::class;
         if (array_key_exists('submit', $_POST)) {
-            $inputValues = array_filter($_POST, function($v, $k){ return $k !== 'submit'; }, ARRAY_FILTER_USE_BOTH);
-            $res = Measure::SaveInstance($inputValues);
-            if (isset($res['@error'])) {
-                //Заполняем все значения обратно
-                $measure = $inputValues;
-                //Выделяем поля, в которых возникла ошибка, либо выводим общее сообщение об ошибке, если не удалось определить конктретное поле
-                $options['validation'] = array(
-                    'state' => Model::ValidStateError,
-                    'message' => 'Ошибка при сохранении данных'
-                );
-                if (isset($res['expected_error_column_name'])) {
-                    $message = isset($res['err_code_explain']) ? $res['err_code_explain'] : 'Недопустимое значение';
-                    $options['validation']['fields'] =  array();
-                    $errorColumns = explode(',', $res['expected_error_column_name']);
-                    foreach ($errorColumns as $errorColumn) {
-                        $options['validation']['fields'][$errorColumn] = array(
-                            'state' => Model::ValidStateError,
-                            'message' => $message
-                        );
-                    }
-                    foreach (array_keys($measure) as $fieldName) {
-                        if (!array_key_exists($fieldName, $options['validation']['fields'])) {
-                            $options['validation']['fields'][$fieldName] = array(
-                                'state' => Model::ValidStateOK
-                            );
-                        }
-                    }
-                }
-            }
-            else  {
-                if ($_POST[Measure::PrimaryColumnName] == 0) {
-                    /*Нужно сменить URL на вновь созданный элемент*/
-                    list($controller, $action) = self::ThisAction();
-                    Redirect(
-                        $controller, $action, $res[DataBase::camelCaseToUnderscore(Measure::PrimaryColumnName)]
-                    );
-                }
-                else {
-                    $options['validation'] = array(
-                        'state' => Model::ValidStateOK,
-                        'message' => 'Данные успешно сохранены'
-                    );
-                    $measure = array_keys_CameCase(
-                        (new DataBase())->
-                        measure->
-                        getFirstRow('id_measure = :id_measure', null, array('id_measure' => $context['id']))
-                    );
-                }
-            }
+            $this->processPostData($entity, $options, $model, $context);
 
         }
         else {
-            $measure = array_keys_CameCase(
+            $dataTable = $model::DataTable;
+            $entity = array_keys_CameCase(
                 (new DataBase())->
-                measure->
-                getFirstRow('id_measure = :id_measure', null, array('id_measure' => $context['id']))
+                $dataTable->
+                getFirstRow(
+                    $model::PrimaryColumnKey . ' = :' . $model::PrimaryColumnKey,
+                    null, array(
+                        $model::PrimaryColumnKey => $context['id']
+                    )
+                )
             );
         }
         $controllerName = self::ThisAction()[0];
         $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
-        $view->Measure = $measure;
+        $view->Entity = $entity;
         $view->options = $options;
+        $view->Model = $model;
         $view->generate();
     }
 }

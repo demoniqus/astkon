@@ -11,6 +11,6 @@
         <div class="alert alert-info text-center">
             Редактирование информации об объекте
         </div>
-        <?= \Astkon\Model\BuildObject::EditForm($BuildObject, $options); ?>
+        <?= $Model::EditForm($Entity, $options); ?>
     </div>
 </div>
