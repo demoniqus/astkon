@@ -6,11 +6,7 @@ use \PDO as PDO;
 use \PDOException as PDOException;
 use \Exception as Exception;
 use PDOStatement;
-use ReflectionProperty;
 
-//echo getcwd() . PHP_EOL;
-//echo __DIR__ . PHP_EOL;
-//die();
 /*
  * Данный класс выполняет работу с базой данных
  */
