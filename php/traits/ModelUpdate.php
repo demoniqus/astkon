@@ -155,6 +155,12 @@ trait ModelUpdate
                 '\'' .  DataBase::underscoreToCamelCase($primaryColumn['column_name']) . '\'' :
                 'null'
             ) . ';');
+        fwrite($partialHandle,  PHP_EOL);
+        fwrite($partialHandle, "\t" . 'const PrimaryColumnKey = ' . (
+            $primaryColumn ?
+                '\'' .  $primaryColumn['column_name'] . '\'' :
+                'null'
+            ) . ';');
 
         fwrite($partialHandle,  PHP_EOL . PHP_EOL);
 
@@ -312,7 +318,11 @@ trait ModelUpdate
             '\' AND referenced_table_name=\'' . DataBase::camelCaseToUnderscore($className) . '\''
         );
         foreach ($extLinks as $extLink) {
-            $columns[DataBase::underscoreToCamelCase($extLink['referenced_column_name'])]['external_link'] = array(
+            $column = &$columns[DataBase::underscoreToCamelCase($extLink['referenced_column_name'])];
+            if (!array_key_exists('external_link', $column)) {
+                $column['external_link'] = array();
+            }
+            $column['external_link'][$extLink['table_name']] = array(
                 'model' => $extLink['table_name'],
                 'field' => $extLink['column_name'],
             );
@@ -383,13 +393,12 @@ trait ModelUpdate
 
     private static function registerModel(string $className) {
         /*Регистрируем созданный класс*/
-        $classRelativePath = DIRECTORY_SEPARATOR . GlobalConst::ModelsDirectory . DIRECTORY_SEPARATOR . $className . '.php';
         $classRegisterHandle = fopen(getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ModelsRegistry, 'r+t');
         if (strpos(fgets($classRegisterHandle), '<?php') === false) {
             fwrite($classRegisterHandle, '<?php' . PHP_EOL);
         }
         /*Ищем информацию о том, что файл уже зарегистрирован*/
-        $newline = 'require_once getcwd() . \'' . $classRelativePath . '\';';
+        $newline = 'require_once GlobalConst::ModelsDirectory . DIRECTORY_SEPARATOR . \'' . $className . '.php\';';
         while (trim($line = fgets($classRegisterHandle)) !== $newline) {
             if(feof($classRegisterHandle)) {
                 fwrite($classRegisterHandle, $newline . PHP_EOL);
