@@ -9,10 +9,9 @@
 namespace Astkon\View;
 
 use Astkon\GlobalConst;
+use Astkon\linq;
 
 define(__NAMESPACE__ . '\FORM_EDIT_FIELDS_TEMPLATES', getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields');
-
-
 
 class View
 {
@@ -143,7 +142,25 @@ class View
         $this->variables[$name] = $value;
     }
 
+    /**
+     * Метод реализует табличное представление набора $items
+     * @param $config - конфигурация модели для представления
+     * @param $items - набор элементов для вывода в списке
+     * @param array $options - набор опций для действий пользователя с элементами набора $items
+     */
     public static function TableList($config, $items, $options = array()) {
+        /*Bool значения заменим иконками для наглядности*/
+        (new linq($config))
+            ->where(function($fieldConfig){
+                return $fieldConfig['data_type'] === 'bit';
+            })
+            ->for_each(function($fieldConfig) use (&$items){
+                foreach ($items as &$item) {
+                    if ($item[$fieldConfig['key']]) {
+                        $item[$fieldConfig['key']] = '<img src="/icon-true-light.png" class="bool-field-true-value-icon" />';
+                    }
+                }
+            });
         define('TABLE_LIST_VIEW_DIRECTORY', getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_table_list_view');
         require_once TABLE_LIST_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . 'table.php';
     }
