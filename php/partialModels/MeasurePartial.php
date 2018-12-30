@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class MeasurePartial extends Model {
 	const DataTable = 'measure';
 	const PrimaryColumnName = 'IdMeasure';
+	const PrimaryColumnKey = 'id_measure';
 
 /** @var array */
 protected static $fieldsInfo = array (
@@ -28,11 +29,14 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'external_link' => 
     array (
-      'model' => 'article',
-      'field' => 'id_measure',
+      'article' => 
+      array (
+        'model' => 'article',
+        'field' => 'id_measure',
+      ),
     ),
   ),
   'MeasureName' => 
@@ -46,7 +50,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'IsSplit' => 
   array (
@@ -59,7 +63,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'Precision' => 
   array (
@@ -72,7 +76,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
 );
 	/**

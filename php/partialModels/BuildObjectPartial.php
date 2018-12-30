@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class BuildObjectPartial extends Model {
 	const DataTable = 'build_object';
 	const PrimaryColumnName = 'IdBuildObject';
+	const PrimaryColumnKey = 'id_build_object';
 
 /** @var array */
 protected static $fieldsInfo = array (
@@ -28,7 +29,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'BuildObjectName' => 
   array (
@@ -41,7 +42,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'Comment' => 
   array (
@@ -54,7 +55,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
 );
 	/**

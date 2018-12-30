@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class UserPartial extends Model {
 	const DataTable = 'user';
 	const PrimaryColumnName = 'IdUser';
+	const PrimaryColumnKey = 'id_user';
 
 /** @var array */
 protected static $fieldsInfo = array (
@@ -28,7 +29,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'Login' => 
   array (
@@ -41,7 +42,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'Password' => 
   array (
@@ -54,7 +55,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'Config' => 
   array (
@@ -67,7 +68,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'HasAccount' => 
   array (
@@ -80,7 +81,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'IdUserGroup' => 
   array (
@@ -93,7 +94,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'foreign_key' => 
     array (
       'model' => 'user_group',
@@ -111,7 +112,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
 );
 	/**

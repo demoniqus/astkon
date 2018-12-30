@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class OperationPartial extends Model {
 	const DataTable = 'operation';
 	const PrimaryColumnName = 'IdOperation';
+	const PrimaryColumnKey = 'id_operation';
 
 /** @var array */
 protected static $fieldsInfo = array (
@@ -28,11 +29,14 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'external_link' => 
     array (
-      'model' => 'operation_item',
-      'field' => 'id_operation',
+      'operation_item' => 
+      array (
+        'model' => 'operation_item',
+        'field' => 'id_operation',
+      ),
     ),
   ),
   'CreateDatetime' => 
@@ -46,7 +50,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'IdOperationType' => 
   array (
@@ -59,7 +63,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'foreign_key' => 
     array (
       'model' => 'operation_type',
@@ -77,7 +81,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'IdOperationState' => 
   array (
@@ -90,7 +94,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'foreign_key' => 
     array (
       'model' => 'operation_state',
@@ -108,7 +112,25 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
+  ),
+  'IdUserGroup' => 
+  array (
+    'table_name' => 'operation',
+    'column_name' => 'id_user_group',
+    'data_type' => 'int',
+    'max_length' => NULL,
+    'num_prec' => '10',
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => 'MUL',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update,references',
+    'foreign_key' => 
+    array (
+      'model' => 'user_group',
+      'field' => 'id_user_group',
+    ),
   ),
 );
 	/**
@@ -146,6 +168,13 @@ protected static $fieldsInfo = array (
 	* @var int
 	*/
 	public $IdOperationType;
+
+	/**
+	* @database_column_name id_user_group
+	* @alias
+	* @var int
+	*/
+	public $IdUserGroup;
 
 	/**
 	* @noeditable

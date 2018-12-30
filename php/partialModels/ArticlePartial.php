@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class ArticlePartial extends Model {
 	const DataTable = 'article';
 	const PrimaryColumnName = 'IdArticle';
+	const PrimaryColumnKey = 'id_article';
 
 /** @var array */
 protected static $fieldsInfo = array (
@@ -28,11 +29,19 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'external_link' => 
     array (
-      'model' => 'operation_item',
-      'field' => 'id_article',
+      'article_balance' => 
+      array (
+        'model' => 'article_balance',
+        'field' => 'id_article',
+      ),
+      'operation_item' => 
+      array (
+        'model' => 'operation_item',
+        'field' => 'id_article',
+      ),
     ),
   ),
   'ArticleName' => 
@@ -46,7 +55,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'IdMeasure' => 
   array (
@@ -59,7 +68,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'foreign_key' => 
     array (
       'model' => 'measure',
@@ -77,7 +86,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => 'MUL',
     'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'IsArchive' => 
   array (
@@ -90,7 +99,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'IdArticleCategory' => 
   array (
@@ -103,7 +112,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'foreign_key' => 
     array (
       'model' => 'article_category',
@@ -127,6 +136,7 @@ protected static $fieldsInfo = array (
 	public $IdArticle;
 
 	/**
+	* @foreign_key_action ArticleCategories/ArticleCategoriesDict
 	* @database_column_name id_article_category
 	* @alias Категория
 	* @var int

@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class ArticleBalancePartial extends Model {
 	const DataTable = 'article_balance';
 	const PrimaryColumnName = 'IdArticleBalance';
+	const PrimaryColumnKey = 'id_article_balance';
 
 /** @var array */
 protected static $fieldsInfo = array (
@@ -28,7 +29,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'IdArticle' => 
   array (
@@ -41,7 +42,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'foreign_key' => 
     array (
       'model' => 'article',
@@ -59,7 +60,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'foreign_key' => 
     array (
       'model' => 'user_group',
@@ -77,7 +78,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
 );
 	/**

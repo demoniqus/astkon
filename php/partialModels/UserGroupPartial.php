@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class UserGroupPartial extends Model {
 	const DataTable = 'user_group';
 	const PrimaryColumnName = 'IdUserGroup';
+	const PrimaryColumnKey = 'id_user_group';
 
 /** @var array */
 protected static $fieldsInfo = array (
@@ -28,11 +29,24 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'external_link' => 
     array (
-      'model' => 'user',
-      'field' => 'id_user_group',
+      'article_balance' => 
+      array (
+        'model' => 'article_balance',
+        'field' => 'id_user_group',
+      ),
+      'operation' => 
+      array (
+        'model' => 'operation',
+        'field' => 'id_user_group',
+      ),
+      'user' => 
+      array (
+        'model' => 'user',
+        'field' => 'id_user_group',
+      ),
     ),
   ),
   'UserGroupName' => 
@@ -46,7 +60,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'Comment' => 
   array (
@@ -59,7 +73,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
 );
 	/**
@@ -77,7 +91,7 @@ protected static $fieldsInfo = array (
 	public $IdUserGroup;
 
 	/**
-    * @foreign_key_display_value
+	* @foreign_key_display_value
 	* @database_column_name user_group_name
 	* @alias Наименование группы
 	* @var string

@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class OperationStatePartial extends Model {
 	const DataTable = 'operation_state';
 	const PrimaryColumnName = 'IdOperationState';
+	const PrimaryColumnKey = 'id_operation_state';
 
 /** @var array */
 protected static $fieldsInfo = array (
@@ -28,11 +29,14 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'external_link' => 
     array (
-      'model' => 'operation',
-      'field' => 'id_operation_state',
+      'operation' => 
+      array (
+        'model' => 'operation',
+        'field' => 'id_operation_state',
+      ),
     ),
   ),
   'StateName' => 
@@ -46,7 +50,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'StateLabel' => 
   array (
@@ -59,7 +63,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'StateComment' => 
   array (
@@ -72,7 +76,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
 );
 	/**

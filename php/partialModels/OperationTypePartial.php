@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class OperationTypePartial extends Model {
 	const DataTable = 'operation_type';
 	const PrimaryColumnName = 'IdOperationType';
+	const PrimaryColumnKey = 'id_operation_type';
 
 /** @var array */
 protected static $fieldsInfo = array (
@@ -28,11 +29,14 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'external_link' => 
     array (
-      'model' => 'operation',
-      'field' => 'id_operation_type',
+      'operation' => 
+      array (
+        'model' => 'operation',
+        'field' => 'id_operation_type',
+      ),
     ),
   ),
   'OperationName' => 
@@ -46,7 +50,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'OperationLabel' => 
   array (
@@ -59,7 +63,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
 );
 	/**

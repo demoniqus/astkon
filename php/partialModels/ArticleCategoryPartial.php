@@ -14,6 +14,7 @@ use Astkon\Model\Model;
 abstract class ArticleCategoryPartial extends Model {
 	const DataTable = 'article_category';
 	const PrimaryColumnName = 'IdArticleCategory';
+	const PrimaryColumnKey = 'id_article_category';
 
 /** @var array */
 protected static $fieldsInfo = array (
@@ -28,11 +29,14 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
     'external_link' => 
     array (
-      'model' => 'article',
-      'field' => 'id_article_category',
+      'article' => 
+      array (
+        'model' => 'article',
+        'field' => 'id_article_category',
+      ),
     ),
   ),
   'CategoryName' => 
@@ -46,7 +50,7 @@ protected static $fieldsInfo = array (
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'IsWriteoff' => 
   array (
@@ -59,7 +63,7 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
   'IsSaleable' => 
   array (
@@ -72,11 +76,11 @@ protected static $fieldsInfo = array (
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update',
+    'privileges' => 'select,insert,update,references',
   ),
 );
 	/**
-    * @foreign_key_display_value
+	* @foreign_key_display_value
 	* @database_column_name category_name
 	* @alias Наименование категории
 	* @var string
