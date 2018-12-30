@@ -16,7 +16,8 @@ trait ListView
 {
     /**
      * @param View $view
-     * @param $model
+     * @param string $model
+     * @param string $controller
      * @param string|null $condition
      * @param array|null $requiredFields
      * @param array|null $substitution
@@ -26,17 +27,19 @@ trait ListView
     public function ListViewAction(
         View $view,
         $model,
+        $controller,
         $condition = null,
         $requiredFields = null,
         $substitution = null,
         $offset = null,
         $limit = null
     ) {
-        $modelName = explode('\\', $model);
-        $modelName = array_pop($modelName);
+        $controllerName = explode('\\', $controller);
+        $controllerName = array_pop($controllerName);
+        $controllerName = mb_substr($controllerName, 0, mb_strlen($controllerName) - mb_strlen('Controller'));
         $view->listItemOptions = array(
             array(
-                'action' => '/' . $modelName  . '/Edit',
+                'action' => '/' . $controllerName  . '/Edit',
                 'click' => null,
                 'icon' => '/icon-edit.png',
                 'title' => 'Редактировать'
