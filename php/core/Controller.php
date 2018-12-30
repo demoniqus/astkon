@@ -114,15 +114,17 @@ abstract class Controller
 //    }
 
     /**
+     * @param array|null $backtrace
      * @return array
      */
-    public static function ThisAction() : array {
-        $backtrace = (debug_backtrace(2, 2));
-        $backtrace = $backtrace[1];
+    public static function ThisAction($backtrace = null) : array {
+        if (!is_array($backtrace)) {
+            $backtrace = (debug_backtrace(2, 2));
+            $backtrace = $backtrace[1];
+        }
         $classSegments = explode('\\',$backtrace['class']);
         $controller = preg_replace('/Controller$/i', '', array_pop($classSegments));
         $action = preg_replace('/Action$/i', '', $backtrace['function']);
         return array($controller, $action);
     }
-
 }
