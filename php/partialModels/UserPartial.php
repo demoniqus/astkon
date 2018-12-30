@@ -124,6 +124,7 @@ protected static $fieldsInfo = array (
 	public $Config;
 
 	/**
+    * @form_edit_order 4
 	* @database_column_name has_account
 	* @alias Пользователь имеет аккаунт
 	* @var bool
@@ -138,6 +139,7 @@ protected static $fieldsInfo = array (
 	public $IdUser;
 
 	/**
+    * @form_edit_order 3
 	* @database_column_name id_user_group
 	* @alias Группа
 	* @var int
@@ -145,6 +147,7 @@ protected static $fieldsInfo = array (
 	public $IdUserGroup;
 
 	/**
+    * @form_edit_order 1
 	* @database_column_name login
 	* @alias Логин
 	* @var string
@@ -152,6 +155,7 @@ protected static $fieldsInfo = array (
 	public $Login;
 
 	/**
+    * @form_edit_order 2
 	* @database_column_name password
 	* @alias Пароль
 	* @var string
@@ -159,6 +163,7 @@ protected static $fieldsInfo = array (
 	public $Password;
 
 	/**
+    * @form_edit_order 0
 	* @database_column_name user_name
 	* @alias Имя пользователя
 	* @var string

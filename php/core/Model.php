@@ -98,7 +98,12 @@ abstract class Model  {
             if ($bColumnKey === GlobalConst::MySqlPKVal) {
                 return 1;
             }
-            return 0;
+            $orderA = self::extractDocCommentItem($a, 'form_edit_order');
+            $orderB = self::extractDocCommentItem($b, 'form_edit_order');
+            $orderA = is_null($orderA) ? 0 : self::trimDocCommentKey($orderA);
+            $orderB = is_null($orderB) ? 0 : self::trimDocCommentKey($orderB);
+//            var_dump(array(intval($orderA), $orderB));
+            return intval($orderA) <=> intval($orderB);
         });
         return $editedProperties;
     }
@@ -109,7 +114,7 @@ abstract class Model  {
      * @param string $itemName
      * @return string|null
      */
-    protected static function extractDocCommentItem(ReflectionProperty $reflectionProperty, string $itemName) : string{
+    protected static function extractDocCommentItem(ReflectionProperty $reflectionProperty, string $itemName) : ?string{
         $items = array_filter(
             explode(GlobalConst::NewLineChar, $reflectionProperty->getDocComment()),
             function($line) use ($itemName) { return mb_strpos($line, '@' . $itemName) > 0; }
@@ -630,6 +635,7 @@ abstract class Model  {
         'database_column_name' => 'наименование колонки в таблице БД, отвечающей за хранение значения свойства модели',
         'foreign_key_display_value' => 'Это значение показывается в ссылочных полях вместо идентификатора. Если несколько полей используются для отображения значения, их порядок сортируется значением этого параметра',
         'foreign_key_action' => 'ссылка на action для справочника',
+        'form_edit_order' => 'порядок вывода в форме редактирования',
         'noeditable' => 'Обозначает, что данное свойство не отображается в форме редактирования',
     );
 
