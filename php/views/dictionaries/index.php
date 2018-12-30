@@ -11,20 +11,30 @@
                 'Icon' => '/barcode.png',
             ),
             array(
+                'Action' => '/ArticleCategories/ArticleCategoriesList',
+                'Caption' => 'Категории артикулов',
+                'Icon' => '/icon-categories.png',
+            ),
+            array(
                 'Action' => '/Measures/MeasuresList',
                 'Caption' => 'Единицы измерения',
                 'Icon' => '/measures.png',
+            ),
+            array(
+                'Action' => '/UserGroups/UserGroupsList',
+                'Caption' => 'Группы',
+                'Icon' => '/user-group-icon.png',
             ),
             array(
                 'Action' => '/BuildObjects/BuildObjectsList',
                 'Caption' => 'Объекты',
                 'Icon' => '/building.png',
             ),
-            array(
-                'Action' => '/People/PeopleList',
-                'Caption' => 'Люди',
-                'Icon' => '/people.jpg',
-            ),
+//            array(
+//                'Action' => '/People/PeopleList',
+//                'Caption' => 'Люди',
+//                'Icon' => '/people.jpg',
+//            ),
 
         );
 
