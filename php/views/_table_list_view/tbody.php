@@ -6,6 +6,9 @@
         <?php
         $PKVal = 0;
         foreach ($config as $fieldConfig) {
+            if (array_key_exists('nodisplay', $fieldConfig)) {
+                continue;
+            }
             $val = isset($item[$fieldConfig['key']]) ? $item[$fieldConfig['key']] : '';
             if ($fieldConfig['primary_key']) {
                 ?>
