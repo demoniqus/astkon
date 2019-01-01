@@ -49,12 +49,5 @@ class IndexController extends Controller
 
     }
 
-    public function AuthAction($context)
-    {
-        var_dump(debug_backtrace(2, 2));
-        echo PHP_EOL;
-        echo PHP_EOL;
-
-    }
 }
 
