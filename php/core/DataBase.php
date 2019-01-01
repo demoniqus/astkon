@@ -182,9 +182,9 @@ class DataBase {
 
     /**
      * Метод запускает фиксацию транзакции.
-     * Если последний запрос в транзакции был SELECT, метод вернет его результат
+     * Если последний запрос в транзакции был SELECT, метод вернет его результат. В случае ошибки возвращает false
      * @param string $mode
-     * @return array
+     * @return array|false
      */
     public function commit(string $mode = 'assoc') {
         /** @var PDOStatement $stmt */

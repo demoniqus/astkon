@@ -14,7 +14,7 @@ require_once 'core/Model.php';
 require_once 'core/Controller.php';
 require_once 'core/View.php';
 require_once 'core/error_code.php';
-require_once 'core/db.php';
+require_once 'core/DataBase.php';
 require_once 'core/linq.php';
 require_once 'core/DocComment.php';
 require_once 'lib.php';
@@ -73,9 +73,16 @@ final class GlobalConst {
      * Директория представлений
      */
     const ViewsDirectory = 'php' . DIRECTORY_SEPARATOR . 'views';
+    /**
+     * Директория трейтов
+     */
     const TraitsDirectory = 'php' . DIRECTORY_SEPARATOR . 'traits';
+    /**
+     * Файлы дефолтных заголовока и подвала страницы
+     */
     const DefHeaderView = GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_defheader.php';
     const DefFooterView = GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_deffooter.php';
+
     const ViewDefCharset = 'utf-8';
     const FOpenMode = 'wt';
 
