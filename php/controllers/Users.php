@@ -10,6 +10,7 @@ namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
+use Astkon\ErrorCode;
 use function Astkon\Lib\array_keys_CameCase;
 use function Astkon\Lib\Redirect;
 use Astkon\Model\Model;
@@ -103,5 +104,97 @@ class UsersController extends Controller
         $view->User = $user;
         $view->options = $options;
         $view->generate();
+    }
+
+    /**
+     * Метод отвечает за инициализацию проекта и создания суперпользователя.
+     * Вызываться должен только однажды, пока в БД нет еще пользователей.
+     * В остальных случаях создание суперадмина должно осуществляться через БД
+     * @param $context
+     */
+    public function InitProjectAction($context) {
+        $view = new View();
+        $db = new DataBase();
+        $dataTable =  User::DataTable;
+        if ($db->$dataTable->getFirstRow() !== null) {
+            $view->error(ErrorCode::FORBIDDEN);
+        }
+
+        $options = array();
+        $entity = array(
+            'Login' => '',
+            'Password' => '',
+            'PasswordConfirm' => '',
+        );
+        if (array_key_exists('submit', $_POST)) {
+            $login = $_POST['Login'];
+            $password = $_POST['Password'];
+            $pasConfirm = $_POST['PasswordConfirm'];
+            $options['validation'] = array(
+                'fields' => array()
+            );
+            if (!$login) {
+                $options['validation']['fields']['Login'] = array(
+                    'state' => Model::ValidStateError,
+                    'message' => 'Логин не может быть пустым'
+                );
+            }
+
+            if (!$password) {
+                $options['validation']['fields']['Password'] = array(
+                    'state' => Model::ValidStateError,
+                    'message' => 'Пароль не может быть пустым'
+                );
+            }
+
+            if ($password != $pasConfirm) {
+                $options['validation']['fields']['Password'] = array(
+                    'state' => Model::ValidStateError,
+                    'message' => ''
+                );
+                $options['validation']['fields']['PasswordConfirm'] = array(
+                    'state' => Model::ValidStateError,
+                    'message' => 'Пароли не совпадают'
+                );
+            }
+            if (count($options['validation']['fields']) > 0) {
+                $entity = $_POST;
+            }
+            else {
+                $db->beginTransaction();
+                if (false === $db->query('insert into `user_group` set `user_group_name`=\'Администраторы\', `comment`=\'Группа пользователей, имеющих административные права\'')) {
+                    $options['validation']['state'] = Model::ValidStateError;
+                    $db->rollback();
+                }
+                else if (
+                    false === $db->query(
+                        'insert into `user` set `login` = :Login, `password` = PASSWORD(:Password), `has_account` = 1, `user_name` = \'SuperAdmin\', `is_admin` = 1, `id_user_group` = (select max(`id_user_group`) from `user_group`)',
+                        array(
+                            'Login' => $login,
+                            'Password' => $password
+                        )
+                    )
+                ) {
+                    $options['validation']['state'] = Model::ValidStateError;
+                    $db->rollback();
+
+                }
+                else {
+                    $db->query('select * from `user` where `id_user` = (select max(`id_user`) from `user`)');
+                    $result = $db->commit();
+                    if (false === $result) {
+                        $options['validation']['state'] = Model::ValidStateError;
+                    }
+                    else {
+                        AuthController::Run('IndexAction', array());
+                        return;
+                    }
+                }
+            }
+        }
+        $view->Entity = $entity;
+        $view->options = $options;
+        $view->generate();
+
     }
 }
