@@ -13,7 +13,7 @@ use Reflector;
 abstract class DocComment
 {
     /**
-     * Извлекает из DocComment все @параметры и возвращает из них массив (с @ключами).
+     * Извлекает из DocComment все @параметры и возвращает из них массив.
      * Если в DocComment несколько одинаковых ключей, их значения будут собраны в массив
      * @param Reflector $reflector
      * @return array
@@ -48,6 +48,7 @@ abstract class DocComment
                 $segments[] = null;
             }
             list($key, $value) = $segments;
+            $key = mb_substr($key, 1);
             if (!array_key_exists($key, $items)) {
                 $items[$key] = array();
             }
@@ -67,9 +68,6 @@ abstract class DocComment
      * @return array|string|null
      */
     public static function getDocCommentItem (Reflector $reflector, string $itemName) {
-        if(mb_substr($itemName, 0, 1) !== '@') {
-            $itemName = '@' . $itemName;
-        }
         $docCommentParams = self::extractDocCommentParams($reflector);
         if (!is_array($docCommentParams)) {
             $docCommentParams = array();
