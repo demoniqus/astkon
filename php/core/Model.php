@@ -4,6 +4,7 @@ namespace Astkon\Model;
 //find . -exec chown demonius:demonius {} \; -exec chmod a+rw {} \;
 
 use Astkon\DataBase;
+use Astkon\DocComment;
 use Astkon\ErrorCode;
 use Astkon\GlobalConst;
 use Astkon\linq;
@@ -61,8 +62,7 @@ abstract class Model  {
 
         /** @var ReflectionProperty $reflectionProperty */
         $reflectionProperty = array_shift($editedProperties);
-        $alias = self::extractDocCommentItem($reflectionProperty, 'alias');
-        $alias = self::trimDocCommentKey($alias);
+        $alias = DocComment::getDocCommentItem($reflectionProperty, 'alias');
         return !!$alias ? $alias : $fieldName;
     }
 
@@ -98,91 +98,13 @@ abstract class Model  {
             if ($bColumnKey === GlobalConst::MySqlPKVal) {
                 return 1;
             }
-            $orderA = self::extractDocCommentItem($a, 'form_edit_order');
-            $orderB = self::extractDocCommentItem($b, 'form_edit_order');
-            $orderA = is_null($orderA) ? 0 : self::trimDocCommentKey($orderA);
-            $orderB = is_null($orderB) ? 0 : self::trimDocCommentKey($orderB);
-//            var_dump(array(intval($orderA), $orderB));
+            $orderA = DocComment::getDocCommentItem($a, 'form_edit_order');
+            $orderB = DocComment::getDocCommentItem($b, 'form_edit_order');
+            $orderA = is_null($orderA) ? 0 : $orderA;
+            $orderB = is_null($orderB) ? 0 : $orderB;
             return intval($orderA) <=> intval($orderB);
         });
         return $editedProperties;
-    }
-
-    /**
-     * Метод извлекаект из DocComment элемент по @key. Предполагается, что такой элемент однострочный без переносов строк.
-     * @param ReflectionProperty $reflectionProperty
-     * @param string $itemName
-     * @return string|null
-     */
-    protected static function extractDocCommentItem(ReflectionProperty $reflectionProperty, string $itemName) : ?string{
-        $items = array_filter(
-            explode(GlobalConst::NewLineChar, $reflectionProperty->getDocComment()),
-            function($line) use ($itemName) { return mb_strpos($line, '@' . $itemName) > 0; }
-        );
-        return count($items) > 0 ? array_shift($items) : null;
-    }
-
-    /**
-     * Метод извлекает значение из DocComment-строки и отрезает @key и начальные *
-     * @param string $docCommentLine
-     * @return string
-     */
-    protected static function trimDocCommentKey(string $docCommentLine) {
-        $docCommentLine = trim($docCommentLine);
-        while (mb_substr($docCommentLine, 0, 1) === '*') {
-            $docCommentLine = trim(mb_substr($docCommentLine, 1));
-        }
-        if (mb_substr($docCommentLine, 0, 1) === '@') {
-            $docCommentLine = trim($docCommentLine);
-            if (mb_strpos($docCommentLine, ' ') === false) {
-                /*У ключа нет значения*/
-                $docCommentLine = null;
-            }
-            else {
-                $docCommentLine = trim(mb_substr($docCommentLine, mb_strpos($docCommentLine, ' ')));
-            }
-        }
-        return $docCommentLine;
-    }
-
-    /**
-     * Извлекает из DocComment все @параметры и возвращает из них массив (с @ключами)
-     * @param ReflectionProperty $reflectionProperty
-     * @return array
-     */
-    protected static function extractDocCommentParams(ReflectionProperty $reflectionProperty) {
-        $_items = array_filter(
-            explode(GlobalConst::NewLineChar, $reflectionProperty->getDocComment()),
-            function($line){
-                return mb_strpos($line, '@') !== false;
-            }
-        );
-        $_items = array_map(
-            function($line){
-                while (mb_substr($line = trim($line), 0, 1) === '*') {
-                    $line = mb_substr($line, 1);
-                }
-                return $line;
-            },
-            $_items
-        );
-        $_items = array_filter(
-            $_items,
-            function($line){
-                return !!preg_match('/^@[a-z_]/i', $line);
-            }
-        );
-
-        $items = array();
-        array_walk($_items, function($item) use (&$items) {
-            $segments = explode(' ', $item, 2);
-            if (count($segments) < 2) {
-                $segments[] = null;
-            }
-            list($key, $value) = $segments;
-            $items[$key] = $value;
-        });
-        return $items;
     }
 
     /**
@@ -232,7 +154,7 @@ abstract class Model  {
         $baseRequirePath = \Astkon\View\FORM_EDIT_FIELDS_TEMPLATES . DIRECTORY_SEPARATOR;
         foreach ($editedProperties as $property) {
             $propName = $property->name;
-            $docCommentParams = self::extractDocCommentParams($property);
+            $docCommentParams = DocComment::extractDocCommentParams($property);
             if (
                 array_key_exists('@noeditable', $docCommentParams) ||
                 array_key_exists('@autocalc', $docCommentParams)
@@ -321,7 +243,7 @@ abstract class Model  {
     protected static function getReferenceDisplayedKeys() : array {
         $editedProperties = self::getModelPublicProperties();
         $editedProperties = array_map(function (ReflectionProperty $reflectionProperty){
-            $docParams = static::extractDocCommentParams($reflectionProperty);
+            $docParams = DocComment::extractDocCommentParams($reflectionProperty);
             if (!array_key_exists('@foreign_key_display_value', $docParams)) {
                 return null;
             }
@@ -623,8 +545,8 @@ abstract class Model  {
         });
         $result = array();
         foreach ($autoCalcFields as $reflectionProperty) {
-            $calcRule = self::extractDocCommentItem($reflectionProperty, 'autocalc');
-            $result[$reflectionProperty->name] = self::trimDocCommentKey($calcRule);
+            $calcRule = DocComment::getDocCommentItem($reflectionProperty, 'autocalc');
+            $result[$reflectionProperty->name] = $calcRule;
         }
         return $result;
     }
