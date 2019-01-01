@@ -67,6 +67,9 @@ abstract class DocComment
      * @return array|string|null
      */
     public static function getDocCommentItem (Reflector $reflector, string $itemName) {
+        if(mb_substr($itemName, 0, 1) !== '@') {
+            $itemName = '@' . $itemName;
+        }
         $docCommentParams = self::extractDocCommentParams($reflector);
         if (!is_array($docCommentParams)) {
             $docCommentParams = array();
