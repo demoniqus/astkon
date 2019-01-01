@@ -1,5 +1,6 @@
 <?php
 
+use Astkon\Controllers\AuthController;
 use Astkon\GlobalConst;
 
 $bootstrapDir = '/bootstrap_v4.0.0';
@@ -53,5 +54,21 @@ $jqueryUIVers = '1.12.1';
     </style>
 </head>
 <body>
-    <div id="document-header" class="container-fluid"></div>
+    <div id="document-header" class="container-fluid">
+        <?php if (isset($_SESSION[AuthController::CurrentUserKey])) {
+            ?>
+                <div class="row justify-content-end py-1">
+                    <div class="col-sm-3 text-right">
+                        <?= $_SESSION[AuthController::CurrentUserKey]['UserName']; ?>
+                    </div>
+                    <div class="col-sm-1">
+                        <a href="/Auth/Logout">
+                            <img src="/logout.png" style="width: 32px; height: 32px; border: 0px none;" />
+                        </a>
+                    </div>
+                </div>
+            <?php
+        }
+        ?>
+    </div>
     <div id="document-body" class="container-fluid">
