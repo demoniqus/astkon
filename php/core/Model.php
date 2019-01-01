@@ -11,6 +11,7 @@ use Astkon\linq;
 use Astkon\Traits\ModelUpdate;
 use Astkon\View\View;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionProperty;
 
 abstract class Model  {
@@ -68,19 +69,22 @@ abstract class Model  {
 
     /**
      * Метод возвращает набор публичных нестатичных свойств класса Partial
+     * @param bool $usePartialClass - позволяет выбирать только поля, имеющиеся в таблице БД, отфильтровывая вспомогательные поля, объявленные в полной модели
      * @return array
+     * @throws ReflectionException
      */
-    protected static function getModelPublicProperties() {
+    protected static function getModelPublicProperties(bool $usePartialClass = false) {
         $partialClassName = explode('\\', static::class);
         $partialClassName[] = $partialClassName[count($partialClassName) - 1] . 'Partial';
         $partialClassName[count($partialClassName) - 2] = 'Partial';
         $partialClassName = implode('\\', $partialClassName);
 
-        $partialParentClass = new ReflectionClass($partialClassName);
+        $reflectionClass = new ReflectionClass($usePartialClass ? $partialClassName : static::class);
 
         $editedProperties = array_filter(
-            $partialParentClass->getProperties(ReflectionProperty::IS_PUBLIC),
+            $reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC),
             function(ReflectionProperty $property ) use ($partialClassName){
+                return !$property->isStatic();
                 if ($property->isStatic()) {
                     return false;
                 }
@@ -90,19 +94,23 @@ abstract class Model  {
         );
         $fieldsInfo = static::$fieldsInfo;
         usort($editedProperties, function(ReflectionProperty $a, ReflectionProperty $b) use ($fieldsInfo) {
-            $aColumnKey = strtoupper($fieldsInfo[$a->name]['column_key']);
-            if ($aColumnKey === GlobalConst::MySqlPKVal) {
-                return -1;
+            if (array_key_exists($a->name, $fieldsInfo)) {
+                $aColumnKey = strtoupper($fieldsInfo[$a->name]['column_key']);
+                if ($aColumnKey === GlobalConst::MySqlPKVal) {
+                    return -1;
+                }
             }
-            $bColumnKey = strtoupper($fieldsInfo[$b->name]['column_key']);
-            if ($bColumnKey === GlobalConst::MySqlPKVal) {
-                return 1;
+            if (array_key_exists($b->name, $fieldsInfo)) {
+                $bColumnKey = strtoupper($fieldsInfo[$b->name]['column_key']);
+                if ($bColumnKey === GlobalConst::MySqlPKVal) {
+                    return 1;
+                }
             }
             $orderA = DocComment::getDocCommentItem($a, 'form_edit_order');
             $orderB = DocComment::getDocCommentItem($b, 'form_edit_order');
             $orderA = is_null($orderA) ? 0 : $orderA;
             $orderB = is_null($orderB) ? 0 : $orderB;
-            return intval($orderA) <=> intval($orderB);
+            return floatval($orderA) <=> floatval($orderB);
         });
         return $editedProperties;
     }
@@ -130,8 +138,8 @@ abstract class Model  {
 
         $isFormProcessed = is_array($options) && isset($options['validation']);
 
-        $Controller = explode('\\', static::class);
-        $Controller = array_pop($Controller);
+//        $Controller = explode('\\', static::class);
+//        $Controller = array_pop($Controller);
 
         // https://getbootstrap.com/docs/4.1/components/forms/
 
@@ -202,7 +210,8 @@ abstract class Model  {
                 require $baseRequirePath . 'foreign_key.php';
             }
             else {
-                switch ($fieldInfo['data_type']) {
+                $dataType = is_null($fieldInfo) ? DocComment::getDocCommentItem($property, 'data_type') : $fieldInfo['data_type'];
+                switch ($dataType) {
                     case 'bit':
                         require $baseRequirePath . 'boolean.php';
                         break;
@@ -220,6 +229,7 @@ abstract class Model  {
                     case 'char':
                     case 'varchar':
                     case 'nvarchar':
+                    case 'string':
                         $inputType = 'text';
                         require $baseRequirePath . 'input.php';
                         break;
@@ -365,7 +375,7 @@ abstract class Model  {
      * @return array|bool
      */
     public function Save() {
-        $editedProperties = self::getModelPublicProperties();
+        $editedProperties = self::getModelPublicProperties(true);
         $values = array();
         foreach ($editedProperties as $referenceProperty) {
             $propName = $referenceProperty->name;
