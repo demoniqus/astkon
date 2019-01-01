@@ -8,6 +8,7 @@
 
 namespace Astkon\Controller;
 
+use Astkon\ErrorCode;
 use Astkon\GlobalConst;
 use Astkon\linq;
 use Astkon\View\View;
@@ -31,16 +32,24 @@ abstract class Controller
      */
     public static function Run(string $action, array $context) {
         if (method_exists(static::class, $action)) {
-            if (self::checkPermition($action)) {
-                (new static())->$action($context);
-            }
-            else {
-                /*Возвращаем ошибку*/
+            $reflectionMethod = new ReflectionMethod(static::class, $action);
+            if ($reflectionMethod->isPublic() && !$reflectionMethod->isStatic()) {
+
+                if (self::checkPermition($action)) {
+                    (new static())->$action($context);
+                }
+                else {
+                    $view = new View();
+                    $view->error(ErrorCode::FORBIDDEN);
+                    die();
+                }
             }
         }
         else {
             /*Возвращаем ошибку*/
-            echo '<p style="font-size: 8em;">Запрошенный метод в данном классе не существует';
+            $view = new View();
+            $view-> error(404);
+            die();
         }
 
     }
@@ -52,24 +61,24 @@ abstract class Controller
         ->for_each(function($line) use (&$permition){
             if (strpos($line, '@access') !== false) {
 
-                $currentUser = $_SESSION['CurrentUser'];
-                $role = strtolower($currentUser['Role']);
-                $line = str_replace('*', '', $line);
-                $line = str_replace('@access', '', $line);
-                $roles = (new linq(explode(',', $line)))
-                    ->select(function($item){ return explode(' ', preg_replace('/\s+/', ' ', trim($item)));})
-                    ->for_each(function($item) use (&$permition, $role){
-                        $r = strtolower($item[0]);
-                        $p = strtolower($item[1]) === 'allow';
-                        if (strtolower($item[0]) === 'all') {
-                            $permition = $p;
-                        }
-                        else  if ($r === $role) {
-                            $permition = $p;
-                        }
-
-                    })
-                    ->getData();
+//                $currentUser = $_SESSION['CurrentUser'];
+//                $role = strtolower($currentUser['Role']);
+//                $line = str_replace('*', '', $line);
+//                $line = str_replace('@access', '', $line);
+//                $roles = (new linq(explode(',', $line)))
+//                    ->select(function($item){ return explode(' ', preg_replace('/\s+/', ' ', trim($item)));})
+//                    ->for_each(function($item) use (&$permition, $role){
+//                        $r = strtolower($item[0]);
+//                        $p = strtolower($item[1]) === 'allow';
+//                        if (strtolower($item[0]) === 'all') {
+//                            $permition = $p;
+//                        }
+//                        else  if ($r === $role) {
+//                            $permition = $p;
+//                        }
+//
+//                    })
+//                    ->getData();
 //                Метод пока не дописан из-за отсутствия реализации ролевой модели
             }
         });
