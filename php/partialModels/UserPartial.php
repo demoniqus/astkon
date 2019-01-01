@@ -114,9 +114,24 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
+  'IsAdmin' => 
+  array (
+    'table_name' => 'user',
+    'column_name' => 'is_admin',
+    'data_type' => 'bit',
+    'max_length' => NULL,
+    'num_prec' => '1',
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update,references',
+  ),
 );
 	/**
+    * @nodisplay true
 	* @noeditable true
+	* @list_view_order 6
 	* @database_column_name config
 	* @alias Системная конфигурация
 	* @var array
@@ -124,7 +139,8 @@ protected static $fieldsInfo = array (
 	public $Config;
 
 	/**
-    * @form_edit_order 4
+	* @form_edit_order 4
+	* @list_view_order 4
 	* @database_column_name has_account
 	* @alias Пользователь имеет аккаунт
 	* @var bool
@@ -139,7 +155,8 @@ protected static $fieldsInfo = array (
 	public $IdUser;
 
 	/**
-    * @form_edit_order 3
+	* @form_edit_order 3
+	* @list_view_order 3
 	* @database_column_name id_user_group
 	* @alias Группа
 	* @var int
@@ -147,7 +164,17 @@ protected static $fieldsInfo = array (
 	public $IdUserGroup;
 
 	/**
-    * @form_edit_order 1
+	* @form_edit_order 5
+	* @list_view_order 5
+	* @database_column_name is_admin
+	* @alias Администратор
+	* @var bool
+	*/
+	public $IsAdmin;
+
+	/**
+	* @form_edit_order 1
+	* @list_view_order 1
 	* @database_column_name login
 	* @alias Логин
 	* @var string
@@ -155,7 +182,9 @@ protected static $fieldsInfo = array (
 	public $Login;
 
 	/**
-    * @form_edit_order 2
+    * @nodisplay true
+	* @form_edit_order 2
+	* @list_view_order 2
 	* @database_column_name password
 	* @alias Пароль
 	* @var string
@@ -163,7 +192,8 @@ protected static $fieldsInfo = array (
 	public $Password;
 
 	/**
-    * @form_edit_order 0
+	* @form_edit_order 0
+	* @list_view_order 0
 	* @database_column_name user_name
 	* @alias Имя пользователя
 	* @var string
