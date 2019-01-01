@@ -164,14 +164,14 @@ abstract class Model  {
             $propName = $property->name;
             $docCommentParams = DocComment::extractDocCommentParams($property);
             if (
-                array_key_exists('@noeditable', $docCommentParams) ||
-                array_key_exists('@autocalc', $docCommentParams)
+                array_key_exists('noeditable', $docCommentParams) ||
+                array_key_exists('autocalc', $docCommentParams)
 
             ) {
                 continue;
             }
             /** @var string $alias - используется во вьюхах*/
-            $alias = isset($docCommentParams['@alias']) ? $docCommentParams['@alias'] : $propName;
+            $alias = isset($docCommentParams['alias']) ? $docCommentParams['alias'] : $propName;
             /** @var mixed $value - используется во вьюхах*/
             $value = $item[$propName];
 
@@ -204,8 +204,8 @@ abstract class Model  {
                 );
                 $displayValue = is_array($refItem) ? implode(' ', $refItem) : '';
                 $dictionaryAction = '';
-                if (isset($docCommentParams['@foreign_key_action'])) {
-                    $dictionaryAction = $docCommentParams['@foreign_key_action'];
+                if (isset($docCommentParams['foreign_key_action'])) {
+                    $dictionaryAction = $docCommentParams['foreign_key_action'];
                 }
                 require $baseRequirePath . 'foreign_key.php';
             }
@@ -254,12 +254,12 @@ abstract class Model  {
         $editedProperties = self::getModelPublicProperties();
         $editedProperties = array_map(function (ReflectionProperty $reflectionProperty){
             $docParams = DocComment::extractDocCommentParams($reflectionProperty);
-            if (!array_key_exists('@foreign_key_display_value', $docParams)) {
+            if (!array_key_exists('foreign_key_display_value', $docParams)) {
                 return null;
             }
             return array(
                 'key' => $reflectionProperty->name,
-                'order' => intval($docParams['@foreign_key_display_value'])
+                'order' => intval($docParams['foreign_key_display_value'])
             );
         }, $editedProperties);
         $editedProperties = array_filter($editedProperties, function($item) {return !is_null($item);});
@@ -568,6 +568,8 @@ abstract class Model  {
         'foreign_key_display_value' => 'Это значение показывается в ссылочных полях вместо идентификатора. Если несколько полей используются для отображения значения, их порядок сортируется значением этого параметра',
         'foreign_key_action' => 'ссылка на action для справочника',
         'form_edit_order' => 'порядок вывода в форме редактирования',
+        'list_view_order' => 'порядок вывода в списках',
+        'nodisplay' => 'Обозначает, что данное свойство не отображается в представлениях списков',
         'noeditable' => 'Обозначает, что данное свойство не отображается в форме редактирования',
     );
 
@@ -579,15 +581,15 @@ abstract class Model  {
     public static function getConfigForListView($excludeFields = null) {
         $excludeFields = is_array($excludeFields) ? array_flip($excludeFields) : array();
 
-        return array_map(
+        $config = array_map(
             function(ReflectionProperty $prop) {
-                return array(
-                    'key' => $prop->name,
-                    'alias' => self::getFieldAlias($prop->name),
-                    'primary_key' => static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal,
-                    'foreign_key' => isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null,
-                    'data_type' => static::$fieldsInfo[$prop->name]['data_type'],
-                );
+                $result = DocComment::extractDocCommentParams($prop);
+                $result['key'] = $prop->name;
+                $result['primary_key'] = static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal;
+                $result['foreign_key'] = isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null;
+                $result['data_type'] = static::$fieldsInfo[$prop->name]['data_type'];
+
+                return $result;
             },
             array_filter(
                 self::getModelPublicProperties(),
@@ -595,6 +597,27 @@ abstract class Model  {
                     return !array_key_exists($prop->name, $excludeFields);
                 })
         );
+
+        usort($config, function(array $a, array $b) {
+            if (
+                array_key_exists('primary_key', $a) &&
+                $a['primary_key']
+            ) {
+                return -1;
+            }
+            if (
+                array_key_exists('primary_key', $b) &&
+                $b['primary_key']
+            ) {
+                return 1;
+            }
+            $orderA = isset($a['list_view_order']) ? $a['list_view_order'] : 0;
+            $orderB = isset($b['list_view_order']) ? $b['list_view_order'] : 0;
+
+            return floatval($orderA) <=> floatval($orderB);
+        });
+
+        return $config;
     }
 
 
