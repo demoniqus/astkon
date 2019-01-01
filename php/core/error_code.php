@@ -12,6 +12,7 @@ abstract class ErrorCode
 {
     const PROGRAMMER_ERROR = 1;
     const BAD_DB_CONSISTENCE = 2;
+    const HACKING = 3;
     const FORBIDDEN = 403;
     const NOT_FOUND = 404;
 }
