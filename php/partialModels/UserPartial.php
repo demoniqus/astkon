@@ -155,6 +155,7 @@ protected static $fieldsInfo = array (
 	public $IdUser;
 
 	/**
+    * @foreign_key_action UserGroups/UserGroupsDict
 	* @form_edit_order 3
 	* @list_view_order 3
 	* @database_column_name id_user_group

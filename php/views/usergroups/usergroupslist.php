@@ -11,6 +11,7 @@
     <div class="col-lg text-center">
         <div class="text-left">
             <a href="/UserGroups/Edit/0" class="btn btn-success">Добавить группу</a>
+            <a href="/Users/UsersList" class="btn btn-outline-secondary">Пользователи</a>
         </div>
         <?php
         View::TableList($modelConfig, $listItems, $listItemOptions);

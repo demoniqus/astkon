@@ -41,6 +41,20 @@ class UsersController extends Controller
         $user = array();
         if (array_key_exists('submit', $_POST)) {
             $inputValues = array_filter($_POST, function($v, $k){ return $k !== 'submit'; }, ARRAY_FILTER_USE_BOTH);
+            if ($inputValues[User::PrimaryColumnName] == 0) {
+                if (!$inputValues['Password']) {
+                    //Ошибка
+                }
+                if ($inputValues['Password'] !== $inputValues['PasswordConfirm']) {
+                    //Ошибка
+                }
+
+            }
+            else {
+                /*
+                 * Если парольное поле НЕ ЗАПОЛНЕНО, тогда именно это поле не обновляем в БД
+                 */
+            }
             $res = User::SaveInstance($inputValues);
             if (isset($res['@error'])) {
                 //Заполняем все значения обратно
@@ -87,6 +101,8 @@ class UsersController extends Controller
                         user->
                         getFirstRow('id_user = :id_user', null, array('id_user' => $context['id']))
                     );
+                    unset($user['Password']);
+
                 }
             }
 
@@ -97,6 +113,7 @@ class UsersController extends Controller
                 user->
                 getFirstRow('id_user = :id_user', null, array('id_user' => $context['id']))
             );
+            unset($user['Password']);
         }
         $controllerName = self::ThisAction()[0];
         $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
@@ -118,6 +135,7 @@ class UsersController extends Controller
         $dataTable =  User::DataTable;
         if ($db->$dataTable->getFirstRow() !== null) {
             $view->error(ErrorCode::FORBIDDEN);
+            die();
         }
 
         $options = array();

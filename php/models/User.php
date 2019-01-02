@@ -16,4 +16,13 @@ class User extends UserPartial {
 	public function __construct (array $fields = array()) {
 		parent::__construct($fields, DataBase::camelCaseToUnderscore(__CLASS__));
 	}
+
+    /**
+     * @nodisplay true
+     * @data_type string
+     * @form_edit_order 2.1
+     * @alias Подтверждение пароля
+     * @var string
+     */
+	public $PasswordConfirm;
 }

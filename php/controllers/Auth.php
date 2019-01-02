@@ -33,6 +33,9 @@ class AuthController extends Controller
     }
 
     public function IndexAction($context) {
+        if (isset($_SESSION[AuthController::CurrentUserKey])) {
+            Redirect('Index', 'Index');
+        }
         $view = new View();
         $view->validState = Model::ValidStateUndefined;
         $options = array();
