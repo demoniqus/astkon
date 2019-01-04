@@ -10,13 +10,16 @@ namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
+use Astkon\DocComment;
 use function Astkon\Lib\array_keys_CameCase;
 use function Astkon\Lib\Redirect;
 use Astkon\linq;
 use Astkon\Model\Model;
+use Astkon\Model\Partial\UserPartial;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
+use ReflectionProperty;
 
 class AuthController extends Controller
 {
@@ -42,7 +45,9 @@ class AuthController extends Controller
         if (array_key_exists('submit', $_POST)) {
             $db = new DataBase();
             $usersList = $db->user->getRows('login = :login AND has_account = 1', null, array('login' => $_POST['Login']));
-            $password = $db->query('select PASSWORD(:password) as pwd', array('password' => $_POST['Password']));
+            $pwdFunction = DocComment::getDocCommentItem(new ReflectionProperty(UserPartial::class, 'Password'), 'save_wrapper');
+            $pwdFunction = $pwdFunction ?? 'password';
+            $password = $db->query('select ' . $pwdFunction . '(:password) as pwd', array('password' => $_POST['Password']));
             $password = $password[0]['pwd'];
             $user = (new linq($usersList))
                 ->first(function($user) use ($password){ return $user['password'] === $password;});
