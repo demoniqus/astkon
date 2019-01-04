@@ -413,13 +413,8 @@ abstract class Model  {
             $view->error(ErrorCode::PROGRAMMER_ERROR);
             die();
         }
-        $primaryFieldInfo = array_filter(
-            static::$fieldsInfo,
-            function($fieldInfo){
-                return strtoupper($fieldInfo['column_key']) === GlobalConst::MySqlPKVal;
-            }
-        );
-        $PKName = array_keys($primaryFieldInfo)[0];
+
+        $PKName = static::PrimaryColumnName;
         if (!array_key_exists($PKName, $values)) {
             $view = new View();
             $view->trace = nl2br(
@@ -444,6 +439,12 @@ abstract class Model  {
             throw new \Exception('Недопустимое значение первичного ключа');
         }
         $fieldsInfo = static::$fieldsInfo;
+
+        foreach ($fieldsInfo as $fieldName => $fieldParams) {
+            $reflectionProperty = new ReflectionProperty(static::class, $fieldName);
+            $fieldsInfo[$fieldName]['DocCommentParams'] = DocComment::extractDocCommentParams($reflectionProperty);
+        }
+
         $query = $PKVal === 0 ? ' INSERT INTO `' . static::DataTable . '` SET ' : 'UPDATE `' . static::DataTable . '` SET ';
         $values = array_filter(
             $values,
@@ -458,7 +459,13 @@ abstract class Model  {
         /*Здесь потом будем рассчитывать автоматические значения*/
 
         foreach ($values as $fieldKey => $fieldValue) {
-            $query .= ' `' . $fieldsInfo[$fieldKey]['column_name'] . '` = :' . $fieldKey . ',';
+            if (isset($fieldsInfo[$fieldKey]['DocCommentParams']['save_wrapper'])) {
+                $query .= ' `' . $fieldsInfo[$fieldKey]['column_name'] . '` = ' . $fieldsInfo[$fieldKey]['DocCommentParams']['save_wrapper'] . '(:' . $fieldKey . '),';
+            }
+        else {
+
+                $query .= ' `' . $fieldsInfo[$fieldKey]['column_name'] . '` = :' . $fieldKey . ',';
+            }
         }
 
         $query = mb_substr($query, 0, mb_strlen($query) - 1);
@@ -573,6 +580,7 @@ abstract class Model  {
         'list_view_order' => 'порядок вывода в списках',
         'nodisplay' => 'Обозначает, что данное свойство не отображается в представлениях списков',
         'noeditable' => 'Обозначает, что данное свойство не отображается в форме редактирования',
+        'save_wrapper' => 'Функция sql, используемая для сохранения значения в БД, например password или md5 (наименование без скобок)'
     );
 
     /**
