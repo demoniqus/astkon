@@ -9,7 +9,10 @@
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php'; ?>
     <div class="col-md text-left">
         <div class="alert alert-info text-center">
-            Редактирование единицы измерения
+            <?php
+            $actionCaption = $Entity[$Model::PrimaryColumnName] == 0 ? 'Создание ' : 'Редактирование ';
+            ?>
+            <?= $actionCaption; ?> единицы измерения
         </div>
         <?= $Model::EditForm($Entity, $options); ?>
     </div>
