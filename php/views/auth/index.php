@@ -6,7 +6,7 @@ use Astkon\Model\Model;
 ?>
 <form method="post" action="/Auth/Index">
     <div class="row mx-0">
-        <div class="col-lg text-center">
+        <div class="col-md text-center">
             <div class="mx-5 alert alert-secondary text-center">
                 Авторизуйтесь
             </div>
