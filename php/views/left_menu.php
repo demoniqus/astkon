@@ -1,4 +1,9 @@
-
+<style type="text/css">
+    .left-menu .nav-link {
+        text-overflow: ellipsis;
+        overflow-x: hidden;
+    }
+</style>
 <div class="left-menu col-md-2">
     <ul class="nav flex-column">
         <?php
@@ -34,7 +39,7 @@
             array_walk($leftMenuItems, function($menuItem) use ($activeMenu) {
                 ?>
                 <li class="nav-item<?php if (isset($activeMenu) && strtolower($activeMenu) === strtolower($menuItem['Action'])) echo ' btn btn-outline-primary p-0 text-left'; ?>">
-                    <a class="nav-link" href="<?= $menuItem['Action']; ?>"><?= $menuItem['Caption']; ?></a>
+                    <a class="nav-link" href="<?= $menuItem['Action']; ?>" title="<?= $menuItem['Caption']; ?>"><?= $menuItem['Caption']; ?></a>
                 </li>
         <?php
             });
