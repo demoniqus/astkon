@@ -79,17 +79,26 @@ else {
     $index = 0;
     $controller = $requestUri[$index] === '' ? 'index' : $requestUri[$index];
     $controller = setPathPartType($controller, 'controller');
+    define('REQUIRED_CONTROLLER', mb_substr($controller, 0, mb_strlen($controller) - mb_strlen('controller')));
 
     $index = 1;
     $action = $requestUri[$index] === '' ? 'index' : $requestUri[$index];
     $action = setPathPartType($action, 'action');
+    define('REQUIRED_ACTION', mb_substr($action, 0, mb_strlen($action) - mb_strlen('action')));
 
     $index = 2;
     $requestUri[$index] = $requestUri[$index] === '' ? null : $requestUri[$index];
 
-    //var_dump((new linq(get_declared_classes()))->where(function($item){ return strpos($item, 'stkon')!== false;})->getData());
+//    $existsControllers = (new linq(get_declared_classes()))
+//        ->where(function($item){ return strpos($item, 'stkon')!== false;})
+//        ->select(function ($item){ return explode('\\', $item);})
+//        ->where(function($item) use ($controller) {return count($item) > 1 && $item[1] === 'Controller' && strtolower ($item[2] )})
+//        ->getData();
+//
+//    var_dump($existsControllers);
+//    die();
     /*Получаем имя контроллера и его метода для вызова*/
-    $controllerNamespace = 'Astkon\Controllers\\';
+    $controllerNamespace = __NAMESPACE__ . '\\Controllers\\';
 
     $controller = $controllerNamespace . $controller;
 

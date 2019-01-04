@@ -142,6 +142,8 @@ abstract class Model  {
 //        $Controller = array_pop($Controller);
 
         // https://getbootstrap.com/docs/4.1/components/forms/
+        $Model = static::class;
+        $Entity = $item;
 
         echo '<form action="' . (isset($options['formAction']) ? $options['formAction'] : '') . '" method="post" enctype="multipart/form-data">';
         if ($isFormProcessed && isset($options['validation']['message'])) {
