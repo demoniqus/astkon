@@ -27,20 +27,20 @@ require_once  '.' . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'main_re
 //foreach (array_keys($_SESSION) as $key) {
 //    unset($_SESSION[$key]);
 //}
-$key = 'CurrentUser';
 //$user = null;
 //unset ($GLOBALS[$key]);
-if ((!isset($_SESSION[$key]) || !$_SESSION[$key])) {
+if ((!isset($_SESSION[AuthController::CurrentUserKey]) || !$_SESSION[AuthController::CurrentUserKey])) {
+    define('CURRENT_USER', null);
     $db = new DataBase();
     if ($db->user->getFirstRow() === null) {
         UsersController::Run('InitProjectAction', array());
     }
-    else {
+else {
         AuthController::Run('IndexAction', array());
     }
-
 }
 else {
+    define('CURRENT_USER', $_SESSION[AuthController::CurrentUserKey]);
     /**
      * Функция дополняет части запрошенного пути соответствующими им обозначениями типа Controller, Action
      * @param $pathPart
