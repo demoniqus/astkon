@@ -7,7 +7,7 @@
     use Astkon\View\View;
 
     ?>
-    <div class="col-lg text-center">
+    <div class="col-md text-center">
 
         <?php
             View::TableList($modelConfig, $listItems, $listItemOptions);

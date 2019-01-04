@@ -1,5 +1,5 @@
 
-<div class="left-menu col-lg-2">
+<div class="left-menu col-md-2">
     <ul class="nav flex-column">
         <?php
             $leftMenuItems = array(

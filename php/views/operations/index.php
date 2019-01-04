@@ -8,7 +8,7 @@
 
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php';
     ?>
-    <div class="col-lg text-center">
+    <div class="col-md text-center">
         <div class="container-fluid">
 
 

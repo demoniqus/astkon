@@ -8,7 +8,7 @@
     use Astkon\View\View;
 
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php'; ?>
-    <div class="col-lg text-center">
+    <div class="col-md text-center">
         <div class="text-left">
             <a href="/Users/Edit/0" class="btn btn-success">Добавить пользователя</a>
             <a href="/UserGroups/UserGroupsList" class="btn btn-outline-secondary">Группы пользователей</a>
