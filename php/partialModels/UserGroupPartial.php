@@ -77,6 +77,7 @@ protected static $fieldsInfo = array (
   ),
 );
 	/**
+    * @form_edit_order 2
     * @list_view_order 2
 	* @database_column_name comment
 	* @alias Комментарий
@@ -91,7 +92,8 @@ protected static $fieldsInfo = array (
 	*/
 	public $IdUserGroup;
 
-	/**
+    /**
+    * @form_edit_order 1
     * @list_view_order 1
 	* @foreign_key_display_value
 	* @database_column_name user_group_name
