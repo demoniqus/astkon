@@ -252,6 +252,11 @@ abstract class Model  {
         //https://getbootstrap.com/docs/4.1/components/forms/#validation   - проверка формы
     }
 
+    /**
+     * Метод возвращает список полей модели, которые должны использоваться для преобразования
+     * справочного идентификатора в понятное пользователю значение
+     * @return array
+     */
     protected static function getReferenceDisplayedKeys() : array {
         $editedProperties = self::getModelPublicProperties();
         $editedProperties = array_map(function (ReflectionProperty $reflectionProperty){
@@ -264,9 +269,20 @@ abstract class Model  {
                 'order' => intval($docParams['foreign_key_display_value'])
             );
         }, $editedProperties);
-        $editedProperties = array_filter($editedProperties, function($item) {return !is_null($item);});
-        usort($editedProperties, function($a, $b){ return $a['order'] <=> $b['order']; });
-        $editedProperties = array_map(function($prop){ return $prop['key']; }, $editedProperties);
+        $editedProperties = array_filter(
+            $editedProperties,
+            function($item) {
+                return !is_null($item);
+            }
+        );
+        usort(
+            $editedProperties,
+            function($a, $b){ return $a['order'] <=> $b['order']; }
+        );
+        $editedProperties = array_map(
+            function($prop){ return $prop['key']; },
+            $editedProperties
+        );
         if (count($editedProperties) === 0) {
             $editedProperties = [static::PrimaryColumnName];
         }
@@ -307,7 +323,9 @@ abstract class Model  {
                 $model = $fk['model'];
                 $refModel = explode('\\', __CLASS__);
                 $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($model);
-                $fk['displayed_keys'] = call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys');
+                $refModel = implode('\\', $refModel);
+                $fk['displayed_keys'] = $refModel::getReferenceDisplayedKeys();
+//                $fk['displayed_keys'] = call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys');
                 foreach ($listItems as &$listItem) {
                     if (is_null($listItem[$fieldKey])) {
                         continue;
@@ -594,6 +612,7 @@ abstract class Model  {
         $config = array_map(
             function(ReflectionProperty $prop) {
                 $result = DocComment::extractDocCommentParams($prop);
+//                Следующие ключи определяем принудительно независимо от настроек модели
                 $result['key'] = $prop->name;
                 $result['primary_key'] = static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal;
                 $result['foreign_key'] = isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null;
@@ -602,7 +621,7 @@ abstract class Model  {
                 return $result;
             },
             array_filter(
-                self::getModelPublicProperties(),
+                static::getModelPublicProperties(),
                 function(ReflectionProperty $prop) use ($excludeFields) {
                     return !array_key_exists($prop->name, $excludeFields);
                 })
