@@ -7,32 +7,63 @@
 <div class="left-menu col-md-2">
     <ul class="nav flex-column">
         <?php
-            $leftMenuItems = array(
-                array(
-                    'Action' => '/',
-                    'Caption' => 'Главная',
-                ),
-//                array(
-//                    'Action' => '/Articles/ArticlesList',
-//                    'Caption' => 'Артикулы',
-//                    'Icon' => '/barcode.png',
-//                ),
-                array(
-                    'Action' => '/Operations/Index',
-                    'Caption' => 'Операции',
-                    'Icon' => '/operations-icon.png',
-                ),
-                array(
-                    'Action' => '/Dictionaries/Index',
-                    'Caption' => 'Справочники',
-                    'Icon' => '/refbook.png',
-                ),
-                array(
-                    'Action' => '/Users/UsersList',
-                    'Caption' => 'Пользователи',
-                    'Icon' => '/users.png',
-                ),
-            );
+            if (CURRENT_USER['IsAdmin']) {
+                $leftMenuItems = array(
+                    array(
+                        'Action' => '/',
+                        'Caption' => 'Главная',
+                    ),
+                    //                array(
+                    //                    'Action' => '/Articles/ArticlesList',
+                    //                    'Caption' => 'Артикулы',
+                    //                    'Icon' => '/barcode.png',
+                    //                ),
+//                    array(
+//                        'Action' => '/Operations/Index',
+//                        'Caption' => 'Операции',
+//                        'Icon' => '/operations-icon.png',
+//                    ),
+                    array(
+                        'Action' => '/Dictionaries/Index',
+                        'Caption' => 'Справочники',
+                        'Icon' => '/refbook.png',
+                    ),
+                    array(
+                        'Action' => '/Users/UsersList',
+                        'Caption' => 'Пользователи',
+                        'Icon' => '/users.png',
+                    ),
+                );
+            }
+            else {
+                $leftMenuItems = array(
+                    array(
+                        'Action' => '/',
+                        'Caption' => 'Главная',
+                    ),
+                    //                array(
+                    //                    'Action' => '/Articles/ArticlesList',
+                    //                    'Caption' => 'Артикулы',
+                    //                    'Icon' => '/barcode.png',
+                    //                ),
+                    array(
+                        'Action' => '/Operations/Index',
+                        'Caption' => 'Операции',
+                        'Icon' => '/operations-icon.png',
+                    ),
+                    array(
+                        'Action' => '/Dictionaries/Index',
+                        'Caption' => 'Справочники',
+                        'Icon' => '/refbook.png',
+                    ),
+//                    array(
+//                        'Action' => '/Users/UsersList',
+//                        'Caption' => 'Пользователи',
+//                        'Icon' => '/users.png',
+//                    ),
+                );
+            }
+
             if (!isset($activeMenu)) {
                 $activeMenu = null;
             }
