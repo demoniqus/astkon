@@ -11,8 +11,8 @@ namespace Astkon;
 abstract class ErrorCode
 {
     const PROGRAMMER_ERROR = 1;
-    const BAD_DB_CONSISTENCE = 2;
-    const HACKING = 3;
+    const BAD_DB_CONSISTENCE = 2; //Ошибка целостности БД - найдена ссылка на несуществующий элемент
+    const HACKING = 3; //Попытка несанкционированного прямого доступа к методам
     const FORBIDDEN = 403;
     const NOT_FOUND = 404;
 }

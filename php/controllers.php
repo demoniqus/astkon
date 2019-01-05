@@ -2,8 +2,9 @@
 
 use Astkon\GlobalConst;
 
-require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Articles.php';
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'ArticleBalance.php';
 require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'ArticleCategories.php';
+require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Articles.php';
 require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Auth.php';
 require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'BuildObjects.php';
 require_once GlobalConst::ControllersDirectory . DIRECTORY_SEPARATOR . 'Index.php';

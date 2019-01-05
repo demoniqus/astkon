@@ -47,26 +47,7 @@ class ArticlesController extends Controller
         $substitution = null;
 //        $pageId = isset($context['id']) ? intval($context['id']) : 0;
 //        $pageSize = 5;
-        if (isset($_GET['operation'])) {
-            $dataTableName = OperationType::DataTable;
-            $operationType = (new DataBase())->$dataTableName->getFirstRow('operation_name = :operation_name', null, array('operation_name' => $_GET['operation']));
-            if (!$operationType) {
-                $view->trace = 'Запрошена недопустимая операция';
-                $view->error(ErrorCode::PROGRAMMER_ERROR);
-                die();
-            }
-            switch ($operationType['operation_name']) {
-                case 'Income':
-//                    Обозначение архивности нужно для того, чтобы не захламлять справочник артикулов, когда
-//                    остатки по нему нулевые и поступлений не ожидается, по крайней мере некоторое время
-                    $condition = 'is_archive <> 1';
-                    break;
-                default:
-                    $condition = 'balance > 0 && is_archive <> 1';
-                    break;
-            }
 
-        }
         $this->DictViewAction($view, Article::class, $condition, null, $substitution);
         $view->generate();
     }

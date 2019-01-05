@@ -4,39 +4,77 @@
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php'; ?>
     <div class="col-md text-center">
         <?php
-        $menu = array(
-            array(
-                'Action' => '/Articles/ArticlesList',
-                'Caption' => 'Артикулы',
-                'Icon' => '/barcode.png',
-            ),
-            array(
-                'Action' => '/ArticleCategories/ArticleCategoriesList',
-                'Caption' => 'Категории артикулов',
-                'Icon' => '/icon-categories.png',
-            ),
-            array(
-                'Action' => '/Measures/MeasuresList',
-                'Caption' => 'Единицы измерения',
-                'Icon' => '/measures.png',
-            ),
-            array(
-                'Action' => '/UserGroups/UserGroupsList',
-                'Caption' => 'Группы',
-                'Icon' => '/user-group-icon.png',
-            ),
-            array(
-                'Action' => '/BuildObjects/BuildObjectsList',
-                'Caption' => 'Объекты',
-                'Icon' => '/building.png',
-            ),
-//            array(
-//                'Action' => '/People/PeopleList',
-//                'Caption' => 'Люди',
-//                'Icon' => '/people.jpg',
-//            ),
+            if (CURRENT_USER['IsAdmin']) {
+                $menu = array(
+                    array(
+                        'Action' => '/Articles/ArticlesList',
+                        'Caption' => 'Артикулы',
+                        'Icon' => '/barcode.png',
+                    ),
+                    array(
+                        'Action' => '/ArticleCategories/ArticleCategoriesList',
+                        'Caption' => 'Категории артикулов',
+                        'Icon' => '/icon-categories.png',
+                    ),
+                    array(
+                        'Action' => '/Measures/MeasuresList',
+                        'Caption' => 'Единицы измерения',
+                        'Icon' => '/measures.png',
+                    ),
+                    array(
+                        'Action' => '/UserGroups/UserGroupsList',
+                        'Caption' => 'Группы',
+                        'Icon' => '/user-group-icon.png',
+                    ),
+                    array(
+                        'Action' => '/BuildObjects/BuildObjectsList',
+                        'Caption' => 'Объекты',
+                        'Icon' => '/building.png',
+                    ),
+                    //            array(
+                    //                'Action' => '/People/PeopleList',
+                    //                'Caption' => 'Люди',
+                    //                'Icon' => '/people.jpg',
+                    //            ),
 
-        );
+                );
+            }
+            else {
+                $menu = array(
+                    array(
+                        'Action' => '/ArticleBalance/ArticleBalanceList',
+                        'Caption' => 'Артикулы',
+                        'Icon' => '/barcode.png',
+                    ),
+                    array(
+                        'Action' => '/ArticleCategories/ArticleCategoriesList',
+                        'Caption' => 'Категории артикулов',
+                        'Icon' => '/icon-categories.png',
+                    ),
+//                    array(
+//                        'Action' => '/Measures/MeasuresList',
+//                        'Caption' => 'Единицы измерения',
+//                        'Icon' => '/measures.png',
+//                    ),
+//                    array(
+//                        'Action' => '/UserGroups/UserGroupsList',
+//                        'Caption' => 'Группы',
+//                        'Icon' => '/user-group-icon.png',
+//                    ),
+//                    array(
+//                        'Action' => '/BuildObjects/BuildObjectsList',
+//                        'Caption' => 'Объекты',
+//                        'Icon' => '/building.png',
+//                    ),
+                    //            array(
+                    //                'Action' => '/People/PeopleList',
+                    //                'Caption' => 'Люди',
+                    //                'Icon' => '/people.jpg',
+                    //            ),
+
+                );
+            }
+
 
         \Astkon\Lib\TileMenu($menu, 4, 2);
         ?>
