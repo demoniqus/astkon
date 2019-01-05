@@ -38,7 +38,7 @@ abstract class Model  {
     }
 
     /**
-     * Метод извлекает alias для указанного поля из DocComment
+     * Метод извлекает caption для указанного поля из DocComment
      * @param string $fieldName
      * @return string
      */
@@ -63,8 +63,8 @@ abstract class Model  {
 
         /** @var ReflectionProperty $reflectionProperty */
         $reflectionProperty = array_shift($editedProperties);
-        $alias = DocComment::getDocCommentItem($reflectionProperty, 'alias');
-        return !!$alias ? $alias : $fieldName;
+        $caption = DocComment::getDocCommentItem($reflectionProperty, 'caption');
+        return !!$caption ? $caption : $fieldName;
     }
 
     /**
@@ -172,8 +172,8 @@ abstract class Model  {
             ) {
                 continue;
             }
-            /** @var string $alias - используется во вьюхах*/
-            $alias = isset($docCommentParams['alias']) ? $docCommentParams['alias'] : $propName;
+            /** @var string $caption - используется во вьюхах*/
+            $caption = isset($docCommentParams['caption']) ? $docCommentParams['caption'] : $propName;
             /** @var mixed $value - используется во вьюхах*/
             $value = $item[$propName];
 
@@ -589,16 +589,16 @@ abstract class Model  {
     }
 
     const DocCommentKeys = array(
-        'alias' => ' Псевдоним, выводимый на страницы для пользователя вместо реального имени свойства экзепмляра модели',
-        'autocalc' => 'Обозначает, что значение свойства автоматически рассчитывается согласно указанному выражению. Такое свойство не отображается в форме редактирования',
-        'database_column_name' => 'наименование колонки в таблице БД, отвечающей за хранение значения свойства модели',
+        'caption'                   => ' Псевдоним, выводимый на страницы для пользователя вместо реального имени свойства экзепмляра модели',
+        'autocalc'                  => 'Обозначает, что значение свойства автоматически рассчитывается согласно указанному выражению. Такое свойство не отображается в форме редактирования',
+        'database_column_name'      => 'наименование колонки в таблице БД, отвечающей за хранение значения свойства модели',
         'foreign_key_display_value' => 'Это значение показывается в ссылочных полях вместо идентификатора. Если несколько полей используются для отображения значения, их порядок сортируется значением этого параметра',
-        'foreign_key_action' => 'ссылка на action для справочника',
-        'form_edit_order' => 'порядок вывода в форме редактирования',
-        'list_view_order' => 'порядок вывода в списках',
-        'nodisplay' => 'Обозначает, что данное свойство не отображается в представлениях списков',
-        'noeditable' => 'Обозначает, что данное свойство не отображается в форме редактирования',
-        'save_wrapper' => 'Функция sql, используемая для сохранения значения в БД, например password или md5 (наименование без скобок)'
+        'foreign_key_action'        => 'ссылка на action для справочника',
+        'form_edit_order'           => 'порядок вывода в форме редактирования',
+        'list_view_order'           => 'порядок вывода в списках',
+        'nodisplay'                 => 'Обозначает, что данное свойство не отображается в представлениях списков',
+        'noeditable'                => 'Обозначает, что данное свойство не отображается в форме редактирования',
+        'save_wrapper'              => 'Функция sql, используемая для сохранения значения в БД, например password или md5 (наименование без скобок)',
     );
 
     /**

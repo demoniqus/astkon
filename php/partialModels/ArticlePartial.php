@@ -123,14 +123,14 @@ protected static $fieldsInfo = array (
 	/**
 	* @foreign_key_display_value
 	* @database_column_name article_name
-	* @alias Наименование
+	* @caption Наименование
 	* @var string
 	*/
 	public $ArticleName;
 
 	/**
 	* @database_column_name id_article
-	* @alias Идентификатор
+	* @caption Идентификатор
 	* @var int
 	*/
 	public $IdArticle;
@@ -138,7 +138,7 @@ protected static $fieldsInfo = array (
 	/**
 	* @foreign_key_action ArticleCategories/ArticleCategoriesDict
 	* @database_column_name id_article_category
-	* @alias Категория
+	* @caption Категория
 	* @var int
 	*/
 	public $IdArticleCategory;
@@ -146,21 +146,21 @@ protected static $fieldsInfo = array (
 	/**
 	* @foreign_key_action Measures/MeasuresDict
 	* @database_column_name id_measure
-	* @alias Единица измерения
+	* @caption Единица измерения
 	* @var int
 	*/
 	public $IdMeasure;
 
 	/**
 	* @database_column_name is_archive
-	* @alias Архивный
+	* @caption Архивный
 	* @var bool
 	*/
 	public $IsArchive;
 
 	/**
 	* @database_column_name vendor_code
-	* @alias Код поставщика
+	* @caption Код поставщика
 	* @var string
 	*/
 	public $VendorCode;

@@ -20,12 +20,12 @@ use Astkon\Model\Model;
             }
 
             $inputType = 'text';
-            $alias = 'Логин';
+            $caption = 'Логин';
             $propName = 'Login';
             require GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
 
             $inputType = 'password';
-            $alias = 'Пароль';
+            $caption = 'Пароль';
             $propName = 'Password';
             require GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
             ?>

@@ -21,7 +21,7 @@ class User extends UserPartial {
      * @nodisplay true
      * @data_type string
      * @form_edit_order 2.1
-     * @alias Подтверждение пароля
+     * @caption Подтверждение пароля
      * @var string
      */
 	public $PasswordConfirm;

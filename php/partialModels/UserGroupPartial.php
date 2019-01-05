@@ -80,14 +80,14 @@ protected static $fieldsInfo = array (
     * @form_edit_order 2
     * @list_view_order 2
 	* @database_column_name comment
-	* @alias Комментарий
+	* @caption Комментарий
 	* @var string
 	*/
 	public $Comment;
 
 	/**
 	* @database_column_name id_user_group
-	* @alias Идентификатор
+	* @caption Идентификатор
 	* @var int
 	*/
 	public $IdUserGroup;
@@ -97,7 +97,7 @@ protected static $fieldsInfo = array (
     * @list_view_order 1
 	* @foreign_key_display_value
 	* @database_column_name user_group_name
-	* @alias Наименование группы
+	* @caption Наименование группы
 	* @var string
 	*/
 	public $UserGroupName;

@@ -6,7 +6,7 @@ use Astkon\DataBase;
 
 ?>
 <div class="form-group row <?= $propName; ?>">
-    <label class="col-sm-3 col-form-label text-right"><?= $alias; ?></label>
+    <label class="col-sm-3 col-form-label text-right"><?= $caption; ?></label>
     <div class="col-sm-9 col-lg-5 row">
         <div class="col-sm-2">
             <button type="button" class="btn btn-light" onclick="new DictionaryField({targetContainer: $(this).parents('.form-group:first'), extReferencePKName: '<?= DataBase::underscoreToCamelCase($ForeignKeyParams['field']); ?>', dataSourceUrl: '<?= $dictionaryAction; ?>', title: $(this).parents('.form-group:first').find('.col-form-label:first').text(), setValueCallback: 'setSingleReferenceValue'})">...</button>

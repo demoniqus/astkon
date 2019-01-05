@@ -83,28 +83,28 @@ protected static $fieldsInfo = array (
 );
 	/**
 	* @database_column_name balance
-	* @alias
+	* @caption Остаток
 	* @var float
 	*/
 	public $Balance;
 
 	/**
 	* @database_column_name id_article
-	* @alias
+	* @caption
 	* @var int
 	*/
 	public $IdArticle;
 
 	/**
 	* @database_column_name id_article_balance
-	* @alias
+	* @caption
 	* @var int
 	*/
 	public $IdArticleBalance;
 
 	/**
 	* @database_column_name id_user_group
-	* @alias
+	* @caption
 	* @var int
 	*/
 	public $IdUserGroup;

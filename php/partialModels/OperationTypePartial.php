@@ -68,7 +68,7 @@ protected static $fieldsInfo = array (
 );
 	/**
 	* @database_column_name id_operation_type
-	* @alias
+	* @caption
 	* @var int
 	*/
 	public $IdOperationType;
@@ -76,14 +76,14 @@ protected static $fieldsInfo = array (
 	/**
 	* @foreign_key_display_value
 	* @database_column_name operation_label
-	* @alias
+	* @caption
 	* @var string
 	*/
 	public $OperationLabel;
 
 	/**
 	* @database_column_name operation_name
-	* @alias
+	* @caption
 	* @var string
 	*/
 	public $OperationName;

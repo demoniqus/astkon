@@ -33,7 +33,7 @@ use Astkon\Model\Model;
                 $validMessage = '';
             }
             $inputType = 'text';
-            $alias = 'Логин';
+            $caption = 'Логин';
             $value = $Entity[$propName];
             require GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
 
@@ -47,7 +47,7 @@ use Astkon\Model\Model;
                 $validMessage = '';
             }
             $inputType = 'password';
-            $alias = 'Пароль';
+            $caption = 'Пароль';
             $value = $Entity[$propName];
             require GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
 
@@ -60,7 +60,7 @@ use Astkon\Model\Model;
                 $validState = Model::ValidStateUndefined;
                 $validMessage = '';
             }
-            $alias = 'Подтверждение пароля';
+            $caption = 'Подтверждение пароля';
             $value = $Entity[$propName];
             require GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields' . DIRECTORY_SEPARATOR . 'input.php';
             ?>

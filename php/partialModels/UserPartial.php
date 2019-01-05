@@ -133,7 +133,7 @@ protected static $fieldsInfo = array (
 	* @noeditable true
 	* @list_view_order 6
 	* @database_column_name config
-	* @alias Системная конфигурация
+	* @caption Системная конфигурация
 	* @var array
 	*/
 	public $Config;
@@ -142,14 +142,14 @@ protected static $fieldsInfo = array (
 	* @form_edit_order 4
 	* @list_view_order 4
 	* @database_column_name has_account
-	* @alias Пользователь имеет аккаунт
+	* @caption Пользователь имеет аккаунт
 	* @var bool
 	*/
 	public $HasAccount;
 
 	/**
 	* @database_column_name id_user
-	* @alias Идентификатор
+	* @caption Идентификатор
 	* @var int
 	*/
 	public $IdUser;
@@ -159,7 +159,7 @@ protected static $fieldsInfo = array (
 	* @form_edit_order 3
 	* @list_view_order 3
 	* @database_column_name id_user_group
-	* @alias Группа
+	* @caption Группа
 	* @var int
 	*/
 	public $IdUserGroup;
@@ -168,7 +168,7 @@ protected static $fieldsInfo = array (
 	* @form_edit_order 5
 	* @list_view_order 5
 	* @database_column_name is_admin
-	* @alias Администратор
+	* @caption Администратор
 	* @var bool
 	*/
 	public $IsAdmin;
@@ -177,7 +177,7 @@ protected static $fieldsInfo = array (
 	* @form_edit_order 1
 	* @list_view_order 1
 	* @database_column_name login
-	* @alias Логин
+	* @caption Логин
 	* @var string
 	*/
 	public $Login;
@@ -188,7 +188,7 @@ protected static $fieldsInfo = array (
 	* @list_view_order 2
     * @save_wrapper password
 	* @database_column_name password
-	* @alias Пароль
+	* @caption Пароль
 	* @var string
 	*/
 	public $Password;
@@ -197,7 +197,7 @@ protected static $fieldsInfo = array (
 	* @form_edit_order 0
 	* @list_view_order 0
 	* @database_column_name user_name
-	* @alias Имя пользователя
+	* @caption Имя пользователя
 	* @var string
 	*/
 	public $UserName;

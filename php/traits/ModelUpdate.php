@@ -242,7 +242,7 @@ trait ModelUpdate
                 /*Пишем новый docComment*/
                 fwrite($partialHandle, "\t" . '/**' . PHP_EOL);
                 fwrite($partialHandle, "\t" . '* @database_column_name ' . $_column_name . PHP_EOL);
-                fwrite($partialHandle, "\t" . '* @alias' . PHP_EOL);
+                fwrite($partialHandle, "\t" . '* @caption' . PHP_EOL);
                 switch ($line['data_type']) {
                     case 'int':
                     case 'year':

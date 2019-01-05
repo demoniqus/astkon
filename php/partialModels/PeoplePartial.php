@@ -60,21 +60,21 @@ protected static $fieldsInfo = array (
 );
 	/**
 	* @database_column_name id_people
-	* @alias Идентификатор
+	* @caption Идентификатор
 	* @var int
 	*/
 	public $IdPeople;
 
 	/**
 	* @database_column_name people_name
-	* @alias ФИО
+	* @caption ФИО
 	* @var string
 	*/
 	public $PeopleName;
 
 	/**
 	* @database_column_name post_name
-	* @alias Должность
+	* @caption Должность
 	* @var string
 	*/
 	public $PostName;

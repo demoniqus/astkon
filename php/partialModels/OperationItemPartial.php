@@ -109,42 +109,42 @@ protected static $fieldsInfo = array (
 );
 	/**
 	* @database_column_name consignment_balance
-	* @alias
+	* @caption
 	* @var float
 	*/
 	public $ConsignmentBalance;
 
 	/**
 	* @database_column_name id_article
-	* @alias
+	* @caption
 	* @var int
 	*/
 	public $IdArticle;
 
 	/**
 	* @database_column_name id_operation
-	* @alias
+	* @caption
 	* @var int
 	*/
 	public $IdOperation;
 
 	/**
 	* @database_column_name id_operation_item
-	* @alias
+	* @caption
 	* @var int
 	*/
 	public $IdOperationItem;
 
 	/**
 	* @database_column_name operation_count
-	* @alias
+	* @caption
 	* @var float
 	*/
 	public $OperationCount;
 
 	/**
 	* @database_column_name operation_item_info
-	* @alias
+	* @caption
 	* @var array
 	*/
 	public $OperationItemInfo;

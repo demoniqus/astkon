@@ -7,7 +7,7 @@
         }
         ?>
         <th scope="col" class="align-top">
-            <?= $fieldConfig['alias'] ? $fieldConfig['alias'] : $fieldConfig['key']; ?>
+            <?= $fieldConfig['caption'] ? $fieldConfig['caption'] : $fieldConfig['key']; ?>
         </th>
         <?php
     }

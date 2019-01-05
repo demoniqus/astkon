@@ -135,28 +135,28 @@ protected static $fieldsInfo = array (
 );
 	/**
 	* @database_column_name create_datetime
-	* @alias Дата создания операции
+	* @caption Дата создания операции
 	* @var DateTime
 	*/
 	public $CreateDatetime;
 
 	/**
 	* @database_column_name fix_datetime
-	* @alias Дата фиксации операции
+	* @caption Дата фиксации операции
 	* @var DateTime
 	*/
 	public $FixDatetime;
 
 	/**
 	* @database_column_name id_operation
-	* @alias Идентификатор
+	* @caption Идентификатор
 	* @var int
 	*/
 	public $IdOperation;
 
 	/**
 	* @database_column_name id_operation_state
-	* @alias Статус документа
+	* @caption Статус документа
 	* @var int
 	*/
 	public $IdOperationState;
@@ -164,14 +164,14 @@ protected static $fieldsInfo = array (
 	/**
 	* @noeditable
 	* @database_column_name id_operation_type
-	* @alias Тип документа
+	* @caption Тип документа
 	* @var int
 	*/
 	public $IdOperationType;
 
 	/**
 	* @database_column_name id_user_group
-	* @alias
+	* @caption
 	* @var int
 	*/
 	public $IdUserGroup;
@@ -179,7 +179,7 @@ protected static $fieldsInfo = array (
 	/**
 	* @noeditable
 	* @database_column_name operation_info
-	* @alias Расширенная информация
+	* @caption Расширенная информация
 	* @var array
 	*/
 	public $OperationInfo;

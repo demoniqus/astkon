@@ -82,28 +82,28 @@ protected static $fieldsInfo = array (
 	/**
 	* @foreign_key_display_value
 	* @database_column_name category_name
-	* @alias Наименование категории
+	* @caption Наименование категории
 	* @var string
 	*/
 	public $CategoryName;
 
 	/**
 	* @database_column_name id_article_category
-	* @alias Идентификатор
+	* @caption Идентификатор
 	* @var int
 	*/
 	public $IdArticleCategory;
 
 	/**
 	* @database_column_name is_saleable
-	* @alias Расходуется
+	* @caption Расходуется
 	* @var bool
 	*/
 	public $IsSaleable;
 
 	/**
 	* @database_column_name is_writeoff
-	* @alias Списывается
+	* @caption Списывается
 	* @var bool
 	*/
 	public $IsWriteoff;

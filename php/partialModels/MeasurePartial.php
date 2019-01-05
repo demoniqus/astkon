@@ -81,14 +81,14 @@ protected static $fieldsInfo = array (
 );
 	/**
 	* @database_column_name id_measure
-	* @alias Идентификатор
+	* @caption Идентификатор
 	* @var int
 	*/
 	public $IdMeasure;
 
 	/**
 	* @database_column_name is_split
-	* @alias Признак делимости
+	* @caption Признак делимости
 	* @var bool
 	*/
 	public $IsSplit;
@@ -96,14 +96,14 @@ protected static $fieldsInfo = array (
 	/**
 	* @foreign_key_display_value
 	* @database_column_name measure_name
-	* @alias Обозначение
+	* @caption Обозначение
 	* @var string
 	*/
 	public $MeasureName;
 
 	/**
 	* @database_column_name precision
-	* @alias Точность деления (дес. зн)
+	* @caption Точность деления (дес. зн)
 	* @var int
 	*/
 	public $Precision;

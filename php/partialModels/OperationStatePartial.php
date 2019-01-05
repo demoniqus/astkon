@@ -81,28 +81,28 @@ protected static $fieldsInfo = array (
 );
 	/**
 	* @database_column_name id_operation_state
-	* @alias
+	* @caption
 	* @var int
 	*/
 	public $IdOperationState;
 
 	/**
 	* @database_column_name state_comment
-	* @alias
+	* @caption
 	* @var string
 	*/
 	public $StateComment;
 
 	/**
 	* @database_column_name state_label
-	* @alias
+	* @caption
 	* @var string
 	*/
 	public $StateLabel;
 
 	/**
 	* @database_column_name state_name
-	* @alias
+	* @caption
 	* @var string
 	*/
 	public $StateName;

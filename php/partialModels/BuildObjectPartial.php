@@ -60,21 +60,21 @@ protected static $fieldsInfo = array (
 );
 	/**
 	* @database_column_name build_object_name
-	* @alias Наименование объекта
+	* @caption Наименование объекта
 	* @var string
 	*/
 	public $BuildObjectName;
 
 	/**
 	* @database_column_name comment
-	* @alias Комментарий для объекта
+	* @caption Комментарий для объекта
 	* @var string
 	*/
 	public $Comment;
 
 	/**
 	* @database_column_name id_build_object
-	* @alias Идентификатор
+	* @caption Идентификатор
 	* @var int
 	*/
 	public $IdBuildObject;
