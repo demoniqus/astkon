@@ -633,7 +633,7 @@ abstract class Model  {
         ?array $substitution = array(),
         ?int $offset = null,
         ?bool $decodeForeignKeys = false
-    ) : array {
+    ) : ?array {
         $rows = static::getRows(
             $db,
             $condition,
