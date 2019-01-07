@@ -16,6 +16,7 @@ use function Astkon\Lib\Redirect;
 use Astkon\linq;
 use Astkon\Model\Model;
 use Astkon\Model\Partial\UserPartial;
+use Astkon\Model\User;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
@@ -52,6 +53,7 @@ class AuthController extends Controller
             $user = (new linq($usersList))
                 ->first(function($user) use ($password){ return $user['password'] === $password;});
             if ($user) {
+                $user = User::getFirstRow($db, User::PrimaryColumnKey . ' = ' . $user[User::PrimaryColumnKey], null, null, null, true);
                 unset($user['password']);
                 $_SESSION[AuthController::CurrentUserKey] = $GLOBALS[AuthController::CurrentUserKey] = array_keys_CameCase($user);
                 Redirect('Index', 'Index');
