@@ -60,7 +60,7 @@ protected static $fieldsInfo = array (
         0 => 
         array (
           'key' => 'article_name',
-          'alias' => 'article_name_alias',
+//          'alias' => 'article_name_alias',
           'list_view_order' => 1,
         ),
         1 => 
