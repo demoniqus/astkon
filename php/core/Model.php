@@ -500,6 +500,62 @@ abstract class Model  {
         }
     }
 
+    public static function getRows(
+        $db = null,
+        ?string $condition = null, //строка
+        ?array $required_fields = null, //массив наименований колонок для выборки
+        ?array $substitution = array(),
+        ?int $offset = null,
+        ?int $limit = null,
+        ?bool $decodeForeignKeys = false
+    ) : array {
+        if (!self::checkIsClassOfModel()) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        $db = $db ?? (new DataBase());
+        $model = static::DataTable;
+        $rows = $db->$model->getRows(
+            $condition,
+            $required_fields,
+            $substitution,
+            $offset,
+            $limit
+        );
+        if ($decodeForeignKeys) {
+            static::decodeForeignKeys($rows);
+        }
+        return $rows;
+    }
+
+    public static function getFirstRow(
+        $db = null,
+        ?string $condition = null, //строка
+        ?array $required_fields = null, //массив наименований колонок для выборки
+        ?array $substitution = array(),
+        ?int $offset = null,
+        ?bool $decodeForeignKeys = false
+    ) : array {
+        $rows = static::getRows(
+            $db,
+            $condition,
+            $required_fields,
+            $substitution,
+            $offset,
+            1,
+            $decodeForeignKeys
+        );
+        return count($rows) ? $rows[0] : null;
+    }
+
     protected static function typifyValues(array $fieldsInfo, array $values) {
         foreach ($values as $k => &$v) {
             if (is_null($v)) {
@@ -630,6 +686,53 @@ abstract class Model  {
                     return !array_key_exists($prop->name, $excludeFields);
                 })
         );
+        $checkIsJoined = function (array $item) : bool {
+            return isset($item['foreign_key']) && isset($item['foreign_key']['display_mode']) && $item['foreign_key']['display_mode'] === 'join_model';
+        };
+
+        $joinedModels = array();
+        foreach ($config as $configItem) {
+            if (!$checkIsJoined($configItem)) {
+                continue;
+            }
+            $joinedModels[] = $configItem['foreign_key'];
+        }
+        while(count($joinedModels)) {
+            $joinedModel = array_pop($joinedModels);
+
+
+            $refModel = explode('\\', static::class);
+            $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($joinedModel['model']);
+            $refModel = implode('\\', $refModel);
+            $refModelConfig = (new linq($refModel::getConfigForListView()))
+                ->toAssoc(function($refModelFieldConfig){ return $refModelFieldConfig['key'];})
+                ->getData();
+            foreach ($joinedModel['joined_columns'] as $joinedField) {
+                $fieldName = DataBase::underscoreToCamelCase($joinedField['key']);
+                if (!array_key_exists($fieldName, $refModelConfig)) {
+                    $view = new View();
+                    $view->trace = 'Внешний ключ модели ' . static::class . ' ссылается на несуществующее поле ' . $fieldName . ' модели ' . $refModel;
+                    $view->error(ErrorCode::PROGRAMMER_ERROR);
+                    die();
+                }
+                $refModelFieldConfig = $refModelConfig[$fieldName];
+                if ($checkIsJoined($refModelFieldConfig)) {
+                    $joinedModels[] = $refModelFieldConfig;
+                }
+                else {
+                    if (isset($joinedField['list_view_order'])) {
+                        $refModelFieldConfig['list_view_order'] = $joinedField['list_view_order'];
+                    }
+                    if (isset($joinedField['alias'])) {
+                        $refModelFieldConfig['$orig_key'] = $refModelFieldConfig['key'];
+                        $refModelFieldConfig['key'] = DataBase::underscoreToCamelCase($joinedField['alias']);
+//                        var_dump($refModelFieldConfig);
+                    }
+                    $config[] = $refModelFieldConfig;
+                }
+            }
+
+        }
 
         usort($config, function(array $a, array $b) {
             if (
