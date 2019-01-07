@@ -116,7 +116,7 @@ class DataBase {
      */
     public function query(
         string $query,
-        $substitution = array(),
+        ?array $substitution = array(),
         string $mode = 'assoc'
     ) {
         $data = array();
@@ -787,26 +787,26 @@ class DataBase {
         /*Запросим строки и сразу произведем типизацию*/
         return 'select ' .
             implode(', ', $required_fields) .
-            ' from ' . $this->currentObject['name'] . ' ' .
+            ' from `' . $this->currentObject['name'] . '` ' .
             ($condition ? 'where ' . $condition : '') . ' ' .
             (!is_null($limit) ? 'limit ' . $limit : '') . ' ' .
             (!is_null($offset) ? 'offset ' . $offset : '');
     }
 
     /**
-     * @param null|string $condition - условие для выборки
-     * @param null|array $required_fields - требуемые для выборки поля
-     * @param array $values - значения для подставновки в запрос вместо placeholder'ов
-     * @param null|int $offset
-     * @param null|int $limit
+     * @param null|string $condition       - условие для выборки
+     * @param null|array  $required_fields - требуемые для выборки поля
+     * @param array       $substitution    - значения для подставновки в запрос вместо placeholder'ов
+     * @param null|int    $offset
+     * @param null|int    $limit
      * @return array
      */
     public function getRows(
-            $condition = null, //строка
-            $required_fields = null, //массив наименований колонок для выборки
-            $values = array(),
-            $offset = null,
-            $limit = null
+        $condition = null, //строка
+        $required_fields = null, //массив наименований колонок для выборки
+        $substitution = array(),
+        $offset = null,
+        $limit = null
             ) : array {
         if (!$this->currentObject) {
             throw new Exception('Не установлен объект для извелечения из БД');
@@ -815,7 +815,7 @@ class DataBase {
         $columns = $this->currentObject['fields'];
         /*Запросим строки и сразу произведем типизацию*/
         $query = $this->_getQueryString($condition, $required_fields, $offset, $limit);
-        $rows = (new linq($this->query($query, $values)))
+        $rows = (new linq($this->query($query, $substitution)))
             ->where(function($row){ return count($row) > 0;})
             ->for_each(function(&$row) use ($columns){
                 self::_convertValue($row, $this->currentObject['fields']);
@@ -1323,7 +1323,7 @@ class DataBase {
      */
     public static function underscoreToCamelCase(string $underscore) {
         $camelCase = preg_replace_callback('/(_[a-z])/', function ($matches) { return strtoupper($matches[1][1]);}, $underscore);
-        return strtoupper($camelCase[0]) . substr($camelCase, 1);
+        return ucfirst($camelCase);
     }
 
     /**
