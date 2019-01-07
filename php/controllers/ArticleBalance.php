@@ -9,7 +9,7 @@
 namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
-use Astkon\Model\ArticleCategory;
+use Astkon\Model\ArticleBalance;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
@@ -29,7 +29,14 @@ class ArticleBalanceController extends Controller
 
     public function ArticleBalanceListAction($context) {
         $view = new View();
-        $this->ListViewAction($view, ArticleCategory::class, __CLASS__);
+        $this->ListViewAction(
+            $view,
+            ArticleBalance::class,
+            __CLASS__,
+            'id_user_group = :id_user_group',
+            null,
+            array('id_user_group' => CURRENT_USER['IdUserGroup'])
+        );
         $view->generate();
 
 
@@ -58,7 +65,13 @@ class ArticleBalanceController extends Controller
 
     public function ArticleBalanceDictAction($context) {
         $view = new View();
-        $this->DictViewAction($view, ArticleCategory::class);
+        $this->DictViewAction(
+            $view,
+            ArticleBalance::class,
+            'id_user_group = :id_user_group',
+            null,
+            array('id_user_group' => CURRENT_USER['IdUserGroup'])
+        );
         $view->generate();
     }
 
