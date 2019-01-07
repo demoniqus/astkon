@@ -20,6 +20,7 @@ use ReflectionProperty;
 trait ModelUpdate
 {
     protected static $PartialSuffix = 'Partial';
+    protected static $KEY__FOREIGN_KEY = 'foreign_key';
     /**
      * Метод обновляет код моделей.
      * Если метод вызван на базовом классе Model, будут обновлены все модели, существующие в БД.
@@ -27,7 +28,6 @@ trait ModelUpdate
      * Если метод вызван на потомке класса Model (в т.ч. и Partial-потомке), будет обновлена его модель
      * Если передан параметр $className, будет обновлена соответствующая модель независимо от точки вызова данного метода
      * @param null|string $className
-     * @throws Exception
      */
     public static function UpdateModelPhpCode($className = null) {
         $db = new DataBase();
@@ -41,7 +41,7 @@ trait ModelUpdate
         else {
             $className = explode('\\', !empty($className) ? $className : static::class);
             $className = $className[count($className) - 1];
-            if (preg_match('/' . self::$PartialSuffix . '$/', $className)) {
+            if (preg_match('/' . self::$PartialSuffix . '$/i', $className)) {
                 $className = substr($className, 0, strlen($className) - strlen(self::$PartialSuffix));
             }
             self::generateClass(DataBase::underscoreToCamelCase($className), $db);
@@ -109,9 +109,13 @@ trait ModelUpdate
         fwrite($fileHandler,  PHP_EOL);
         fwrite($fileHandler, ' * Не допускаются произвольные изменения вручную.');
         fwrite($fileHandler,  PHP_EOL);
-        fwrite($fileHandler, ' * Допускается вручную только расширять doc-блок публичный полей класса. ');
+        fwrite($fileHandler, ' * Допускается вручную расширять doc-блок публичный полей класса. ');
         fwrite($fileHandler,  PHP_EOL);
         fwrite($fileHandler, ' * При этом разделы @var и @database_column_name будут автоматически перезаписываться.');
+        fwrite($fileHandler,  PHP_EOL);
+        fwrite($fileHandler, ' * Допускается вручную расширять foreign_key в $fieldsInfo. ');
+        fwrite($fileHandler,  PHP_EOL);
+        fwrite($fileHandler, ' * При этом ключи model и field изменять не допускается - при обновлении модели в случае их изменения может быть утрачена прочая информация');
         fwrite($fileHandler, ' */');
         fwrite($fileHandler,  PHP_EOL);
 
@@ -128,23 +132,30 @@ trait ModelUpdate
         $partialModelFileName = getcwd() . DIRECTORY_SEPARATOR .
             GlobalConst::PartialModelsDirectory . DIRECTORY_SEPARATOR .
             $className . self::$PartialSuffix . '.php';
-        $fieldsDoc = array();
-        if (file_exists($partialModelFileName)) {
-            $fieldsDoc = self::getPartialModelFieldsDocBlock($className);
-        }
+
+        $partialModelNS = self::getRootNameSpace() . '\\Model\\' . self::$PartialSuffix;
+        $partialModelName = $className . self::$PartialSuffix;
+        $partialClassName = $partialModelNS . '\\' . $partialModelName;
+
+        $foreignKeys = self::getColumnsForeignKeys($partialClassName);
+
+
+        $fieldsDoc = self::getPartialModelFieldsDocBlock($partialClassName);
+
         $partialHandle = fopen(
             $partialModelFileName,
             'wt'
         );
+
         fwrite($partialHandle, '<?php ');
         fwrite($partialHandle,  PHP_EOL . PHP_EOL);
         self::PartialModelInstruction($partialHandle);
         fwrite($partialHandle,  PHP_EOL . PHP_EOL);
-        fwrite($partialHandle, 'namespace ' . self::getRootNameSpace() . '\\Model\\' . self::$PartialSuffix . ';');
+        fwrite($partialHandle, 'namespace ' . $partialModelNS . ';');
         fwrite($partialHandle,  PHP_EOL . PHP_EOL);
         fwrite($partialHandle, 'use ' . self::getRootNameSpace() . '\\Model\\Model;');
         fwrite($partialHandle,  PHP_EOL . PHP_EOL);
-        fwrite($partialHandle, 'abstract class ' . ucfirst($className) . self::$PartialSuffix . ' extends Model {');
+        fwrite($partialHandle, 'abstract class ' . $partialModelName . ' extends Model {');
         fwrite($partialHandle,  PHP_EOL);
         fwrite($partialHandle, "\t" . 'const DataTable = \'' . $tableName . '\';');
         fwrite($partialHandle,  PHP_EOL);
@@ -168,11 +179,21 @@ trait ModelUpdate
 
         $columns = (new linq($columns))->toAssoc(function($column){ return DataBase::underscoreToCamelCase($column['column_name']);})->getData();
 
-        $columns = self::setColumnsForeignKeys($columns, $className, $db);
+        $columns = self::setColumnsForeignKeys($columns, $className, $db, $foreignKeys);
 
         $columns = self::setColumnsExtLinks($columns, $className, $db);
 
-        fwrite($partialHandle, '/** @var array */');
+        fwrite($partialHandle, "\t" . '/** ');
+        fwrite($partialHandle,  PHP_EOL);
+        fwrite($partialHandle, "\t" . '* Параметр описывает свойства колонок таблиц БД. ');
+        fwrite($partialHandle,  PHP_EOL);
+        fwrite($partialHandle, "\t" . '* Все наименования колонок следует задавать в under_score стиле. ');
+        fwrite($partialHandle,  PHP_EOL);
+        fwrite($partialHandle, "\t" . '* В camelCase стиле задаются только ключи верхнего уровня. ');
+        fwrite($partialHandle,  PHP_EOL);
+        fwrite($partialHandle, "\t" . '* @var array');
+        fwrite($partialHandle,  PHP_EOL);
+        fwrite($partialHandle, "\t" . '*/');
         fwrite($partialHandle,  PHP_EOL);
         fwrite($partialHandle, 'protected static $fieldsInfo = ' . var_export($columns, true) . ';');
         fwrite($partialHandle,  PHP_EOL);
@@ -292,7 +313,35 @@ trait ModelUpdate
         fclose($partialHandle);
     }
 
-    private static function setColumnsForeignKeys(array $columns, string $className, DataBase $db) {
+    private static function getColumnsForeignKeys(string $model) : array {
+        $keys = array();
+        if (class_exists($model)) {
+            $reflectClass = new ReflectionClass($model);
+            foreach ($reflectClass->getProperties(ReflectionProperty::IS_PRIVATE | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_STATIC) as $reflectionProperty) {
+                if (!$reflectionProperty->isStatic()) {
+                    continue;
+                }
+                if (strtolower($reflectionProperty->name) != 'fieldsinfo') {
+                    continue;
+                }
+
+                $reflectionProperty->setAccessible(true);
+
+                $fieldsInfo = $reflectionProperty->getValue();
+
+                foreach ($fieldsInfo as $fieldName => $fieldInfo) {
+                    if (!array_key_exists(static::$KEY__FOREIGN_KEY, $fieldInfo)) {
+                        continue;
+                    }
+                    $keys[$fieldName] = $fieldInfo[static::$KEY__FOREIGN_KEY];
+                }
+                $reflectionProperty->setAccessible(false);
+            }
+        }
+        return $keys;
+    }
+
+    private static function setColumnsForeignKeys(array $columns, string $className, DataBase $db, array $foreignKeys) {
         $references = $db->query('select '
             . '`table_name`, '
             . '`column_name`, '
@@ -302,10 +351,19 @@ trait ModelUpdate
             '\' AND table_name=\'' . DataBase::camelCaseToUnderscore($className) . '\' AND `referenced_column_name` IS NOT NULL'
         );
         foreach ($references as $reference) {
-            $columns[DataBase::underscoreToCamelCase($reference['column_name'])]['foreign_key'] = array(
-                'model' => $reference['referenced_table_name'],
-                'field' => $reference['referenced_column_name'],
-            );
+            $fieldName = DataBase::underscoreToCamelCase($reference['column_name']);
+            $fkData = array();
+            if (
+                isset($foreignKeys[$fieldName]) &&
+                $foreignKeys[$fieldName]['model'] === $reference['referenced_table_name'] &&
+                $foreignKeys[$fieldName]['field'] === $reference['referenced_column_name']
+            ) {
+                $fkData = $foreignKeys[$fieldName];
+            }
+            $fkData['model'] = $reference['referenced_table_name'];
+            $fkData['field'] = $reference['referenced_column_name'];
+
+            $columns[DataBase::underscoreToCamelCase($reference['column_name'])][static::$KEY__FOREIGN_KEY] = $fkData;
         }
         return $columns;
     }
@@ -378,6 +436,13 @@ trait ModelUpdate
         }
         else {
             $classFileHandle = fopen($classFileName, 'r+t');
+            if (gettype($classFileHandle) === gettype(true)) {
+                $view = new View();
+                $view->trace(array(
+                    'message' => 'Не удалось открыть файл ' . $classFileName
+                ));
+                $view->error(ErrorCode::PROGRAMMER_ERROR);
+            }
             $lines = [];
             while (!feof($classFileHandle)) {
                 $line = fgets($classFileHandle);
