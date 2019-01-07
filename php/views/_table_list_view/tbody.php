@@ -1,5 +1,8 @@
 <tbody>
     <?php
+
+    use Astkon\Model\Model;
+
     foreach ($items as $item) {
         ?>
         <tr data-item="<?= htmlspecialchars(json_encode($item)); ?>">
@@ -23,7 +26,7 @@
                 ?>
                 <td>
                     <?php
-                    $fkName = '$fk_' . $fieldConfig['key'];
+                    $fkName = Model::ForeignKeyPrefix . $fieldConfig['key'];
                     $val = isset($item[$fkName]) ? $item[$fkName]: $item[$fieldConfig['key']];
                     echo $val;
                     ?>

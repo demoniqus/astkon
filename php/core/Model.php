@@ -311,79 +311,169 @@ abstract class Model  {
      * @param array $listItems - ключи в under_score стиле
      */
     public static function decodeForeignKeys(array &$listItems) {
-        /*Пока мудрить ради скорости не буду - выбираю более понятный путь вывода значений справочников*/
         $fieldsInfo = array_filter(static::$fieldsInfo, function($fieldInfo){ return isset($fieldInfo['foreign_key']);});
         if (count($listItems) && count($fieldsInfo)) {
             $db = new DataBase();
-            foreach ($fieldsInfo as $fieldKey => $fieldInfo) {
+            foreach ($fieldsInfo as $fieldInfo) {
+                $columnName = $fieldInfo['column_name'];
+                if (!isset($fieldInfo['foreign_key'])) {
+                    continue;
+                }
                 $fk = $fieldInfo['foreign_key'];
+                if (
+                    !isset($fk['display_mode']) ||
+                    empty($fk['display_mode'])
+                ) {
+                    /*Если режим отображения не задан, остается идентификатор*/
+                    continue;
+                }
+
                 $model = $fk['model'];
                 $refModel = explode('\\', __CLASS__);
                 $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($model);
                 $refModel = implode('\\', $refModel);
-                $fk['displayed_keys'] = $refModel::getReferenceDisplayedKeys();
-//                $fk['displayed_keys'] = call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys');
-                foreach ($listItems as &$listItem) {
-                    if (is_null($listItem[$fieldKey])) {
-                        continue;
-                    }
-                    $refItem = $db->$model->getFirstRow(
-                        $fk['field'] . '= :' . $fk['field'],
-                        $fk['displayed_keys'],
-                        array($fk['field'] => $listItem[$fieldKey])
-                    );
-                    if (is_null($refItem)) {
-                        $view = new View();
-                        $view->trace = 'Нарушена целостность БД: элемент ' . $fieldInfo['table_name'] . '#' . $listItem[static::PrimaryColumnName] .
-                            ' ссылается на несуществующий элемент ' . $fk['model'] . '#' . $listItem[$fieldKey];
-                        $view->error(ErrorCode::BAD_DB_CONSISTENCE);
-                        die();
-                    }
 
-                    $listItem['$fk_' . $fieldKey] = implode(' ', $refItem);
+                $listId = array_map(
+                    function($item) use ($columnName){
+                        /*
+                         * Если поле не было запрошено, то $fieldInfo может быть не представлен в $item вообще
+                         */
+                        return array_key_exists($columnName, $item) ? $item[$columnName] : null;
+                    },
+                    $listItems
+                );
+                $listId = array_filter(
+                    $listId,
+                    function($searchId) {
+                        return !is_null($searchId);
+                    }
+                );
+                if (count($listId) < 1) {
+                    continue;
                 }
+
+                switch ($fk['display_mode']) {
+                    case 'decode_id_to_string':
+                        $required_keys = array_map(
+                            function($key){ return DataBase::camelCaseToUnderscore($key);},
+                            $refModel::getReferenceDisplayedKeys()
+                        );
+                        if (count($required_keys) === 1 && $required_keys[0] === $refModel::PrimaryColumnKey) {
+                            break;
+                        }
+                        $fk['displayed_keys'] = $required_keys;
+
+                        /*Т.к. полей всегда лишь несколько, то нет смысла искать через ключи - разница быстройдествия будет несущественной
+                        или даже не в пользу такого метода*/
+//                        if (!array_key_exists($refModel::PrimaryColumnKey, array_flip($required_keys))) {
+//                            $required_keys[] = $refModel::PrimaryColumnKey;
+//                        }
+                        if (!in_array($refModel::PrimaryColumnKey, $required_keys)) {
+                            $required_keys[] = $refModel::PrimaryColumnKey;
+                        }
+
+                        $rows = $refModel::getRows(
+                            $db,
+                            $refModel::PrimaryColumnKey .  ' in (' . implode(',', $listId) . ')',
+                            $required_keys,
+                            null,
+                            null,
+                            count($listItems),
+                            true
+                        );
+
+                        $displayed_keys = $fk['displayed_keys'];
+
+                        $rows = (new linq($rows))
+                            ->toAssoc(
+                                function($row) use ($refModel) { return $row[$refModel::PrimaryColumnKey];},
+                                function($row) use ($displayed_keys) {
+                                    return implode(
+                                        ' ',
+                                        array_map(
+                                            function($key) use ($row) { return is_null($row[$key]) ? '' : $row[$key];},
+                                            $displayed_keys
+                                        )
+                                    );
+
+                                }
+                            )->getData();
+
+                        foreach ($listItems as &$item) {
+                            if (is_null($item[$columnName]))  {
+                                continue;
+                            }
+                            $id = $item[$columnName];
+                            if (array_key_exists($id, $rows)) {
+                                $item[static::fkPrefix . $columnName] = $rows[$id];
+                            }
+                        }
+
+                        break;
+                    case 'join_model':
+                        $required_keys = array_map(
+                            function($jc){
+                                return $jc['key'];
+                            },
+                            $fk['joined_columns']
+                        );
+                        if (count($required_keys) < 1) {
+                            break;
+                        }
+                        if (count($required_keys) === 1 && $required_keys[0] === $refModel::PrimaryColumnKey) {
+                            break;
+                        }
+
+                        /*Т.к. полей всегда лишь несколько, то нет смысла искать через ключи - разница быстройдествия будет несущественной
+                        или даже не в пользу такого метода*/
+//                        if (!array_key_exists($refModel::PrimaryColumnKey, array_flip($required_keys))) {
+//                            $required_keys[] = $refModel::PrimaryColumnKey;
+//                        }
+                        if (!in_array($refModel::PrimaryColumnKey, $required_keys)) {
+                            $required_keys[] = $refModel::PrimaryColumnKey;
+                        }
+
+                        $rows = $refModel::getRows(
+                            $db,
+                            $refModel::PrimaryColumnKey .  ' in (' . implode(',', $listId) . ')',
+                            $required_keys,
+                            null,
+                            null,
+                            count($listItems),
+                            true
+                        );
+
+                        $rows = (new linq($rows))
+                            ->toAssoc(
+                                function($row) use ($refModel) { return $row[$refModel::PrimaryColumnKey];}
+                            )->getData();
+                        $joinedColumns = (new linq($fk['joined_columns']))
+                            ->toAssoc(
+                                function($jc){ return $jc['key'];},
+                                function($jc){ return isset($jc['alias']) ? $jc['alias'] : $jc['key'];}
+                            )->getData();
+                        foreach ($listItems as &$item) {
+                            if (is_null($item[$columnName]))  {
+                                continue;
+                            }
+                            $id = $item[$columnName];
+                            if (array_key_exists($id, $rows)) {
+                                $row = $rows[$id];
+                                foreach ($joinedColumns as $joinedColumnName => $joinedColumnAlias) {
+                                    $item[$joinedColumnAlias] = $row[$joinedColumnName];
+                                    $joinedColumnName = static::fkPrefix . $joinedColumnName;
+                                    if (array_key_exists($joinedColumnName, $row)) {
+                                        $item[static::fkPrefix . $joinedColumnAlias] = $row[$joinedColumnName];
+
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                }
+
             }
         }
-
-
-//        $fieldsInfo = array_filter(function($fieldInfo){ return isset($fieldInfo['foreign_key']);}, static::$fieldsInfo);
-//        if (count($listItems) && count($fieldsInfo)) {
-//            foreach ($fieldsInfo as $fieldKey => $fieldInfo) {
-//                $fk = &$fieldInfo['foreign_key'];
-//                $model = $fk['model'];
-//                $refModel = explode('\\', __CLASS__);
-//                $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($model);
-//                $fk['displayed_keys'] = call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys');
-//
-//                /*Получим все запрашиваемые идентификаторы*/
-//                $requiredIdList = array_map(function($item) use ($fieldKey) { return $item[$fieldKey];}, $listItems);
-//                $requiredIdList = array_filter($requiredIdList, function($fkId){ return !is_null($fkId);});
-//                $kfValuesDict = array();
-//                foreach (array_chunk($requiredIdList, 50) as $fkIgGroup) {
-//
-//                }
-//
-//            }
-//            $f = function(){};
-//            $itemsDict = array();
-//            $PKName = static::PKName();
-//            foreach ($listItems as &$item) {
-//                $itemsDict[$item[$PKName]] = $item;
-//            }
-//            /*
-//             * Требуется более точный расчет. Однако при 50 записях и предельном буфере в 10 МБ,
-//             * на 1 запись получается 20 КБ - в абсолютном большинстве предостаточно
-//            */
-//            $tmpArray = array_chunk($itemsDict, 50);
-//            $db = new DataBase();
-//            $db->setPDOAttribute(PDO::MYSQL_ATTR_MAX_BUFFER_SIZE, 10 * 2 ** 10);
-//            $refItem = (new DataBase())->$model->getFirstRow(
-//                $fk['field'] . ' = :' . $fk['field'],
-//
-//                array($fk['field'] => intval($value))
-//            );
-//            $displayValue = is_array($refItem) ? implode(' ', $refItem) : '';
-//        }
     }
 
     /**
