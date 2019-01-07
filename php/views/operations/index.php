@@ -22,12 +22,12 @@
             $menu = array(
                 array(
                     'Action' => '/Operations/OperationsList/' . $operationTypes['Income'],
-                    'Caption' => 'Поступление на склад',
+                    'Caption' => 'Поступление',
                     'Icon' => '/receipt.jpg',
                 ),
                 array(
                     'Action' => '/Operations/OperationsList/' . $operationTypes['Sale'],
-                    'Caption' => 'Расход со склада',
+                    'Caption' => 'Расход',
                     'Icon' => '/leaving.png',
                 ),
                 array(
