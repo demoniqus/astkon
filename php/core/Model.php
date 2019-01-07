@@ -19,6 +19,8 @@ abstract class Model  {
     const ValidStateError = 0;
     const ValidStateOK = 1;
     const ValidStateUndefined = 2;
+    const ForeignKeyPrefix = '$fk';
+    protected const  fkPrefix = '$fk_';
 
     /**
      * Метод проверяет, что метод, вызвавший проверку checkIsClassOfModel, вызван не из Model или Partial классов, а
@@ -85,11 +87,6 @@ abstract class Model  {
             $reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC),
             function(ReflectionProperty $property ) use ($partialClassName){
                 return !$property->isStatic();
-                if ($property->isStatic()) {
-                    return false;
-                }
-
-                return $partialClassName === $property->class;
             }
         );
         $fieldsInfo = static::$fieldsInfo;
@@ -311,7 +308,7 @@ abstract class Model  {
 
     /**
      * Метод расшифровывает значения справочных полей, заменяя идентификаторы понятными значениями
-     * @param array $listItems
+     * @param array $listItems - ключи в under_score стиле
      */
     public static function decodeForeignKeys(array &$listItems) {
         /*Пока мудрить ради скорости не буду - выбираю более понятный путь вывода значений справочников*/
