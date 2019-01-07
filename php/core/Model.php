@@ -614,9 +614,16 @@ abstract class Model  {
                 $result = DocComment::extractDocCommentParams($prop);
 //                Следующие ключи определяем принудительно независимо от настроек модели
                 $result['key'] = $prop->name;
-                $result['primary_key'] = static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal;
-                $result['foreign_key'] = isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null;
-                $result['data_type'] = static::$fieldsInfo[$prop->name]['data_type'];
+                if (array_key_exists($prop->name, static::$fieldsInfo)) {
+                    $result['primary_key'] = static::$fieldsInfo[$prop->name]['column_key'] === GlobalConst::MySqlPKVal;
+                    $result['foreign_key'] = isset(static::$fieldsInfo[$prop->name]['foreign_key']) ? static::$fieldsInfo[$prop->name]['foreign_key'] : null;
+                    $result['data_type'] = static::$fieldsInfo[$prop->name]['data_type'];
+                }
+                else {
+                    $result['primary_key'] = false;
+                    $result['foreign_key'] = null;
+                    $result['data_type'] = isset($result['var']) ? $result['var'] : 'string';
+                }
 
                 return $result;
             },
