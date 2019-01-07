@@ -9,9 +9,10 @@
 namespace Astkon\Traits;
 
 use Astkon\DataBase;
+use Astkon\ErrorCode;
 use Astkon\GlobalConst;
 use Astkon\linq;
-use Astkon\Model\Model;
+use Astkon\View\View;
 use Exception;
 use ReflectionClass;
 use ReflectionProperty;
@@ -43,18 +44,17 @@ trait ModelUpdate
             if (preg_match('/' . self::$PartialSuffix . '$/', $className)) {
                 $className = substr($className, 0, strlen($className) - strlen(self::$PartialSuffix));
             }
-            self::generateClass($className, $db);
+            self::generateClass(DataBase::underscoreToCamelCase($className), $db);
         }
     }
 
     /**
-     * Метод генерирует Partial-класс указанной сущности из БД. Используется для разработки
+     * Метод генерирует Partial-класс указанной сущности из БД. Используется для разработки.
      * @param string $className Имя таблицы из БД в CamelCase, для которой необходимо сгенерировать базовый класс для
      *                          использования в PHP
      * @param DataBase $db
-     * @throws Exception
      */
-    public static function generateClass(string $className, DataBase $db) {
+    private static function generateClass(string $className, DataBase $db) {
         $className = DataBase::underscoreToCamelCase($className);
 
         $tableName = DataBase::camelCaseToUnderscore($className);
