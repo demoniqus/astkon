@@ -59,7 +59,15 @@ $jqueryUIVers = '1.12.1';
             ?>
                 <div class="row justify-content-end py-1">
                     <div class="col-sm-3 text-right">
-                        <?= $_SESSION[AuthController::CurrentUserKey]['UserName']; ?>
+                        <p class="d-inline-block mb-1" title="Пользователь">
+                            <?= CURRENT_USER['UserName']; ?>
+                        </p>
+                        <p class="d-inline-block text-nowrap mb-0" title="Группа">
+                            <img src="/users.png" style="width: 24px; height: 24px; border: 0px none;" class="ml-3 mr-1"/>
+                            <span class="d-inline-block">
+                                <?= CURRENT_USER['$fkIdUserGroup']; ?>
+                            </span>
+                        </p>
                     </div>
                     <div class="col-sm-1">
                         <a href="/Auth/Logout">
