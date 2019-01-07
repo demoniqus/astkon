@@ -9,9 +9,16 @@
 
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php'; ?>
     <div class="col-md text-center">
-        <div class="text-left">
-            <a href="/ArticleCategories/Edit/0" class="btn btn-success">Добавить категорию</a>
-        </div>
+        <?php
+            if (CURRENT_USER['IsAdmin']) {
+                ?>
+                <div class="text-left">
+                    <a href="/ArticleCategories/Edit/0" class="btn btn-success">Добавить категорию</a>
+                </div>
+                <?php
+            }
+        ?>
+
         <?php
         View::TableList($modelConfig, $listItems, $listItemOptions);
         ?>

@@ -35,7 +35,15 @@ class ArticleCategoriesController extends Controller
 
     public function ArticleCategoriesListAction($context) {
         $view = new View();
-        $this->ListViewAction($view, ArticleCategory::class, __CLASS__);
+        $options = array();
+        if (CURRENT_USER['IsAdmin']) {
+            static::editOption($options, __CLASS__);
+        }
+        $this->ListViewAction(
+            $view,
+            ArticleCategory::class,
+            $options
+        );
         $view->generate();
     }
 

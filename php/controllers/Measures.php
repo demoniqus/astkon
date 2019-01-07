@@ -31,10 +31,16 @@ class MeasuresController extends Controller
 
     public function MeasuresListAction($context) {
         $view = new View();
+        $options = array();
+        static::editOption($options, __CLASS__);
+        $this->ListViewAction(
+            $view,
+            Measure::class,
+            $options
+        );
+        $view->generate();
 //        $pageId = isset($context['id']) ? intval($context['id']) : 0;
 //        $pageSize = 5;
-        $this->ListViewAction($view, Measure::class, __CLASS__);
-        $view->generate();
     }
 
     public function MeasuresDictAction($context) {

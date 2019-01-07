@@ -28,11 +28,13 @@ class ArticleBalanceController extends Controller
     }
 
     public function ArticleBalanceListAction($context) {
+
         $view = new View();
+        $options = array();
         $this->ListViewAction(
             $view,
             ArticleBalance::class,
-            __CLASS__,
+            $options,
             'id_user_group = :id_user_group',
             null,
             array('id_user_group' => CURRENT_USER['IdUserGroup'])

@@ -15,37 +15,40 @@ use Astkon\View\View;
 trait ListView
 {
     /**
-     * @param View $view
-     * @param string $model
-     * @param string $controller
+     * @param View        $view
+     * @param string      $model
+     * @param array       $options
+     * @param string      $controller
      * @param string|null $condition
-     * @param array|null $requiredFields
-     * @param array|null $substitution
-     * @param int|null $offset
-     * @param int|null $limit
+     * @param array|null  $requiredFields
+     * @param array|null  $substitution
+     * @param int|null    $offset
+     * @param int|null    $limit
      */
     public function ListViewAction(
         View $view,
         $model,
-        $controller,
+        $options = array(),
         $condition = null,
         $requiredFields = null,
         $substitution = null,
         $offset = null,
         $limit = null
     ) {
+        $view->listItemOptions = $options ?? array();
+        $this->configureListView($view, $model, $condition, $requiredFields, $substitution, $offset, $limit);
+    }
+
+    public static function editOption(array &$options, string $controller) {
         $controllerName = explode('\\', $controller);
         $controllerName = array_pop($controllerName);
         $controllerName = mb_substr($controllerName, 0, mb_strlen($controllerName) - mb_strlen('Controller'));
-        $view->listItemOptions = array(
-            array(
-                'action' => '/' . $controllerName  . '/Edit',
-                'click' => null,
-                'icon' => '/icon-edit.png',
-                'title' => 'Редактировать'
-            )
+        $options[] = array(
+            'action' => '/' . $controllerName  . '/Edit',
+            'click' => null,
+            'icon' => '/icon-edit.png',
+            'title' => 'Редактировать'
         );
-        $this->configureListView($view, $model, $condition, $requiredFields, $substitution, $offset, $limit);
     }
 
     public function configureListView(

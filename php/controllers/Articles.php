@@ -37,7 +37,13 @@ class ArticlesController extends Controller
 
     public function ArticlesListAction($context) {
         $view = new View();
-        $this->ListViewAction($view, Article::class, __CLASS__);
+        $options = array();
+        static::editOption($options, __CLASS__);
+        $this->ListViewAction(
+            $view,
+            Article::class,
+            $options
+        );
         $view->generate();
     }
 

@@ -34,11 +34,10 @@ class OperationsController extends Controller
 
     public function OperationsListAction(array $context) {
         $view = new View();
-        $db = new DataBase();
         $IdOperationType = intval($context['id']);
-        $operation_type = $db->operation_type->getFirstRow('id_operation_type = :id_operation_type', null, array('id_operation_type' => $IdOperationType));
+        $operation_type = OperationType::getFirstRow('id_operation_type = :id_operation_type', null, array('id_operation_type' => $IdOperationType));
         $view->operation_type = $operation_type;
-        $view->listItems = $db->operation->getRows(
+        $view->listItems = Operation::getRows(
             'id_operation_type = :id_operation_type',
             array('id_operation', 'id_operation_state', 'create_datetime', 'fix_datetime', 'operation_info'),
             array('id_operation_type' => $IdOperationType)

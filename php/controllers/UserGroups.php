@@ -35,7 +35,13 @@ class UserGroupsController extends Controller
 
     public function UserGroupsListAction($context) {
         $view = new View();
-        $this->ListViewAction($view, UserGroup::class, __CLASS__);
+        $options = array();
+        static::editOption($options, __CLASS__);
+        $this->ListViewAction(
+            $view,
+            UserGroup::class,
+            $options
+        );
         $view->generate();
     }
 

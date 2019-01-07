@@ -29,13 +29,15 @@ class PeopleController extends Controller
         parent::Run($action, $context);
     }
 
-//    public function IndexAction() {
-//        (new View())->generate();
-//    }
-
     public function PeopleListAction($context) {
         $view = new View();
-        $this->ListViewAction($view, People::class, __CLASS__);
+        $options = array();
+        static::editOption($options, __CLASS__);
+        $this->ListViewAction(
+            $view,
+            People::class,
+            $options
+        );
         $view->generate();
     }
 

@@ -29,13 +29,15 @@ class BuildObjectsController extends Controller
         parent::Run($action, $context);
     }
 
-//    public function IndexAction() {
-//        (new View())->generate();
-//    }
-
     public function BuildObjectsListAction($context) {
         $view = new View();
-        $this->ListViewAction($view, BuildObject::class, __CLASS__);
+        $options = array();
+        static::editOption($options, __CLASS__);
+        $this->ListViewAction(
+            $view,
+            BuildObject::class,
+            $options
+        );
         $view->generate();
     }
 

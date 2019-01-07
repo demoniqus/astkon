@@ -32,7 +32,13 @@ class UsersController extends Controller
 
     public function UsersListAction($context) {
         $view = new View();
-        $this->ListViewAction($view, User::class, __CLASS__);
+        $options = array();
+        static::editOption($options, __CLASS__);
+        $this->ListViewAction(
+            $view,
+            User::class,
+            $options
+        );
         $view->generate();
     }
 
