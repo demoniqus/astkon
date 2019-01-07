@@ -71,28 +71,30 @@ trait ModelUpdate
      * @return array
      */
     private static function getPartialModelFieldsDocBlock(string $className) {
-        $reflectClass = new ReflectionClass(self::getRootNameSpace() . '\\Model\\Partial\\' . $className . 'Partial');
         $fieldsDocs = array();
-        foreach ($reflectClass->getProperties(ReflectionProperty::IS_PUBLIC) as $reflectionProperty) {
-            if ($reflectionProperty->isStatic()) {
-                continue;
-            }
-
-            $doc = array_filter(
-                explode( GlobalConst::NewLineChar, $reflectionProperty->getDocComment() ?? ''),
-                function($docLine){ return !array_key_exists(trim($docLine), array('/**' => true, '*/' => true));}
-            );
-
-            array_walk($doc, function(&$line){
-                $line = trim($line);
-                if (mb_substr($line, 0, 1) === '*') {
-                    $line = trim(mb_substr($line, 1));
+        if (class_exists($className)) {
+            $reflectClass = new ReflectionClass($className);
+            foreach ($reflectClass->getProperties(ReflectionProperty::IS_PUBLIC) as $reflectionProperty) {
+                if ($reflectionProperty->isStatic()) {
+                    continue;
                 }
-            });
 
-            $fieldsDocs[$reflectionProperty->name] = array(
-                'doc' => $doc
-            );
+                $doc = array_filter(
+                    explode( GlobalConst::NewLineChar, $reflectionProperty->getDocComment() ?? ''),
+                    function($docLine){ return !array_key_exists(trim($docLine), array('/**' => true, '*/' => true));}
+                );
+
+                array_walk($doc, function(&$line){
+                    $line = trim($line);
+                    if (mb_substr($line, 0, 1) === '*') {
+                        $line = trim(mb_substr($line, 1));
+                    }
+                });
+
+                $fieldsDocs[$reflectionProperty->name] = array(
+                    'doc' => $doc
+                );
+            }
         }
         return $fieldsDocs;
     }
