@@ -3,8 +3,10 @@
 /** 
  * Файл генерируется автоматически.
  * Не допускаются произвольные изменения вручную.
- * Допускается вручную только расширять doc-блок публичный полей класса. 
- * При этом разделы @var и @database_column_name будут автоматически перезаписываться. */
+ * Допускается вручную расширять doc-блок публичный полей класса. 
+ * При этом разделы @var и @database_column_name будут автоматически перезаписываться.
+ * Допускается вручную расширять foreign_key в $fieldsInfo. 
+ * При этом ключи model и field изменять не допускается - при обновлении модели в случае их изменения может быть утрачена прочая информация */
 
 
 namespace Astkon\Model\Partial;
@@ -16,7 +18,12 @@ abstract class UserGroupPartial extends Model {
 	const PrimaryColumnName = 'IdUserGroup';
 	const PrimaryColumnKey = 'id_user_group';
 
-/** @var array */
+	/** 
+	* Параметр описывает свойства колонок таблиц БД. 
+	* Все наименования колонок следует задавать в under_score стиле. 
+	* В camelCase стиле задаются только ключи верхнего уровня. 
+	* @var array
+	*/
 protected static $fieldsInfo = array (
   'IdUserGroup' => 
   array (
@@ -77,8 +84,8 @@ protected static $fieldsInfo = array (
   ),
 );
 	/**
-    * @form_edit_order 2
-    * @list_view_order 2
+	* @form_edit_order 2
+	* @list_view_order 2
 	* @database_column_name comment
 	* @caption Комментарий
 	* @var string
@@ -92,9 +99,9 @@ protected static $fieldsInfo = array (
 	*/
 	public $IdUserGroup;
 
-    /**
-    * @form_edit_order 1
-    * @list_view_order 1
+	/**
+	* @form_edit_order 1
+	* @list_view_order 1
 	* @foreign_key_display_value
 	* @database_column_name user_group_name
 	* @caption Наименование группы

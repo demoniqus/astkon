@@ -3,8 +3,10 @@
 /** 
  * Файл генерируется автоматически.
  * Не допускаются произвольные изменения вручную.
- * Допускается вручную только расширять doc-блок публичный полей класса. 
- * При этом разделы @var и @database_column_name будут автоматически перезаписываться. */
+ * Допускается вручную расширять doc-блок публичный полей класса. 
+ * При этом разделы @var и @database_column_name будут автоматически перезаписываться.
+ * Допускается вручную расширять foreign_key в $fieldsInfo. 
+ * При этом ключи model и field изменять не допускается - при обновлении модели в случае их изменения может быть утрачена прочая информация */
 
 
 namespace Astkon\Model\Partial;
@@ -16,7 +18,12 @@ abstract class UserPartial extends Model {
 	const PrimaryColumnName = 'IdUser';
 	const PrimaryColumnKey = 'id_user';
 
-/** @var array */
+	/** 
+	* Параметр описывает свойства колонок таблиц БД. 
+	* Все наименования колонок следует задавать в under_score стиле. 
+	* В camelCase стиле задаются только ключи верхнего уровня. 
+	* @var array
+	*/
 protected static $fieldsInfo = array (
   'IdUser' => 
   array (
@@ -99,6 +106,7 @@ protected static $fieldsInfo = array (
     array (
       'model' => 'user_group',
       'field' => 'id_user_group',
+      'display_mode' => 'decode_id_to_string',
     ),
   ),
   'UserName' => 
@@ -129,7 +137,7 @@ protected static $fieldsInfo = array (
   ),
 );
 	/**
-    * @nodisplay true
+	* @nodisplay true
 	* @noeditable true
 	* @list_view_order 6
 	* @database_column_name config
@@ -155,7 +163,7 @@ protected static $fieldsInfo = array (
 	public $IdUser;
 
 	/**
-    * @foreign_key_action UserGroups/UserGroupsDict
+	* @foreign_key_action UserGroups/UserGroupsDict
 	* @form_edit_order 3
 	* @list_view_order 3
 	* @database_column_name id_user_group
@@ -183,10 +191,10 @@ protected static $fieldsInfo = array (
 	public $Login;
 
 	/**
-    * @nodisplay true
+	* @nodisplay true
 	* @form_edit_order 2
 	* @list_view_order 2
-    * @save_wrapper password
+	* @save_wrapper password
 	* @database_column_name password
 	* @caption Пароль
 	* @var string

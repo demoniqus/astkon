@@ -3,8 +3,10 @@
 /** 
  * Файл генерируется автоматически.
  * Не допускаются произвольные изменения вручную.
- * Допускается вручную только расширять doc-блок публичный полей класса. 
- * При этом разделы @var и @database_column_name будут автоматически перезаписываться. */
+ * Допускается вручную расширять doc-блок публичный полей класса. 
+ * При этом разделы @var и @database_column_name будут автоматически перезаписываться.
+ * Допускается вручную расширять foreign_key в $fieldsInfo. 
+ * При этом ключи model и field изменять не допускается - при обновлении модели в случае их изменения может быть утрачена прочая информация */
 
 
 namespace Astkon\Model\Partial;
@@ -16,7 +18,12 @@ abstract class ArticlePartial extends Model {
 	const PrimaryColumnName = 'IdArticle';
 	const PrimaryColumnKey = 'id_article';
 
-/** @var array */
+	/** 
+	* Параметр описывает свойства колонок таблиц БД. 
+	* Все наименования колонок следует задавать в under_score стиле. 
+	* В camelCase стиле задаются только ключи верхнего уровня. 
+	* @var array
+	*/
 protected static $fieldsInfo = array (
   'IdArticle' => 
   array (
@@ -73,6 +80,7 @@ protected static $fieldsInfo = array (
     array (
       'model' => 'measure',
       'field' => 'id_measure',
+      'display_mode' => 'decode_id_to_string',
     ),
   ),
   'VendorCode' => 
@@ -117,6 +125,7 @@ protected static $fieldsInfo = array (
     array (
       'model' => 'article_category',
       'field' => 'id_article_category',
+      'display_mode' => 'decode_id_to_string',
     ),
   ),
 );

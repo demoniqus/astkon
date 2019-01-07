@@ -3,8 +3,10 @@
 /** 
  * Файл генерируется автоматически.
  * Не допускаются произвольные изменения вручную.
- * Допускается вручную только расширять doc-блок публичный полей класса. 
- * При этом разделы @var и @database_column_name будут автоматически перезаписываться. */
+ * Допускается вручную расширять doc-блок публичный полей класса. 
+ * При этом разделы @var и @database_column_name будут автоматически перезаписываться.
+ * Допускается вручную расширять foreign_key в $fieldsInfo. 
+ * При этом ключи model и field изменять не допускается - при обновлении модели в случае их изменения может быть утрачена прочая информация */
 
 
 namespace Astkon\Model\Partial;
@@ -16,7 +18,12 @@ abstract class ArticleBalancePartial extends Model {
 	const PrimaryColumnName = 'IdArticleBalance';
 	const PrimaryColumnKey = 'id_article_balance';
 
-/** @var array */
+	/** 
+	* Параметр описывает свойства колонок таблиц БД. 
+	* Все наименования колонок следует задавать в under_score стиле. 
+	* В camelCase стиле задаются только ключи верхнего уровня. 
+	* @var array
+	*/
 protected static $fieldsInfo = array (
   'IdArticleBalance' => 
   array (
@@ -47,6 +54,25 @@ protected static $fieldsInfo = array (
     array (
       'model' => 'article',
       'field' => 'id_article',
+      'display_mode' => 'join_model',
+      'joined_columns' => 
+      array (
+        0 => 
+        array (
+          'key' => 'article_name',
+          'alias' => 'article_name_alias',
+          'list_view_order' => 1,
+        ),
+        1 => 
+        array (
+          'key' => 'id_measure',
+          'list_view_order' => 2,
+        ),
+        array (
+          'key' => 'id_article_category',
+          'list_view_order' => 0,
+        ),
+      ),
     ),
   ),
   'IdUserGroup' => 
@@ -82,6 +108,7 @@ protected static $fieldsInfo = array (
   ),
 );
 	/**
+	* @list_view_order 3
 	* @database_column_name balance
 	* @caption Остаток
 	* @var float
@@ -89,6 +116,7 @@ protected static $fieldsInfo = array (
 	public $Balance;
 
 	/**
+	* @nodisplay
 	* @database_column_name id_article
 	* @caption
 	* @var int
@@ -96,6 +124,8 @@ protected static $fieldsInfo = array (
 	public $IdArticle;
 
 	/**
+	* @nodisplay
+	* @list_view_order 2
 	* @database_column_name id_article_balance
 	* @caption
 	* @var int
@@ -103,6 +133,7 @@ protected static $fieldsInfo = array (
 	public $IdArticleBalance;
 
 	/**
+	* @nodisplay
 	* @database_column_name id_user_group
 	* @caption
 	* @var int
