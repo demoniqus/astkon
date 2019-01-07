@@ -60,15 +60,13 @@ trait ListView
         if (is_array($requiredFields)) {
             $requiredFields = array_map(function($fieldName){ return DataBase::camelCaseToUnderscore($fieldName);});
         }
-        $dataTable = $model::DataTable;
         $view->modelConfig = $model::getConfigForListView();
         $rows = array_map(
             function($row){
                 return array_keys_CameCase($row);
             },
-            (new DataBase())->$dataTable->getRows($condition, $requiredFields, $substitution, $offset, $limit)
+            $model::getRows(null, $condition, $requiredFields, $substitution, $offset, $limit, true)
         );
-        $model::decodeForeignKeys($rows);
         $view->listItems = $rows;
     }
 
