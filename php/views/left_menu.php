@@ -4,7 +4,7 @@
         overflow-x: hidden;
     }
 </style>
-<div class="left-menu col-md-2">
+<div class="left-menu col-md-2 mb-3">
     <ul class="nav flex-column">
         <?php
             if (CURRENT_USER['IsAdmin']) {
