@@ -4,13 +4,17 @@
 
 <div class="row mx-0">
     <?php
+
+    use Astkon\Controllers\ArticlesController;
+    use Astkon\Controllers\MeasuresController;
     use Astkon\GlobalConst;
     use Astkon\View\View;
 
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php'; ?>
     <div class="col-md text-center">
         <div class="text-left">
-            <a href="/Measures/Edit/0" class="btn btn-success">Добавить единицу измерения</a>
+            <a href="/<?= MeasuresController::Name(); ?>/Edit/0" class="btn btn-success">Добавить единицу измерения</a>
+            <a href="/<?= ArticlesController::Name(); ?>/<?= ArticlesController::Name(); ?>List" class="btn btn-outline-secondary">Артикулы</a>
         </div>
         <?php
             View::TableList($modelConfig, $listItems, $listItemOptions);
