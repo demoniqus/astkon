@@ -55,14 +55,14 @@ class View
             $backtrace = debug_backtrace(2, 2);
             list($controller, $action) = self::get_C_A_from_backtrace($backtrace[1]);
             $templates[] = $this->defHeaderTemplate;
-            $templates[] = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . "$controller/$action.php";
+            $templates[] = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . $controller . DIRECTORY_SEPARATOR . $action . '.php';
             $templates[] = $this->defFooterTemplate;
         }
         else if (gettype($template) === gettype('')) {
             list($controller, $action) = explode('/', $template);
             $controller = strtolower($controller);
             $action = strtolower($action);
-            $templates[] = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . "$controller/$action.php";
+            $templates[] = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR  . $controller . DIRECTORY_SEPARATOR . $action . '.php';
         }
         else if (gettype($template) === gettype(array())) {
             array_walk($template, function($item) use ($templates) {
@@ -77,7 +77,7 @@ class View
                     $controller = array_key_first($item);
                     $action = $item[$controller];
                 }
-                $templates[] = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . "$controller/$action.php";
+                $templates[] = getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . $controller . DIRECTORY_SEPARATOR . $action . '.php';
             });
         }
         foreach ($this->variables as $varName => $varValue) {
