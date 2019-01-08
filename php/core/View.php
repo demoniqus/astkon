@@ -164,4 +164,13 @@ class View
         define('TABLE_LIST_VIEW_DIRECTORY', getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_table_list_view');
         require_once TABLE_LIST_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . 'table.php';
     }
+
+    /**
+     * Метод вызывает незамедлительную отправку в браузер всех переданных во вьюху переменных
+     */
+    public function JSONView() {
+        header('Content-Type: application/json; charset=utf-8', true);
+        echo json_encode($this->variables);
+        die();
+    }
 }
