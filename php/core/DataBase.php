@@ -2,9 +2,9 @@
 namespace Astkon;
 use Astkon\View\View;
 use DateTime;
-use \PDO as PDO;
-use \PDOException as PDOException;
-use \Exception as Exception;
+use Exception;
+use PDO;
+use PDOException;
 use PDOStatement;
 
 /*
@@ -549,6 +549,10 @@ class DataBase {
                         is_string($v) ||
                         (is_numeric($v) && !is_nan($v))
                     ) {
+                        $paramType = PDO::PARAM_STR;
+                    }
+                    else if ($v instanceof DateTime) {
+                        $v = $v->format('Y-m-d H:i:s');
                         $paramType = PDO::PARAM_STR;
                     }
                     if ($paramType !== false) {
