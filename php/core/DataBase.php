@@ -1227,7 +1227,7 @@ class DataBase {
                     break;
                 case 'json':
                     if ($v !== null && trim($v) !== '') {
-                        $entity[$k] = json_decode($v);
+                        $entity[$k] = json_decode($v, true);
                     }
                     else {
                         $entity[$k] = null;
@@ -1235,7 +1235,7 @@ class DataBase {
                     break;
                 case 'datetime':
                 case 'date':
-                    $entity[$k] = new DateTime($v);
+                    $entity[$k] = is_null($v) ? $v : new DateTime($v);
                     break;
             }
         }
