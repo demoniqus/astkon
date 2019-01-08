@@ -545,7 +545,10 @@ class DataBase {
                         $paramType = PDO::PARAM_STR;
                         $v = json_encode($v);
                     }
-                    else if (is_string($v)) {
+                    else if (
+                        is_string($v) ||
+                        (is_numeric($v) && !is_nan($v))
+                    ) {
                         $paramType = PDO::PARAM_STR;
                     }
                     if ($paramType !== false) {
