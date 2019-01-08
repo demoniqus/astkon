@@ -100,4 +100,10 @@ abstract class Controller
         $action = preg_replace('/Action$/i', '', $backtrace['function']);
         return array($controller, $action);
     }
+
+    public static function Name() : ?string {
+        $name = explode('\\', static::class);
+        $name = array_pop($name);
+        return preg_replace('/Controller$/i', '', $name);
+    }
 }
