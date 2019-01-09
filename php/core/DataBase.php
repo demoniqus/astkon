@@ -119,11 +119,11 @@ class DataBase {
         ?array $substitution = array(),
         string $mode = 'assoc'
     ) {
+        $this->setInitState();
         $data = array();
         if ($query) {
             /*Получаем результат запроса из БД*/
             $query = trim($query);
-            $this->lastQueryState = 0;
             $queryType = self::getQueryType($query);
             if($queryType === self::QueryTypeDenied) {
                 $this->lastQueryState = array(
@@ -409,7 +409,6 @@ class DataBase {
         catch (\PDOException $PDOException) {
             $errInfo = array(
                 '@error' => true,
-
                 'errors' => array(
                     array(
                         'errorType' => 'PDO',
@@ -621,7 +620,6 @@ class DataBase {
                 return self::QueryTypeDelete;
             default:
                 return self::QueryTypeDenied;
-
         }
     }
 
@@ -815,6 +813,7 @@ class DataBase {
         $offset = null,
         $limit = null
             ) : array {
+        $this->setInitState();
         if (!$this->currentObject) {
             throw new Exception('Не установлен объект для извелечения из БД');
         }
@@ -1117,8 +1116,14 @@ class DataBase {
             $values = array(),
             $offset = null
             ) {
+        $this->setInitState();
         $rows = $this->getRows($condition, $required_fields, $values, $offset, 1);
         return $rows != null  && count($rows) > 0 ? $rows[0] : null;
+    }
+
+    private function setInitState() {
+        $this->lastInsertId = null;
+        $this->lastQueryState = 0;
     }
 
     /**
@@ -1339,6 +1344,7 @@ class DataBase {
      * @return bool
      */
     public function UseDataBase($dbName) : bool {
+        $this->setInitState();
         $res = (new linq($this->query('SHOW DATABASES')))
             ->select(function($row){ return $row['Database'];})
             ->first(function(string $existsDatabase) use ($dbName) {
