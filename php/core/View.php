@@ -156,7 +156,11 @@ class View
             })
             ->for_each(function($fieldConfig) use (&$items){
                 foreach ($items as &$item) {
-                    if ($item[$fieldConfig['key']]) {
+                    /*
+                     * В представлении не все поля сущности могут быть представлены, поэтому нужно проверять
+                     * наличие ключей
+                    */
+                    if (array_key_exists($fieldConfig['key'], $item) && $item[$fieldConfig['key']]) {
                         $item[$fieldConfig['key']] = '<img src="/icon-true-light.png" class="bool-field-true-value-icon" />';
                     }
                 }
