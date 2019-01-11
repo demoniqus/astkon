@@ -186,12 +186,12 @@ abstract class Model  {
             }
 
             /** @var array $fieldInfo */
-            $fieldInfo = static::$fieldsInfo[$propName];
+            $fieldInfo = isset(static::$fieldsInfo[$propName]) ? static::$fieldsInfo[$propName] : null;
 
-            if ($fieldInfo['column_key'] === GlobalConst::MySqlPKVal) {
+            if ($fieldInfo && $fieldInfo['column_key'] === GlobalConst::MySqlPKVal) {
                 require_once $baseRequirePath . 'primary_key.php';
             }
-            else  if (isset($fieldInfo['foreign_key'])){
+            else  if ($fieldInfo && isset($fieldInfo['foreign_key'])){
                 $ForeignKeyParams = $fieldInfo['foreign_key'];
                 $model = $ForeignKeyParams['model'];
                 $refModel = explode('\\', __CLASS__);
