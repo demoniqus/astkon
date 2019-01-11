@@ -224,6 +224,7 @@ function DictionaryItemChangeCheckedState(/*DOM img*/img) {
 
 
 function saveOperation(/*bool*/ setFixedState) {
+    $('#btn-save,#btn-save-fixed').attr('disabled', 'disabled').addClass('disabled');
     let errCount = 0;
     var setFieldState = function(row, state){
         let input = row.find('input[type=number]:first');
@@ -241,14 +242,49 @@ function saveOperation(/*bool*/ setFixedState) {
         let item = JSON.parse(row.dataset.item);
         let result = {
             IdArticle: item.IdArticle,
-            count: $(row).find('input[type=number]:first').val()
+            count: +$(row).find('input[type=number]:first').val()
         };
-        if (result.count <= 0) {
+        if (OperationType.OperationName === 'Inventory' ? result.count < 0 : result.count <= 0) {
             errCount++;
             state = 'invalid';
         }
-        setFieldState($(row), state)
+        setFieldState($(row), state);
         return result;
     }).collection;
-    console.log(selectedItems);
+
+    if (!errCount) {
+        let data = {
+            selectedItems: selectedItems,
+            operation: Operation,
+            setFixedState: !!setFixedState,
+            linkedData: window.operationLinkedData || null
+        };
+        $.ajax({
+            url: '/Operations/Save',
+            data: data,
+            type: 'POST',
+            success: function(response){
+                if (response.errors) {
+                    $('#saving-result').html(response.errors.join('<br />'));
+                    $('#saving-result').addClass('alert-danger');
+                    $('#btn-save,#btn-save-fixed').removeAttr('disabled').removeClass('disabled');
+                }
+                else if (response.success) {
+                    if (response.redirect) {
+                        window.location.href = response.redirect;
+                    }
+                    else {
+                        $('#btn-save,#btn-save-fixed').removeAttr('disabled').removeClass('disabled');
+                        $('#saving-result').html('Данные успешно сохранены');
+                        $('#saving-result').addClass('alert-success');
+                        window.Operation = response.operation;
+                    }
+                }
+            }
+        });
+    }
+    else {
+        $('#btn-save,#btn-save-fixed').removeAttr('disabled').removeClass('disabled');
+    }
+
 }
