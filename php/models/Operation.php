@@ -16,4 +16,12 @@ class Operation extends OperationPartial {
 	public function __construct (array $fields = array()) {
 		parent::__construct($fields, DataBase::camelCaseToUnderscore(__CLASS__));
 	}
+
+    public static function getItems($operation, ?array $requiredFields = null, ?Database $db = null) {
+        return OperationItem::getRows(
+            $db,
+            '`' . static::PrimaryColumnKey . '` = ' . (is_array($operation) ? $operation[Operation::PrimaryColumnKey] : $operation),
+            $requiredFields
+        );
+    }
 }
