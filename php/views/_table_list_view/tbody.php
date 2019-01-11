@@ -35,7 +35,29 @@
             }else {
                 ?>
                 <td>
-                    <?= $val; ?>
+
+                    <?php
+                        if ($val instanceof DateTime) {
+                            echo $val->format('d.m.Y');
+                        }
+                        else if (is_array($val)){
+                            ?>
+                            <p class="text-left">
+                            <?php
+                            var_dump($val);
+//                            foreach ($val as $item) {
+//                                ?>
+<!--                                <div class="row text-nowrap">-->
+<!--                                    <div class="col">--><?//= $item['label']; ?><!--</div>-->
+<!--                                    <div class="col">--><?//= $item['caption']; ?><!--</div>-->
+<!--                                </div>-->
+<!--                                --><?php
+//                            }
+                        }
+                        else {
+                            echo $val;
+                        }
+                    ?>
                 </td>
                 <?php
             }
