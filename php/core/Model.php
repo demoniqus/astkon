@@ -7,6 +7,7 @@ use Astkon\DataBase;
 use Astkon\DocComment;
 use Astkon\ErrorCode;
 use Astkon\GlobalConst;
+use function Astkon\Lib\array_keys_underscore;
 use Astkon\linq;
 use Astkon\Traits\ModelUpdate;
 use Astkon\View\View;
@@ -229,7 +230,9 @@ abstract class Model  {
                     case 'varchar':
                     case 'nvarchar':
                     case 'string':
-                        $inputType = 'text';
+                        $isPassword = DocComment::getDocCommentItem($property, 'password');
+
+                        $inputType = $isPassword === 'true' ? 'password' : 'text';
                         require $baseRequirePath . 'input.php';
                         break;
                     case 'text':
