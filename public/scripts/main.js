@@ -167,7 +167,7 @@ function setSingleReferenceValue (/*DOM.form-group*/ formGroupElement, /*string*
     $(formGroupElement).find('.form-control[type=hidden]:first').val(objectData[extReferencePKName]);
 }
 
-function setSelectedArticles(/*DOM.form-group*/ selectedArticlesContainer, /*string*/ extReferencePKName, /*array*/ objectsData, /*array*/ fields) {
+function setSelectedArticlesAsEditable(/*DOM.form-group*/ selectedArticlesContainer, /*string*/ extReferencePKName, /*array*/ objectsData, /*array*/ fields) {
     if (!('selectedArticles' in window)) {
         window.selectedArticles = {};
     }
@@ -175,12 +175,15 @@ function setSelectedArticles(/*DOM.form-group*/ selectedArticlesContainer, /*str
         if (articleData.IdArticle in window.selectedArticles) {
             return;
         }
-        var row = $('<div class="row mb-2 text-left"></div>');
+        let row = $('<div class="row mb-2 text-left"></div>');
         row.get(0).dataset.item = JSON.stringify(articleData);
-        var cell = $('<div class="col">' + articleData.ArticleName + '</div>');
+        let cell = $('<div class="col">' + articleData.ArticleName + '</div>');
         row.append(cell);
 
-        cell = $('<div class="col-md-3"><input type="number" class="form-control" value="0" /></div>');
+        cell = $('<div class="col-md-1">' + Measures[articleData.IdMeasure].MeasureName + '</div>');
+        row.append(cell);
+
+        cell = $('<div class="col-md-2"><input type="number" class="form-control" value="' + (articleData.Count ? articleData.Count : '') + '" /></div>');
         row.append(cell);
         cell.find('input:first').blur(function(){
             let val = $(this).val();
@@ -200,7 +203,7 @@ function setSelectedArticles(/*DOM.form-group*/ selectedArticlesContainer, /*str
 
         cell = $('<div class="col-md-2"></div>');
         row.append(cell);
-        var optionDelete = $('<a href="javascript: void(0)"><img src="/trash-empty-icon.png" class="action-icon"  title="Удалить"/></a>');
+        let optionDelete = $('<img src="/trash-empty-icon.png" class="action-icon"  title="Удалить" style="cursor: pointer;"/>');
         cell.append(optionDelete);
         optionDelete.click(function(){
             row.remove();
@@ -220,6 +223,31 @@ function DictionaryItemChangeCheckedState(/*DOM img*/img) {
     tr.dataset.checked_state = state;
     $(img).attr('src', '/checkbox-' + state + '.png');
 
+}
+
+function setSelectedArticles(/*DOM.form-group*/ selectedArticlesContainer, /*string*/ extReferencePKName, /*array*/ objectsData, /*array*/ fields) {
+    if (!('selectedArticles' in window)) {
+        window.selectedArticles = {};
+    }
+    linq(objectsData).foreach(function(articleData){
+        if (articleData.IdArticle in window.selectedArticles) {
+            return;
+        }
+        let row = $('<div class="row mb-2 text-left"></div>');
+        row.get(0).dataset.item = JSON.stringify(articleData);
+        let cell = $('<div class="col">' + articleData.ArticleName + '</div>');
+        row.append(cell);
+
+        cell = $('<div class="col-md-1">' + Measures[articleData.IdMeasure].MeasureName + '</div>');
+        row.append(cell);
+
+        cell = $('<div class="col-md-2"><input type="number"  class="form-control disabled" disabled="disabled" value="' + (articleData.Count || 0) + '" /></div>');
+        row.append(cell);
+
+        $(selectedArticlesContainer).append(row);
+
+        window.selectedArticles[articleData.IdArticle] = articleData;
+    })
 }
 
 
