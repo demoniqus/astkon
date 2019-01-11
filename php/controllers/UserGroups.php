@@ -52,6 +52,10 @@ class UserGroupsController extends Controller
     }
 
     public function EditAction($context) {
+        if (!CURRENT_USER['IsAdmin']) {
+            $view = new View();
+            $view->error(ErrorCode::FORBIDDEN);
+        }
         $options = array();
         $entity = array();
         $model = UserGroup::class;

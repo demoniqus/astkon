@@ -73,6 +73,10 @@ class UsersController extends Controller
     public function EditAction($context) {
         $options = array();
         $user = array();
+        if (!CURRENT_USER['IsAdmin']) {
+            $view = new View();
+            $view->error(ErrorCode::FORBIDDEN);
+        }
         if (array_key_exists('submit', $_POST)) {
             $inputValues = array_filter($_POST, function($v, $k){ return $k !== 'submit'; }, ARRAY_FILTER_USE_BOTH);
             if ($inputValues[User::PrimaryColumnName] == 0) {
