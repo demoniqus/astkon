@@ -65,11 +65,28 @@
         foreach($options as $option) {
             ?>
             <td>
-                <a
-                    href="<?= isset($option['action']) ? $option['action'] . '/' . $PKVal : 'javascript:void(0);'; ?>"
-                    onclick="<?= isset($option['click']) ? $option['click'] : 'return true;'; ?>">
-                    <img src="<?= $option['icon']; ?>" title="<?= isset($option['title']) ? $option['title'] : ''; ?>" class="action-icon" />
-                </a>
+                <?php
+                    if(!isset($option['condition']) || $option['condition']($item) !== false) {
+                        ?>
+                        <a
+                                href="<?php
+                                    if (isset($option['action']))  {
+                                        $action = explode('?', $option['action'], 2);
+                                        $params = count($action) > 1 ? '?' . $action[1] : '';
+                                        $action = str_replace('//', '/', $action[0] . '/');
+                                        echo $action . $PKVal . $params;
+                                    }
+                                    else {
+                                        echo 'javascript:void(0);';
+                                    }
+                                ?>"
+                                onclick="<?= isset($option['click']) ? $option['click'] : 'return true;'; ?>">
+                            <img src="<?= $option['icon']; ?>"
+                                 title="<?= isset($option['title']) ? $option['title'] : ''; ?>" class="action-icon"/>
+                        </a>
+                        <?php
+                    }
+                ?>
 
             </td>
             <?php
