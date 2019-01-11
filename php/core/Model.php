@@ -853,6 +853,181 @@ abstract class Model  {
         return $config;
     }
 
+    /**
+     * Метод возвращает наименование модели без Namespace и в camelCase стиле
+     * @return string
+     */
+    public static function Name() : string{
+        return DataBase::underscoreToCamelCase(static::DataTable);
+    }
+
+    /**
+     * Метод возвращает пустой образец сущности из БД
+     * @param array|null $substitution - возможные значения для подстановки в пустую модель в under_score стиле
+     * @return array
+     */
+    public static function EmptyEntity(?array $substitution) : array {
+        if (!self::checkIsClassOfModel()) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        $entity = array();
+        foreach (static::$fieldsInfo as $fieldInfo) {
+            $entity[$fieldInfo['column_name']] = null;
+        }
+        $entity[static::PrimaryColumnKey] = 0;
+        if (is_array($substitution)) {
+            foreach ($substitution as $key => $value) {
+                $entity[$key] = $value;
+            }
+        }
+        return $entity;
+    }
+
+    /**
+     * @param array         $substitution
+     * @param DataBase|null $db
+     * @param bool|null     $return
+     * @return array|bool|null
+     */
+    public static function Create(array $substitution, ?DataBase $db, ?bool $return = false) {
+        if (!self::checkIsClassOfModel()) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        $db = $db ?? new DataBase();
+        $query = 'INSERT INTO `' . static::DataTable . '` SET ';
+        $substitution = array_keys_underscore($substitution);
+        $query .= implode(
+            ', ',
+            array_map(
+                function($key){
+                    return '`' . $key . '` = :' . $key;
+                },
+                array_keys($substitution)
+            )
+        );
+        if ($db->query($query, $substitution) === false) {
+            return false;
+        }
+        if ($return) {
+            return static::getFirstRow(
+                $db,
+                '`' . static::PrimaryColumnKey . '` = ' . $db->LastInsertId()
+            );
+        }
+        return true;
+    }
+
+    public static function GetByPrimaryKey(int $pk, ?DataBase $db = null) {
+        $db = $db ?? new DataBase();
+        if (!self::checkIsClassOfModel()) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        $model = static::DataTable;
+        return $db->$model->getFirstRow('`' . static::PrimaryColumnKey . '` = ' . $pk);
+    }
+
+    public static function Update(array $substitution, ?DataBase $db = null, ?bool $return = false) {
+        if (!self::checkIsClassOfModel()) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Метод может быть вызван только из класса модели, а не ее родительских классов'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        $db = $db ?? new DataBase();
+        $query = 'UPDATE `' . static::DataTable . '` SET ';
+        $substitution = array_keys_underscore($substitution);
+        if (!isset($substitution[static::PrimaryColumnKey])) {
+            $view = new View();
+            $view->trace = nl2br(
+                'Файл ' . __FILE__ . PHP_EOL .
+                'Класс ' . __CLASS__ . PHP_EOL .
+                'Метод ' . __METHOD__ . PHP_EOL .
+                'Строка ' . __LINE__ . PHP_EOL .
+                'Для обновления записи не указан первичный ключ'
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+
+        }
+        $pkValue = $substitution[static::PrimaryColumnKey];
+        $query .= implode(
+            ', ',
+            array_map(
+                function($key){
+                    return '`' . $key . '` = :' . $key;
+                },
+                array_filter(
+                    array_keys($substitution),
+                    function($key){ return $key !== static::PrimaryColumnKey;}
+                )
+            )
+        );
+
+        $query .= ' WHERE `' . static::PrimaryColumnKey . '` = :' . static::PrimaryColumnKey;
+        if ($db->query($query, $substitution) === false) {
+            return false;
+        }
+        if ($return) {
+            return static::getFirstRow(
+                $db,
+                '`' . static::PrimaryColumnKey . '` = :' . static::PrimaryColumnKey,
+                null,
+                array(static::PrimaryColumnKey => $pkValue)
+            );
+        }
+        return true;
+    }
+
+    public static function Delete($listId, ?DataBase $db) {
+        $db = $db ?? new DataBase();
+        if (is_numeric($listId)) {
+            $db->query('delete from `' . static::DataTable .
+                '` where `' . static::PrimaryColumnKey . '` = :' . static::PrimaryColumnKey .
+                ' limit 1',
+                array(static::PrimaryColumnKey => $listId)
+            );
+        }
+        else if (is_array($listId)) {
+            $db->query('delete from `' . static::DataTable .
+                '` where `' . static::PrimaryColumnKey . '` in (' . implode(',', $listId) .
+                ') limit ' . count($listId)
+            );
+        }
+
+    }
 
 //    protected $fields = array();
 //    /**
