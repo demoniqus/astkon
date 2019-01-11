@@ -19,6 +19,7 @@ class User extends UserPartial {
 
     /**
      * @nodisplay true
+     * @password true
      * @data_type string
      * @form_edit_order 2.1
      * @caption Подтверждение пароля

@@ -191,6 +191,7 @@ protected static $fieldsInfo = array (
 	public $Login;
 
 	/**
+	* @password true
 	* @nodisplay true
 	* @form_edit_order 2
 	* @list_view_order 2
