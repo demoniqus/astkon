@@ -18,25 +18,26 @@ trait ListView
      * @param View        $view
      * @param string      $model
      * @param array       $options
-     * @param string      $controller
      * @param string|null $condition
-     * @param array|null  $requiredFields
+     * @param array|null  $requiredFields - список полей, которые следует получить из БД (в underscore)
      * @param array|null  $substitution
      * @param int|null    $offset
      * @param int|null    $limit
+     * @param array       $displayedFields - список полей, которые следует отображать (в camelCase)
      */
     public function ListViewAction(
         View $view,
         $model,
-        $options = array(),
-        $condition = null,
-        $requiredFields = null,
-        $substitution = null,
-        $offset = null,
-        $limit = null
+        ?array $options = array(),
+        ?string $condition = null,
+        ?array $requiredFields = null,
+        ?array $substitution = null,
+        ?int $offset = null,
+        ?int $limit = null,
+        ?array $displayedFields = null
     ) {
         $view->listItemOptions = $options ?? array();
-        $this->configureListView($view, $model, $condition, $requiredFields, $substitution, $offset, $limit);
+        $this->configureListView($view, $model, $condition, $requiredFields, $substitution, $offset, $limit, $displayedFields);
     }
 
     public static function editOption(array &$options, string $controller) {
@@ -54,16 +55,31 @@ trait ListView
     public function configureListView(
         View $view,
         $model,
-        $condition = null,
-        $requiredFields = null,
-        $substitution = null,
-        $offset = null,
-        $limit = null
+        ?string $condition = null,
+        ?array $requiredFields = null,
+        ?array $substitution = null,
+        ?int $offset = null,
+        ?int $limit = null,
+        ?array $displayedFields = array()
     ) {
         if (is_array($requiredFields)) {
-            $requiredFields = array_map(function($fieldName){ return DataBase::camelCaseToUnderscore($fieldName);});
+            $requiredFields = array_map(
+                function($fieldName){
+                    return DataBase::camelCaseToUnderscore($fieldName);
+                },
+                $requiredFields
+            );
         }
-        $view->modelConfig = $model::getConfigForListView();
+        $modelConfig = $model::getConfigForListView();
+        if (is_array($displayedFields) && count($displayedFields)) {
+            $displayedFieldsDict = array_flip($displayedFields);
+            foreach ($modelConfig as &$configItem) {
+                if (!array_key_exists($configItem['key'], $displayedFieldsDict)) {
+                    $configItem['nodisplay'] = 'true';
+                }
+            }
+        }
+        $view->modelConfig = $modelConfig;
         $rows = array_map(
             function($row){
                 return array_keys_CameCase($row);
@@ -76,11 +92,12 @@ trait ListView
     public function DictViewAction(
         View $view,
         $model,
-        $condition = null,
-        $requiredFields = null,
-        $substitution = null,
-        $offset = null,
-        $limit = null
+        ?string $condition = null,
+        ?array $requiredFields = null,
+        ?array $substitution = null,
+        ?int $offset = null,
+        ?int $limit = null,
+        ?array $displayedFields = array()
     ){
         $listItemOptions = [];
         if (array_key_exists('mode', $_GET) && trim(strtolower($_GET['mode'])) === 'multiple') {
@@ -102,7 +119,7 @@ trait ListView
         $view->listItemOptions = $listItemOptions;
         $view->setHeaderTemplate(null);
         $view->setFooterTemplate(null);
-        $this->configureListView($view, $model, $condition, $requiredFields, $substitution, $offset, $limit);
+        $this->configureListView($view, $model, $condition, $requiredFields, $substitution, $offset, $limit, $displayedFields);
     }
 }
 
