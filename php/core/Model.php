@@ -351,6 +351,10 @@ abstract class Model  {
                         return !is_null($searchId);
                     }
                 );
+
+                /*Избавляемся от повторяющихся ключей*/
+                $listId = array_flip(array_flip($listId));
+
                 if (count($listId) < 1) {
                     continue;
                 }
