@@ -9,7 +9,7 @@
 namespace Astkon\Traits;
 
 use Astkon\DataBase;
-use function Astkon\Lib\array_keys_CameCase;
+use function Astkon\Lib\array_keys_CamelCase;
 use Astkon\View\View;
 
 trait ListView
@@ -82,7 +82,7 @@ trait ListView
         $view->modelConfig = $modelConfig;
         $rows = array_map(
             function($row){
-                return array_keys_CameCase($row);
+                return array_keys_CamelCase($row);
             },
             $model::getRows(null, $condition, $requiredFields, $substitution, $offset, $limit, true)
         );

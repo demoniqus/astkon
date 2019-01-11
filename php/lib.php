@@ -75,7 +75,7 @@ function RedirectToUrl(string $url) {
  * @param array|null $a
  * @return array
  */
-function array_keys_CameCase($a) {
+function array_keys_CamelCase($a) {
     if (is_null($a)) {
         return $a;
     }

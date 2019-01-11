@@ -11,7 +11,7 @@ namespace Astkon\Controllers;
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
 use Astkon\GlobalConst;
-use function Astkon\Lib\array_keys_CameCase;
+use function Astkon\Lib\array_keys_CamelCase;
 use function Astkon\Lib\Redirect;
 use Astkon\linq;
 use Astkon\Model\Article;
@@ -66,7 +66,7 @@ class OperationsController extends Controller
             array(OperationType::PrimaryColumnKey => $operation[OperationType::PrimaryColumnKey])
         );
         if ($operation[OperationState::PrimaryColumnKey] === OperationState::getFirstRow($db, '`state_name`=\'fixed\'')[OperationState::PrimaryColumnKey]) {
-            $view->operationType = array_keys_CameCase($operationType);
+            $view->operationType = array_keys_CamelCase($operationType);
             $view->message = 'Не допускается редактировать документ в статусе "' . OperationState::getFirstRow(null, 'state_name=\'fixed\'')['state_label'] . '"';
             /*Запрещено редактировать закрытый документ*/
             $view->generate(self::Name() . '/_denied_action');
@@ -136,7 +136,7 @@ class OperationsController extends Controller
         return array_map(
             function($article) use ($operationItems){
                 $article['Count'] = $operationItems[$article[Article::PrimaryColumnKey]];
-                return array_keys_CameCase($article);
+                return array_keys_CamelCase($article);
             },
             $articles
         );
@@ -573,7 +573,7 @@ class OperationsController extends Controller
         $db->commit();
 
         $view->success = true;
-        $view->operation = array_keys_CameCase($operation);
+        $view->operation = array_keys_CamelCase($operation);
         $view->JSONView();
 
     }
@@ -599,7 +599,7 @@ class OperationsController extends Controller
                 $db
             );
             if ($operationState['state_name'] === 'fixed') {
-                $view->operationType = array_keys_CameCase($operationType);
+                $view->operationType = array_keys_CamelCase($operationType);
                 $view->message = 'Не допускается удалять документ в статусе "' . OperationState::getFirstRow(null, 'state_name=\'fixed\'')['state_label'] . '"';
                 /*Запрещено удалять закрытый документ*/
                 $view->generate(self::Name() . '/_denied_action');
@@ -981,7 +981,7 @@ class OperationsController extends Controller
                     '`' . $model::PrimaryColumnKey . '` in (' . implode(',', $listId) . ')'
                 );
                 $linkedData[$model] = (new linq($listLinkedItems))
-                    ->select(function($linkedItem){ return array_keys_CameCase($linkedItem);})
+                    ->select(function($linkedItem){ return array_keys_CamelCase($linkedItem);})
                     ->getData();
 
             }
@@ -996,7 +996,7 @@ class OperationsController extends Controller
 
         $view->title = OperationType::getLabel($OpTypeName);
         $view->activeMenu = '/' . static::Name() . '/Index';
-        $view->operationType = array_keys_CameCase($operationType);
+        $view->operationType = array_keys_CamelCase($operationType);
         $operation = null;
         if ($context['id'] > 0) {
             $operation = Operation::getFirstRow(
@@ -1014,7 +1014,7 @@ class OperationsController extends Controller
                 )
             );
         }
-        $view->operation = array_keys_CameCase($operation);
+        $view->operation = array_keys_CamelCase($operation);
 
         define('OPERATION_VIEW_DIRECTORY', getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'operations');
         $view->Measures = (new linq(Measure::getRows($db)))
@@ -1023,7 +1023,7 @@ class OperationsController extends Controller
                     return $measure['id_measure'];
                 },
                 function($measure){
-                    return array_keys_CameCase($measure);
+                    return array_keys_CamelCase($measure);
                 }
             )->getData();
         $view->dictionaryAction = ArticleBalanceController::Name() . '/ArticleBalanceDict/';

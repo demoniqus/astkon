@@ -11,7 +11,7 @@ namespace Astkon\Controllers;
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
 use Astkon\ErrorCode;
-use function Astkon\Lib\array_keys_CameCase;
+use function Astkon\Lib\array_keys_CamelCase;
 use Astkon\linq;
 use Astkon\Model\Article;
 use Astkon\Model\ArticleCategory;
@@ -109,7 +109,7 @@ class ArticlesController extends Controller
                     $article[$modelName] = $dictExistsValues[$article[$modelName]][$model::PrimaryColumnKey];
                 }
                 $view->$modelName = array_map(
-                    function($newItem){ return array_keys_CameCase($newItem);},
+                    function($newItem){ return array_keys_CamelCase($newItem);},
                     $listNewItems
                 );
             }
@@ -204,7 +204,7 @@ class ArticlesController extends Controller
         }
         else {
             $dataTable = $model::DataTable;
-            $entity = array_keys_CameCase(
+            $entity = array_keys_CamelCase(
                 (new DataBase())->
                 $dataTable->
                 getFirstRow(

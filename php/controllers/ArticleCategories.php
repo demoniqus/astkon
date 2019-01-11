@@ -10,7 +10,7 @@ namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
-use function Astkon\Lib\array_keys_CameCase;
+use function Astkon\Lib\array_keys_CamelCase;
 use Astkon\Model\ArticleCategory;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
@@ -63,7 +63,7 @@ class ArticleCategoriesController extends Controller
         }
         else {
             $dataTable = $model::DataTable;
-            $entity = array_keys_CameCase(
+            $entity = array_keys_CamelCase(
                 (new DataBase())->
                     $dataTable->
                     getFirstRow(

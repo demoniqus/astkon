@@ -11,7 +11,7 @@ namespace Astkon\Controllers;
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
 use Astkon\ErrorCode;
-use function Astkon\Lib\array_keys_CameCase;
+use function Astkon\Lib\array_keys_CamelCase;
 use function Astkon\Lib\Redirect;
 use Astkon\Model\Model;
 use Astkon\Model\User;
@@ -130,7 +130,7 @@ class UsersController extends Controller
                         'state' => Model::ValidStateOK,
                         'message' => 'Данные успешно сохранены'
                     );
-                    $user = array_keys_CameCase(
+                    $user = array_keys_CamelCase(
                         (new DataBase())->
                         user->
                         getFirstRow('id_user = :id_user', null, array('id_user' => $context['id']))
@@ -142,7 +142,7 @@ class UsersController extends Controller
 
         }
         else {
-            $user = array_keys_CameCase(
+            $user = array_keys_CamelCase(
                 (new DataBase())->
                 user->
                 getFirstRow('id_user = :id_user', null, array('id_user' => $context['id']))

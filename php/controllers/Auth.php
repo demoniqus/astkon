@@ -11,7 +11,7 @@ namespace Astkon\Controllers;
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
 use Astkon\DocComment;
-use function Astkon\Lib\array_keys_CameCase;
+use function Astkon\Lib\array_keys_CamelCase;
 use function Astkon\Lib\Redirect;
 use Astkon\linq;
 use Astkon\Model\Model;
@@ -55,7 +55,7 @@ class AuthController extends Controller
             if ($user) {
                 $user = User::getFirstRow($db, User::PrimaryColumnKey . ' = ' . $user[User::PrimaryColumnKey], null, null, null, true);
                 unset($user['password']);
-                $_SESSION[AuthController::CurrentUserKey] = $GLOBALS[AuthController::CurrentUserKey] = array_keys_CameCase($user);
+                $_SESSION[AuthController::CurrentUserKey] = $GLOBALS[AuthController::CurrentUserKey] = array_keys_CamelCase($user);
                 Redirect('Index', 'Index');
             }
             else {

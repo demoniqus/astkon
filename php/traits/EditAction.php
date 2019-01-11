@@ -9,7 +9,7 @@
 namespace Astkon\Traits;
 
 use Astkon\DataBase;
-use function Astkon\Lib\array_keys_CameCase;
+use function Astkon\Lib\array_keys_CamelCase;
 use function Astkon\Lib\Redirect;
 use Astkon\Model\Model;
 
@@ -70,7 +70,7 @@ trait EditAction
                 );
                 $dataTable = $model::DataTable;
                 $pkName = DataBase::camelCaseToUnderscore($model::PrimaryColumnName);
-                $entity = array_keys_CameCase(
+                $entity = array_keys_CamelCase(
                     (new DataBase())->
                     $dataTable->
                     getFirstRow($pkName . ' = :' . $pkName, null, array($pkName => $context['id']))
