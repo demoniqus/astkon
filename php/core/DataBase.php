@@ -64,7 +64,6 @@ class DataBase {
         $pass = GlobalConst::HostPass
     ) {
         $this->connect($host, $dbName, $login, $pass);
-        $this->_execQueryCommand = '_standardExecQueryCommandFunction';
     }
 
     /**
@@ -170,221 +169,65 @@ class DataBase {
         return $data;
     }
 
-    /**
-     * Метод начинает транзакцию.
-     * Все запросы для транзакции передаются через $db->query().
-     * При этом в случае успеха каждый $db->query() вернет пустой массив, в случае ошибки вернет false
-     */
-    public function beginTransaction() {
-        $this->PDOStatementsQueue = array();
-        $this->_execQueryCommand = '_transactionExecQueryCommandFunction';
+    public function inTransaction() {
+        return $this->PDO->inTransaction();
     }
 
     /**
-     * Метод запускает фиксацию транзакции.
-     * Если последний запрос в транзакции был SELECT, метод вернет его результат. В случае ошибки возвращает false
-     * @param string $mode
-     * @return array|false
+     * Метод начинает транзакцию.
      */
-    public function commit(string $mode = 'assoc') {
-        /** @var PDOStatement $stmt */
-        $stmt = null;
-        $substitution = null;
-        $queryType = null;
-        $this->lastQueryState = 0;
-        try {
-            $this->PDO->beginTransaction();
-            foreach ($this->PDOStatementsQueue as $statementData) {
-                $queryType = $statementData['queryType'];
-                $substitution = $statementData['substitution'];
-                $stmt = $statementData['statement'];
-                $stmt->execute();
-            }
-            $this->PDO->commit();
-        }
-        catch (\PDOException $PDOException) {
-            $errInfo = array(
-                '@error' => true,
-                'errors' => array(
-                    array(
-                        'errorType' => 'PDO',
-                        'errorCode' => $PDOException->getCode(),
-                        'errorMessage' => $PDOException->getMessage(),
-                        'errorInfo' => $PDOException->errorInfo
-                    ),
-                ),
-            );
-            try {
-                if ($this->PDO->inTransaction()) {
-                    $this->PDO->rollback();
-                }
-            }
-            catch (\PDOException $PDOExceptionRollback) {
-                $errInfo['errors'][] =  array(
-                    'errorType' => 'PDO',
-                    'errorCode' => $PDOExceptionRollback->getCode(),
-                    'errorMessage' => $PDOExceptionRollback->getMessage(),
-                );
-            }
+    public function beginTransaction() {
+        $this->setInitState();
+        $this->PDO->beginTransaction();
+    }
 
-            $errInfo = self::errorMessageParser($errInfo, array_keys($substitution));
-
-            $this->lastQueryState = $errInfo;
-            return false;
-        }
-
-        $result = self::_fetchResult($stmt, $queryType, $mode);
-        $this->setDefConfiguration();
-        return $result;
-
+    public function commit() {
+        $this->finishTransaction('commit');
     }
 
     public function rollback() {
+        $this->finishTransaction('rollback');
+    }
+
+    private function finishTransaction(string $finishMethod) {
+        $this->setInitState();
         if ($this->PDO->inTransaction()) {
-            $this->PDO->rollback();
-        }
-        $this->setDefConfiguration();
-    }
-
-    /**
-     * Метод возвращает экземпляр класса к работе без транзакций
-     */
-    protected function setDefConfiguration() {
-        $this->_execQueryCommand = '_standardExecQueryCommandFunction';
-        $this->PDOStatementsQueue = [];
-    }
-
-    protected function _execQueryCommandTransaction($query, int $queryType, $substitution = null) {
-        $query = trim($query);
-
-
-        /** @var PDOStatement $stmt */
-        try {
-            $stmt = $this->PDO->prepare($query);
-        }
-        catch (PDOException $PDOException) {
-            switch ($PDOException->getCode()) {
-                case '42S22':
-                    $view = new View();
-                    $view->trace = array(
-                        'errorCode' => $PDOException->getCode(),
-                        'errorMessage' => $PDOException->getMessage(),
-                        'errorInfo' => $PDOException->errorInfo,
-                    );
-                    $view->error(ErrorCode::PROGRAMMER_ERROR);
-                    die();
-                default:
-                    return array(
-                        '@error' => true,
-                        'errorType' => 'PDO',
-                        'errorCode' => $PDOException->getCode(),
-                        'errorMessage' => $PDOException->getMessage(),
-                    );
-            }
-        }
-        catch (\Exception $exception) {
-            return array(
-                '@error' => true,
-                'errorType' => 'PHP',
-                'errorCode' => $exception->getCode(),
-                'errorMessage' => $exception->getMessage(),
-            );
-        }
-        // Альтернатива PDO - https://habr.com/post/141127/
-        if (is_array($substitution)) {
             try {
-                foreach ($substitution as $k => $v) {
-                    $paramType = false;
-                    if (is_int($v)) {
-                        $paramType = PDO::PARAM_INT;
-                    }
-                    else if (is_bool($v)) {
-                        $paramType = PDO::PARAM_BOOL;
-                    }
-                    else if (is_null($v)) {
-                        $paramType = PDO::PARAM_NULL;
-                    }
-                    else if(is_array($v)) {
-                        $paramType = PDO::PARAM_STR;
-                        $v = json_encode($v);
-                    }
-                    else if (is_string($v)) {
-                        $paramType = PDO::PARAM_STR;
-                    }
-                    if ($paramType !== false) {
-                        (function($v) use ($stmt, $k, $paramType) {
-                            $stmt->bindParam(':' . $k, $v, $paramType);
-
-                        })($v);
-                    }
-                }
-            } catch (\PDOException $PDOException) {
-                return array(
+                $this->PDO->$finishMethod();
+            }
+            catch (PDOException $PDOException) {
+                $this->lastQueryState = array(
                     '@error' => true,
-                    'errorType' => 'PDO',
-                    'errorCode' => $PDOException->getCode(),
-                    'errorMessage' => $PDOException->getMessage(),
+                    'errors' => array(
+                        array(
+                            'errorType' => 'PDO',
+                            'errorCode' => $PDOException->getCode(),
+                            'errorMessage' => $PDOException->getMessage(),
+                            'errorInfo' => $PDOException->errorInfo
+                        ),
+                    ),
                 );
+                return false;
             }
+            return true;
         }
 
-        try {
-
-            if ($queryType === self::QueryTypeInsert) {
-                $this->PDO->beginTransaction();
-                $stmt->execute();
-                $this->lastInsertId = $this->PDO->lastInsertId();
-                $this->PDO->commit();
-//                echo '<pre>';
-//                $stmt->debugDumpParams();
-//                die();
-            }
-            else {
-                $stmt->execute();
-            }
-        }
-        catch (\PDOException $PDOException) {
-            try {
-                if ($this->PDO->inTransaction()) {
-                    $this->PDO->rollback();
-                }
-            }
-            catch (\PDOException $PDOException) {
-                return array(
-                    '@error' => true,
+        $errInfo = array(
+            '@error' => true,
+            'errors' => array(
+                array(
                     'errorType' => 'PDO',
-                    'errorCode' => $PDOException->getCode(),
-                    'errorMessage' => $PDOException->getMessage(),
-                );
-            }
-            $errInfo = array(
-                '@error' => true,
-                'errorType' => 'PDO',
-                'errorCode' => $PDOException->getCode(),
-                'errorMessage' => $PDOException->getMessage(),
-                'errorInfo' => $PDOException->errorInfo
-            );
-
-            $errInfo = self::errorMessageParser($errInfo, array_keys($substitution));
-
-            return $errInfo;
-        }
-        catch(\Exception $exception) {
-            return array(
-                '@error' => true,
-                'errorType' => 'PHP',
-                'errorCode' => $exception->getCode(),
-                'errorMessage' => $exception->getMessage(),
-            );
-        }
-        return $stmt;
+                    'errorCode' => null,
+                    'errorMessage' => 'Нет активной транзакции',
+                    'errorInfo' => null
+                ),
+            ),
+        );
+        $view = new View();
+        $view->trace = $errInfo;
+        $view->error(ErrorCode::PROGRAMMER_ERROR);
+        die();
     }
-
-    /**
-     * Имя функции для работы с подготовленным выражением PDO - либо стандартная функция, либо функция для накопления запросов
-     * @var string|null
-     */
-    protected $_execQueryCommand = null;
 
     /**
      * Cтандартная функция выполнения одного запроса вне транзакций
@@ -393,20 +236,26 @@ class DataBase {
      * @param array|null $substitution
      * @return array|PDOStatement
      */
-    protected function _standardExecQueryCommandFunction (PDOStatement $stmt, int $queryType, $substitution){
+    protected function _execQueryCommand (PDOStatement $stmt, int $queryType, $substitution){
         try {
 
             if ($queryType === self::QueryTypeInsert) {
-                $this->PDO->beginTransaction();
-                $stmt->execute();
-                $this->lastInsertId = $this->PDO->lastInsertId();
-                $this->PDO->commit();
+                if ($this->PDO->inTransaction()) {
+                    $stmt->execute();
+                    $this->lastInsertId = $this->PDO->lastInsertId();
+                }
+                else {
+                    $this->PDO->beginTransaction();
+                    $stmt->execute();
+                    $this->lastInsertId = $this->PDO->lastInsertId();
+                    $this->PDO->commit();
+                }
             }
             else {
                 $stmt->execute();
             }
         }
-        catch (\PDOException $PDOException) {
+        catch (PDOException $PDOException) {
             $errInfo = array(
                 '@error' => true,
                 'errors' => array(
@@ -423,7 +272,7 @@ class DataBase {
                     $this->PDO->rollback();
                 }
             }
-            catch (\PDOException $PDOExceptionRollback) {
+            catch (PDOException $PDOExceptionRollback) {
                 $errInfo['errors'][] = array(
                     'errorType' => 'PDO',
                     'errorCode' => $PDOExceptionRollback->getCode(),
@@ -445,25 +294,6 @@ class DataBase {
         }
         return $stmt;
     }
-
-    /**
-     * Метод накапливает запросы для транзакции
-     * @param PDOStatement $stmt
-     * @param int $queryType
-     * @param null|array $substitution
-     * @return null
-     */
-    protected function _transactionExecQueryCommandFunction (PDOStatement $stmt, int $queryType, $substitution) {
-        $this->PDOStatementsQueue[] = array(
-            'statement' => $stmt,
-            'queryType' => $queryType,
-            'substitution' => $substitution
-        );
-        return null;
-    }
-
-
-
 
     /**
      * @param array|null $substitution - значения для подстановки. Ключи в CamelCase
@@ -561,7 +391,7 @@ class DataBase {
                         })($v);
                     }
                 }
-            } catch (\PDOException $PDOException) {
+            } catch (PDOException $PDOException) {
                 return array(
                     '@error' => true,
                     'errors' => array(
@@ -574,8 +404,7 @@ class DataBase {
                 );
             }
         }
-        $nextCommand =$this->_execQueryCommand;
-        return $this->$nextCommand($stmt, $queryType, $substitution);
+        return $this->_execQueryCommand($stmt, $queryType, $substitution);
     }
 
     /**
