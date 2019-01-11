@@ -9,7 +9,7 @@
         <?php
         require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_operation_form_header.php';
         ?>
-        <div class="row">
+        <div class="row mb-3">
 <!--            Информация о том, кто провел списание-->
             <button
                     type="button"
@@ -19,20 +19,17 @@
                         extReferencePKName: '<?= Article::PrimaryColumnName; ?>',
                         dataSourceUrl: '<?= $dictionaryAction . '?mode=multiple&operation=' . $operationType['OperationName']; ?>',
                         title: '',
-                        setValueCallback: 'setSelectedArticles',
+                        setValueCallback: 'setSelectedArticlesAsEditable',
                         mode: 'multiple'
                         })">Добавить элементы...</button>
         </div>
-        <div class="row" id="OperationListItems">
-            <div class="container-fluid">
-
-            </div>
-        </div>
-        <div class="row mt-3">
-
-            <button type="button" class="btn btn-primary" onclick="saveOperation(false)">Сохранить</button>
-            <button type="button" class="btn btn-primary ml-2" onclick="saveOperation(true)">Зафиксировать</button>
-        </div>
+        <?php
+            require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_operation_form_body.php';
+        ?>
     </div>
 </div>
+
+<?php
+
+require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_set_edited_operation_data.php';
 

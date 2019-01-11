@@ -1,59 +1,31 @@
 <div class="row mx-0">
     <?php
+
+    use Astkon\DataBase;
     use Astkon\GlobalConst;
     use Astkon\Model\Article;
     use Astkon\Model\BuildObject;
 
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php';
+    $editable = true;
+    require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_set_' . DataBase::camelCaseToUnderscore(BuildObject::Name()) . '_script.php';
+
     ?>
-    <script type="text/javascript">
-        function selectBuildObjects(/*DOM.form-group*/ selectedBuildObjectsContainer, /*string*/ extReferencePKName, /*array*/ objectsData, /*array*/ fields) {
-            if (!('selectedBuildObjects' in window)) {
-                window.selectedBuildObjects = {};
-            }
-            linq(objectsData).foreach(function(objectData){
-                if (objectData.IdBuildObject in window.selectedBuildObjects) {
-                    return;
-                }
-                let tail = $('<div class="tail-item lightgray m-2 p-2 col-md-3"></div>');
-                tail.get(0).dataset.item = JSON.stringify(objectData);
 
-                let textContainer = $('<div></div>');
-                textContainer.text(objectData.BuildObjectName);
-
-                let optionsContainer = $('<div></div>');
-                optionsContainer.addClass('text-right');
-
-                let optionDelete = $('<a href="javascript: void(0)"><img src="/trash-empty-icon.png" class="action-icon"  title="Удалить"/></a>');
-                optionsContainer.append(optionDelete);
-                optionDelete.click(function(){
-                    tail.remove();
-                    delete window.selectedBuildObjects[objectData.IdBuildObject];
-                });
-
-                tail.append(optionsContainer);
-                tail.append(textContainer);
-
-                $(selectedBuildObjectsContainer).append(tail);
-
-                window.selectedBuildObjects[objectData.IdBuildObject] = objectData;
-            })
-        }
-    </script>
     <div class="col-md text-center" id="operation-form">
         <?php
             require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_operation_form_header.php';
         ?>
-        <div class="row mt-3">
+        <div class="row mb-3">
             <button
                 type="button"
                 class="btn btn-light"
                 onclick="new DictionaryField({
-                        targetContainer: $('#BuildObjectsListItems'),
+                        targetContainer: $('#<?= BuildObject::Name(); ?>ListItems'),
                         extReferencePKName: '<?= BuildObject::PrimaryColumnName; ?>',
                         dataSourceUrl: 'BuildObjects/BuildObjectsDict?mode=multiple',
                         title: '',
-                        setValueCallback: 'selectBuildObjects',
+                        setValueCallback: 'select<?= BuildObject::Name(); ?>',
                         mode: 'multiple'
                         })">Выбрать объекты...</button>
             <button
@@ -64,23 +36,21 @@
                     extReferencePKName: '<?= Article::PrimaryColumnName; ?>',
                     dataSourceUrl: '<?= $dictionaryAction . '?mode=multiple&operation=' . $operationType['OperationName']; ?>',
                     title: '',
-                    setValueCallback: 'setSelectedArticles',
+                    setValueCallback: 'setSelectedArticlesAsEditable',
                     mode: 'multiple'
                     })">Добавить элементы...</button>
         </div>
-        <div class="row" id="BuildObjectsListItems">
+        <div class="row" id="<?= BuildObject::Name(); ?>ListItems">
 
         </div>
-        <div class="row" id="OperationListItems">
-            <div class="container-fluid">
-
-            </div>
-        </div>
-        <div class="row mt-3">
-
-            <button type="button" class="btn btn-primary" onclick="saveOperation(false)">Сохранить</button>
-            <button type="button" class="btn btn-primary ml-2" onclick="saveOperation(true)">Зафиксировать</button>
-        </div>
+        <?php
+            require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_operation_form_body.php';
+        ?>
     </div>
 </div>
+
+<?php
+
+require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_set_edited_operation_data.php';
+require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_set_operation_linked_data.php';
 

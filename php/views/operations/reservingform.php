@@ -1,59 +1,30 @@
 <div class="row mx-0">
     <?php
+
+    use Astkon\Controllers\OperationsController;
+    use Astkon\Controllers\UsersController;
     use Astkon\GlobalConst;
     use Astkon\Model\Article;
-    use Astkon\Model\People;
+    use Astkon\Model\User;
 
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php';
+    $editable = true;
+    require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_set_' . DataBase::camelCaseToUnderscore(User::Name()) . '_script.php';
     ?>
-    <script type="text/javascript">
-        function selectPeople(/*DOM.form-group*/ selectedPeopleContainer, /*string*/ extReferencePKName, /*array*/ objectsData, /*array*/ fields) {
-            if (!('selectedPeople' in window)) {
-                window.selectedPeople = {};
-            }
-            linq(objectsData).foreach(function(objectData){
-                if (objectData.IdPeople in window.selectedPeople) {
-                    return;
-                }
-                let tail = $('<div class="tail-item lightgray m-2 p-2 col-md-3"></div>');
-                tail.get(0).dataset.item = JSON.stringify(objectData);
-
-                let textContainer = $('<div></div>');
-                textContainer.text(objectData.PeopleName + (objectData.PostName ? ' (' + objectData.PostName + ')' : ''));
-
-                let optionsContainer = $('<div></div>');
-                optionsContainer.addClass('text-right');
-
-                let optionDelete = $('<a href="javascript: void(0)"><img src="/trash-empty-icon.png" class="action-icon"  title="Удалить"/></a>');
-                optionsContainer.append(optionDelete);
-                optionDelete.click(function(){
-                    tail.remove();
-                    delete window.selectedPeople[objectData.IdPeople];
-                });
-
-                tail.append(optionsContainer);
-                tail.append(textContainer);
-
-                $(selectedPeopleContainer).append(tail);
-
-                window.selectedPeople[objectData.IdPeople] = objectData;
-            })
-        }
-    </script>
     <div class="col-md text-center" id="operation-form">
         <?php
         require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_operation_form_header.php';
         ?>
-        <div class="row mt-3">
+        <div class="row mb-3">
             <button
                     type="button"
                     class="btn btn-light"
                     onclick="new DictionaryField({
-                            targetContainer: $('#PeopleListItems'),
-                            extReferencePKName: '<?= People::PrimaryColumnName; ?>',
-                            dataSourceUrl: 'People/PeopleDict?mode=multiple',
+                            targetContainer: $('#<?= User::Name(); ?>ListItems'),
+                            extReferencePKName: '<?= User::PrimaryColumnName; ?>',
+                            dataSourceUrl: '<?= UsersController::Name() . '/UsersDict'; ?>?mode=multiple',
                             title: '',
-                            setValueCallback: 'selectPeople',
+                            setValueCallback: 'select<?= User::Name(); ?>',
                             mode: 'multiple'
                             })">Выбрать людей...</button>
             <button
@@ -64,11 +35,11 @@
                             extReferencePKName: '<?= Article::PrimaryColumnName; ?>',
                             dataSourceUrl: '<?= $dictionaryAction . '?mode=multiple&operation=' . $operationType['OperationName']; ?>',
                             title: '',
-                            setValueCallback: 'setSelectedArticles',
+                            setValueCallback: 'setSelectedArticlesAsEditable',
                             mode: 'multiple'
                             })">Добавить элементы...</button>
         </div>
-        <div class="row" id="PeopleListItems">
+        <div class="row" id="<?= User::Name(); ?>ListItems">
 
         </div>
         <div class="row" id="OperationListItems">
@@ -78,9 +49,14 @@
         </div>
         <div class="row mt-3">
 
-            <button type="button" class="btn btn-primary" onclick="saveOperation(false)">Сохранить</button>
-            <button type="button" class="btn btn-primary ml-2" onclick="saveOperation(true)">Зафиксировать</button>
+            <button id="btn-save" type="button" class="btn btn-primary" onclick="saveOperation(false)">Сохранить</button>
+            <a id="btn-gotolist" href="<?= '/' . OperationsController::Name() . '/OperationsList/' . $operationType['IdOperationType']; ?>" class="btn btn-outline-secondary ml-2">К списку документов</a>
         </div>
     </div>
 </div>
 
+<?php
+
+require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_set_edited_operation_data.php';
+
+require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_set_operation_linked_data.php';

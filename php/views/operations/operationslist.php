@@ -9,8 +9,13 @@
 
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php'; ?>
     <div class="col-md text-center">
-        <div class="text-left">
-            <a href="/Operations/<?= $operation_type['operation_name']; ?>Form/" class="btn btn-success">Добавить...</a>
+        <div class="row mb-2">
+            <div class="col alert alert-info">
+                <?= $operationType['operation_label']; ?>
+            </div>
+        </div>
+        <div class="text-left mb-2">
+            <a href="/Operations/<?= $operationType['operation_name']; ?>Form/" class="btn btn-success">Добавить...</a>
         </div>
         <?php
         View::TableList($modelConfig, $listItems, $listItemOptions);
