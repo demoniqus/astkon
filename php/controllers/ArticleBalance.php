@@ -9,7 +9,11 @@
 namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
+use Astkon\ErrorCode;
+use Astkon\Model\Article;
 use Astkon\Model\ArticleBalance;
+use Astkon\Model\ChangeBalanceMethod;
+use Astkon\Model\OperationType;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
@@ -67,13 +71,33 @@ class ArticleBalanceController extends Controller
 
     public function ArticleBalanceDictAction($context) {
         $view = new View();
-        $this->DictViewAction(
-            $view,
-            ArticleBalance::class,
-            'id_user_group = :id_user_group',
+        $operationType = OperationType::getFirstRow(
             null,
-            array('id_user_group' => CURRENT_USER['IdUserGroup'])
+            '`operation_name` = :operation_name',
+            null,
+            array('operation_name' => $_GET['operation'])
         );
+        if (!$operationType) {
+            $view->error(ErrorCode::NOT_FOUND);
+            die();
+        }
+        $changeBalanceMethod = ChangeBalanceMethod::GetByPrimaryKey($operationType[ChangeBalanceMethod::PrimaryColumnKey]);
+        if ($changeBalanceMethod['method_name'] === 'in_fixation') {
+
+            $this->DictViewAction(
+                $view,
+                Article::class
+            );
+        }
+        else {
+            $this->DictViewAction(
+                $view,
+                ArticleBalance::class,
+                'id_user_group = :id_user_group',
+                null,
+                array('id_user_group' => CURRENT_USER['IdUserGroup'])
+            );
+        }
         $view->generate();
     }
 
