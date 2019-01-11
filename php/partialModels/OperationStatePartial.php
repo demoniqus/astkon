@@ -101,6 +101,7 @@ protected static $fieldsInfo = array (
 	public $StateComment;
 
 	/**
+	* @foreign_key_display_value
 	* @database_column_name state_label
 	* @caption
 	* @var string

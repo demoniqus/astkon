@@ -60,7 +60,6 @@ protected static $fieldsInfo = array (
         0 => 
         array (
           'key' => 'article_name',
-//          'alias' => 'article_name_alias',
           'list_view_order' => 1,
         ),
         1 => 
@@ -68,6 +67,7 @@ protected static $fieldsInfo = array (
           'key' => 'id_measure',
           'list_view_order' => 2,
         ),
+        2 => 
         array (
           'key' => 'id_article_category',
           'list_view_order' => 0,
@@ -99,7 +99,7 @@ protected static $fieldsInfo = array (
     'column_name' => 'balance',
     'data_type' => 'decimal',
     'max_length' => NULL,
-    'num_prec' => '10',
+    'num_prec' => '30',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => '',

@@ -72,7 +72,32 @@ protected static $fieldsInfo = array (
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
   ),
+  'IdChangeBalanceMethod' => 
+  array (
+    'table_name' => 'operation_type',
+    'column_name' => 'id_change_balance_method',
+    'data_type' => 'int',
+    'max_length' => NULL,
+    'num_prec' => '10',
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => 'MUL',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update,references',
+    'foreign_key' => 
+    array (
+      'model' => 'change_balance_method',
+      'field' => 'id_change_balance_method',
+    ),
+  ),
 );
+	/**
+	* @database_column_name id_change_balance_method
+	* @caption
+	* @var int
+	*/
+	public $IdChangeBalanceMethod;
+
 	/**
 	* @database_column_name id_operation_type
 	* @caption

@@ -126,6 +126,30 @@ protected static $fieldsInfo = array (
       'model' => 'article_category',
       'field' => 'id_article_category',
       'display_mode' => 'decode_id_to_string',
+      'old' => 
+      array (
+        'model' => 'article_category',
+        'field' => 'id_article_category',
+        'display_mode' => 'join_model',
+        'joined_columns' => 
+        array (
+          0 => 
+          array (
+            'key' => 'category_name',
+            'list_view_order' => 0,
+          ),
+          1 => 
+          array (
+            'key' => 'is_writeoff',
+            'list_view_order' => 1,
+          ),
+          2 => 
+          array (
+            'key' => 'is_saleable',
+            'list_view_order' => 2,
+          ),
+        ),
+      ),
     ),
   ),
 );
@@ -161,6 +185,8 @@ protected static $fieldsInfo = array (
 	public $IdMeasure;
 
 	/**
+	* @nodisplay
+	* @noeditable
 	* @database_column_name is_archive
 	* @caption Архивный
 	* @var bool

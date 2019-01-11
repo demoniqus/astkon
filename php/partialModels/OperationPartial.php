@@ -142,6 +142,19 @@ protected static $fieldsInfo = array (
       'display_mode' => 'decode_id_to_string',
     ),
   ),
+  'LinkedData' => 
+  array (
+    'table_name' => 'operation',
+    'column_name' => 'linked_data',
+    'data_type' => 'json',
+    'max_length' => NULL,
+    'num_prec' => NULL,
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'YES',
+    'privileges' => 'select,insert,update,references',
+  ),
 );
 	/**
 	* @database_column_name create_datetime
@@ -173,6 +186,7 @@ protected static $fieldsInfo = array (
 
 	/**
 	* @noeditable
+	* @nodisplay
 	* @database_column_name id_operation_type
 	* @caption Тип документа
 	* @var int
@@ -180,6 +194,8 @@ protected static $fieldsInfo = array (
 	public $IdOperationType;
 
 	/**
+	* @noeditable
+	* @nodisplay
 	* @database_column_name id_user_group
 	* @caption
 	* @var int
@@ -188,6 +204,16 @@ protected static $fieldsInfo = array (
 
 	/**
 	* @noeditable
+	* @nodisplay
+	* @database_column_name linked_data
+	* @caption Информация о связанных объектах
+	* @var array
+	*/
+	public $LinkedData;
+
+	/**
+	* @noeditable
+	* @nodisplay
 	* @database_column_name operation_info
 	* @caption Расширенная информация
 	* @var array

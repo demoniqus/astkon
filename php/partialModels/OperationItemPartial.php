@@ -80,9 +80,9 @@ protected static $fieldsInfo = array (
   array (
     'table_name' => 'operation_item',
     'column_name' => 'operation_count',
-    'data_type' => 'double',
+    'data_type' => 'decimal',
     'max_length' => NULL,
-    'num_prec' => '22',
+    'num_prec' => '30',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => '',
@@ -93,9 +93,9 @@ protected static $fieldsInfo = array (
   array (
     'table_name' => 'operation_item',
     'column_name' => 'consignment_balance',
-    'data_type' => 'double',
+    'data_type' => 'decimal',
     'max_length' => NULL,
-    'num_prec' => '22',
+    'num_prec' => '30',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => '',
