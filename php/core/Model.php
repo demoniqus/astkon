@@ -172,7 +172,7 @@ abstract class Model  {
             /** @var string $caption - используется во вьюхах*/
             $caption = isset($docCommentParams['caption']) ? $docCommentParams['caption'] : $propName;
             /** @var mixed $value - используется во вьюхах*/
-            $value = $item[$propName];
+            $value = isset($item[$propName]) ? $item[$propName] : null;
 
             $validMessage = null;
             $validState = self::ValidStateUndefined;
