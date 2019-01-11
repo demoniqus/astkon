@@ -14,3 +14,4 @@ require_once GlobalConst::ModelsDirectory . DIRECTORY_SEPARATOR . 'OperationStat
 require_once GlobalConst::ModelsDirectory . DIRECTORY_SEPARATOR . 'UserGroup.php';
 require_once GlobalConst::ModelsDirectory . DIRECTORY_SEPARATOR . 'ArticleCategory.php';
 require_once GlobalConst::ModelsDirectory . DIRECTORY_SEPARATOR . 'ArticleBalance.php';
+require_once GlobalConst::ModelsDirectory . DIRECTORY_SEPARATOR . 'ChangeBalanceMethod.php';
