@@ -15,6 +15,7 @@ use function Astkon\Lib\array_keys_CameCase;
 use function Astkon\Lib\Redirect;
 use Astkon\Model\Model;
 use Astkon\Model\User;
+use Astkon\Model\UserGroup;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
 
@@ -38,6 +39,33 @@ class UsersController extends Controller
             $view,
             User::class,
             $options
+        );
+        $view->generate();
+    }
+
+    public function UsersDictAction($context) {
+        $view = new View();
+        $condition = null;
+        $substitution = null;
+//        $pageId = isset($context['id']) ? intval($context['id']) : 0;
+//        $pageSize = 5;
+
+        $this->DictViewAction(
+            $view,
+            User::class,
+            $condition,
+            array(
+                User::PrimaryColumnKey,
+                UserGroup::PrimaryColumnKey,
+                'user_name'
+            ),
+            $substitution,
+            null,
+            null,
+            array(
+                'UserName',
+                UserGroup::PrimaryColumnName
+            )
         );
         $view->generate();
     }
