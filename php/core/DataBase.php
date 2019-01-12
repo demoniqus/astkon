@@ -598,33 +598,177 @@ class DataBase {
 
     /**
      * @param null|string $condition
-     * @param null|array $required_fields
-     * @param null|int $offset
-     * @param null|int $limit
+     * @param null|array  $requiredFields
+     * @param null|int    $offset
+     * @param null|int    $limit
      * @return string
      */
     private function _getQueryString (
-        $condition = null, //строка
-        $required_fields = null, //массив наименований колонок для выборки,
-        $offset = null,
-        $limit = null
+        ?string $condition = null, //строка
+        ?array $requiredFields = null, //массив наименований колонок для выборки,
+        ?int $offset = null,
+        ?int $limit = null
     ) : string {
         /*Определим список полей, которые требуется извлечь*/
-        (
-            !$required_fields ||
-            (gettype($required_fields) !== gettype(array())) ||
-            count($required_fields) < 1
-        ) &&
-        $required_fields = array('*');//По умолчанию извлекаются все поля
-        $required_fields = array_map(function($fieldName){ return DataBase::camelCaseToUnderscore($fieldName);}, $required_fields);
+        $selectedColumns = $this->currentObject['fields'];
+
+        if (is_array($requiredFields) && count($requiredFields)) {
+            $requiredFields = array_flip(
+                array_map(
+                    function($fieldName){
+                        return DataBase::camelCaseToUnderscore($fieldName);
+                    },
+                    $requiredFields
+                )
+            );
+            $selectedColumns = array_filter(
+                $selectedColumns,
+                function($v, $k) use ($requiredFields) {
+                    return array_key_exists($k, $requiredFields);
+                },
+                ARRAY_FILTER_USE_BOTH
+            );
+        }
+        $joinedColumns = array_filter(
+            $selectedColumns,
+            function($selectedColumn){
+                return array_key_exists('_joinedForeignKey', $selectedColumn);
+            }
+        );
+        $query = 'SELECT ';
+        $query .= implode(
+            ', ',
+            array_map(
+                function($selectedColumn){
+                    $querySubstring = '`' . $selectedColumn['table_name'] . '`.`' . $selectedColumn['column_name'] . '`';
+                    if (array_key_exists('_alias', $selectedColumn)) {
+                        $querySubstring .= ' AS `' . $selectedColumn['_alias'] . '`';
+                    }
+                    return $querySubstring;
+                },
+                $selectedColumns
+            )
+        );
+        $query .= ' FROM `' . $this->currentObject['name'] . '` ';
+        if (count($joinedColumns)) {
+            $joinSubqueries = array();
+            foreach ($joinedColumns as $joinedColumn) {
+                $subquery = 'LEFT JOIN `' . $joinedColumn['ref_table_name'] . '` ON `'
+                    . $joinedColumn['table_name'] . '`.`' . $joinedColumn['column_name'] . '` = `'
+                    . $joinedColumn['ref_table_name'] . '`.`' . $joinedColumn['ref_column_name'] . '`';
+
+                if (!array_key_exists($joinedColumn['ref_table_name'], $joinSubqueries)) {
+                    /*
+                     * Если вдруг где-то встретится повторный join таблицы, не будем это считать за ошибку, а просто проигнорируем его,
+                     * поскольку невозможно предсказать ожидаемую сложность и вложенность запросов
+                    */
+                    $joinSubqueries[$joinedColumn['ref_table_name']] = $subquery;
+                }
+            }
+            $query .= implode(' ', $joinSubqueries);
+        }
+        $query .= ' ';
 
         /*Запросим строки и сразу произведем типизацию*/
-        return 'select ' .
-            implode(', ', $required_fields) .
-            ' from `' . $this->currentObject['name'] . '` ' .
-            ($condition ? 'where ' . $condition : '') . ' ' .
+        return $query . ($condition ? 'where ' . $condition : '') . ' ' .
             (!is_null($limit) ? 'limit ' . $limit : '') . ' ' .
             (!is_null($offset) ? 'offset ' . $offset : '');
+
+    }
+
+    /**
+     * Подключение внешнего источника данных
+     *
+     * @param string     $columnName   - наименование колонки в текущей модели, к которой следует подключить foreign_key
+     * @param array|null $joinedFields - массив подключаемых из дополнительной модели полей в формате column_name => column_alias
+     * @param int        $recurciveDeep - глубина рекурсивного join'а
+     */
+    public function joinForeignKey(string $columnName, ?array $joinedFields = null, int $recurciveDeep = 0) {
+        if (!$this->currentObject) {
+            $backtrace = (new linq(debug_backtrace(2, 8)))
+                ->select(function($item){
+                    unset($item['file']);
+                    return $item;
+                })
+                ->getData();
+            $view = new View();
+            $view->trace = array(
+                'class'     => __CLASS__,
+                'line'      => __LINE__,
+                'message'   => 'Не установлен объект для извелечения из БД',
+                'backtrace' => $backtrace,
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        $columnName = self::camelCaseToUnderscore($columnName);
+        if (!array_key_exists($columnName, $this->currentObject['fields'])) {
+            $backtrace = (new linq(debug_backtrace(2, 8)))
+                ->select(function($item){
+                    unset($item['file']);
+                    return $item;
+                })
+                ->getData();
+            $view = new View();
+            $view->trace = array(
+                'class'                 => __CLASS__,
+                'line'                  => __LINE__,
+                'message'               => 'Колонка "' . $columnName . '" отстуствует в текущем объекте для извлечения',
+                'CurrentObject[fields]' => $this->currentObject['fields'],
+                'backtrace'             => $backtrace,
+            );
+            $view->error(ErrorCode::PROGRAMMER_ERROR);
+            die();
+        }
+        $columnParams = $this->currentObject['fields'][$columnName];
+        if (!is_null($columnParams['ref_table_name'])) {
+            $refTableFields = $this->getTableSchema($columnParams['ref_table_name'])['fields'];
+            if (is_array($joinedFields) && count($joinedFields)) {
+                foreach ($joinedFields as $refTableColumnKey => $refTableColumnAlias) {
+                    $refTableColumnKey = self::camelCaseToUnderscore($refTableColumnKey);
+
+                    if (!array_key_exists($refTableColumnKey, $refTableFields)) {
+                        $backtrace = (new linq(debug_backtrace(2, 8)))
+                            ->select(function($item){
+                                unset($item['file']);
+                                return $item;
+                            })
+                            ->getData();
+                        $view = new View();
+                        $view->trace = array(
+                            'class'          => __CLASS__,
+                            'line'           => __LINE__,
+                            'message'        => 'Колонка "' . $refTableColumnKey . '" отстуствует в текущем объекте для извлечения',
+                            'refTableFields' => $refTableFields,
+                            'backtrace'      => $backtrace,
+                        );
+                        $view->error(ErrorCode::PROGRAMMER_ERROR);
+                        die();
+                    }
+
+                    $refTableColumnAlias = self::camelCaseToUnderscore($refTableColumnAlias);
+                    $refTableFields[$refTableColumnKey]['_alias'] = $refTableColumnAlias;
+                    $this->currentObject['fields'][$refTableColumnAlias] = $refTableFields[$refTableColumnKey];
+                }
+            }
+            else {
+                $refTableFields = array_filter(
+                    $refTableFields,
+                    function($v){
+                        return !$v['_primary_key'];
+                    }
+                );
+                foreach ($refTableFields as $refTableColumnKey => $refTableColumnParams) {
+                    if (array_key_exists($refTableColumnKey, $this->currentObject['fields'])) {
+                        $refTableColumnKey = '$fk_' . $refTableColumnKey;
+                        $refTableColumnParams['_alias'] = $refTableColumnKey;
+                    }
+                    $this->currentObject['fields'][$refTableColumnKey] = $refTableColumnParams;
+                }
+            }
+
+            $this->currentObject['fields'][$columnName]['_joinedForeignKey'] = true;
+        }
     }
 
     /**
@@ -1064,6 +1208,7 @@ class DataBase {
                     $entity[$k] = $v === '1' || $v === true || $v === 1;
                     break;
                 case 'json':
+                    /*MySql возвращает все значения в строковом виде, поэтому здесь не проверяем is_string($v)*/
                     if ($v !== null && trim($v) !== '') {
                         $entity[$k] = json_decode($v, true);
                     }
@@ -1093,45 +1238,60 @@ class DataBase {
             throw new Exception('Неизвестный тип объекта.');
         }
         else {
-            $table_params = $list[0];
+            $tableParams = $list[0];
         }
         /*Получим необходимые характеристики, чтобы по ним построить выборку*/
-        $this->currentObject = array(
-            'name' => $table_params['table_name'],
-            'fields' => (new linq($this->getClassColumns($table_params['table_name']))
-                )->where(function($line){
-                    return count($line) > 0;
-                })->select(function($line){
-                    $key = 'max_length';
-                    $line[$key] !== null && ($line[$key] = (int)$line[$key]);
-                    $key = 'num_prec';
-                    $line[$key] !== null && ($line[$key] = (int)$line[$key]);
-                    $key = 'column_key';
-                    $line['_primary_key'] = $line[$key] !== null && strtolower($line[$key]) === 'pri';
-                    $key = 'is_nullable';
-                    $line[$key] = $line[$key] !== '1' ? false : true;
-                    return $line;
-                })->toAssoc(function($column){
-                    return $column['column_name'];
-                })->getData()
-                    
-        );
+        $this->currentObject = $this->getTableSchema($tableParams['table_name']);
         return $this;
     }
 
+    private function getTableSchema(string $tableName) {
+        return array(
+            'name' => $tableName,
+            'fields' => (new linq($this->getClassColumns($tableName))
+            )->where(function($line){
+                return count($line) > 0;
+            })->select(function($line){
+                /*Делаем полученную инфомрацию более удобной для использования - подгоняем типы значений, добавляем новые флаги*/
+                $key = 'max_length';
+                $line[$key] !== null && ($line[$key] = (int)$line[$key]);
+                $key = 'num_prec';
+                $line[$key] !== null && ($line[$key] = (int)$line[$key]);
+                $key = 'num_scale';
+                $line[$key] !== null && ($line[$key] = (int)$line[$key]);
+                $key = 'column_key';
+                $line['_primary_key'] = $line[$key] !== null && strtolower($line[$key]) === 'pri';
+                $key = 'is_nullable';
+                $line[$key] = $line[$key] !== '1' ? false : true;
+                return $line;
+            })->toAssoc(function($column){
+                return $column['column_name'];
+            })->getData()
+
+        );
+    }
+
     public function getClassColumns(string $className) {
-        $columns = $this->query('select '
-            . 'table_name, '
-            . 'column_name, '
-            . 'data_type, '
-            . 'character_maximum_length as max_length, '
-            . 'numeric_precision as num_prec, '
-            . 'datetime_precision as dtime_prec, '
-            . 'character_set_name as char_set, '
-            . 'column_key, '
-            . 'is_nullable, '
-            . 'privileges '
-            . ' from information_schema.columns where table_name=\'' . self::camelCaseToUnderscore($className) . '\' and table_schema=\'' . $this->dbname . '\'');
+        $columns = $this->query('SELECT '
+            . '`isc`.`table_name`, '
+            . '`isc`.`column_name`, '
+            . '`isc`.`data_type`, '
+            . '`isc`.`character_maximum_length` AS `max_length`, '
+            . '`isc`.`numeric_precision` AS `num_prec`, '
+            . '`isc`.`numeric_scale` AS `num_scale`, '
+            . '`isc`.`datetime_precision` AS `dtime_prec`, '
+            . '`isc`.`character_set_name` AS `char_set`, '
+            . '`isc`.`column_key`, '
+            . '`isc`.`is_nullable`, '
+            . '`isc`.`privileges`, '
+            . '`iskcu`.`referenced_table_name` as `ref_table_name`, '
+            . '`iskcu`.`referenced_column_name` as `ref_column_name` '
+            . ' FROM `information_schema`.`columns` AS `isc` '
+            . ' LEFT JOIN `information_schema`.`key_column_usage` AS `iskcu` '
+            . ' ON `isc`.`table_schema` = `iskcu`.`table_schema` '
+            . ' AND `isc`.`table_name` = `iskcu`.`table_name` '
+            . ' AND `isc`.`column_name` = `iskcu`.`column_name` '
+            . ' where `isc`.`table_name`=\'' . self::camelCaseToUnderscore($className) . '\' and `isc`.`table_schema`=\'' . $this->dbname . '\'');
 
         return array_filter($columns, function($line){ return count($line) > 0 ;});
     }
