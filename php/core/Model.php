@@ -613,7 +613,7 @@ abstract class Model  {
         ?array $substitution = array(),
         ?int $offset = null,
         ?int $limit = null,
-        ?bool $decodeForeignKeys = false
+        int $deepDecodeForeignKeys = 0
     ) : array {
         if (!self::checkIsClassOfModel()) {
             $view = new View();
@@ -629,16 +629,53 @@ abstract class Model  {
         }
         $db = $db ?? (new DataBase());
         $model = static::DataTable;
-        $rows = $db->$model->getRows(
+        $db->$model;
+        if ($deepDecodeForeignKeys) {
+            $fkFields = (new linq(static::$fieldsInfo))
+                ->where(function($fieldInfo){
+                    return isset($fieldInfo['foreign_key']);
+                })
+                ->getData();
+            $index = 0;
+            while ($index < count($fkFields)) {
+                $fieldInfo = $fkFields[$index++];
+                $joinedFields = null;
+                if (isset($fieldInfo['foreign_key']['joined_columns'])) {
+                    $joinedFields = (new linq($fieldInfo['foreign_key']['joined_columns']))
+                        ->toAssoc(
+                            function ($joinedColumn) { return $joinedColumn['key'];},
+                            function ($joinedColumn) { return array_key_exists('alias', $joinedColumn) ? $joinedColumn['alias'] : $joinedColumn['key'];}
+                        )
+                        ->getData();
+                }
+                $db->joinForeignKey($fieldInfo['column_name'], $joinedFields, $deepDecodeForeignKeys);
+                $refModel = explode('\\', static::class);
+                $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($fieldInfo['foreign_key']['model']);
+                $refModel = implode('\\', $refModel);
+                $refModelFKFields = (new linq($refModel::$fieldsInfo))
+                    ->where(function($fieldInfo){
+                        return isset($fieldInfo['foreign_key']);
+                    })
+                    ->getData();
+                $refModelFKFields = (new linq($refModelFKFields))
+                    ->where(function($fieldInfo) use ($joinedFields) {
+                        return $joinedFields ? array_key_exists($fieldInfo['column_name'], $joinedFields) : true;
+                    })
+                    ->getData();
+                (new linq($refModelFKFields))
+                    ->for_each(function($fieldInfo) use (&$fkFields){
+                        $fkFields[] = $fieldInfo;
+                    });
+
+            }
+        }
+        $rows = $db->getRows(
             $condition,
             $required_fields,
             $substitution,
             $offset,
             $limit
         );
-        if ($decodeForeignKeys) {
-            static::decodeForeignKeys($rows);
-        }
         return $rows;
     }
 
@@ -648,7 +685,7 @@ abstract class Model  {
         ?array $required_fields = null, //массив наименований колонок для выборки
         ?array $substitution = array(),
         ?int $offset = null,
-        ?bool $decodeForeignKeys = false
+        int $deepDecodeForeignKeys = 0
     ) : ?array {
         $rows = static::getRows(
             $db,
@@ -657,7 +694,7 @@ abstract class Model  {
             $substitution,
             $offset,
             1,
-            $decodeForeignKeys
+            $deepDecodeForeignKeys
         );
         return count($rows) ? $rows[0] : null;
     }
@@ -793,7 +830,7 @@ abstract class Model  {
                 })
         );
         $checkIsJoined = function (array $item) : bool {
-            return isset($item['foreign_key']) && isset($item['foreign_key']['display_mode']) && $item['foreign_key']['display_mode'] === 'join_model';
+            return isset($item['foreign_key']);
         };
 
         $joinedModels = array();
@@ -801,19 +838,36 @@ abstract class Model  {
             if (!$checkIsJoined($configItem)) {
                 continue;
             }
-            $joinedModels[] = $configItem['foreign_key'];
+            $joinedModels[] = $configItem;
         }
-        while(count($joinedModels)) {
-            $joinedModel = array_pop($joinedModels);
 
+        while(count($joinedModels)) {
+            $joinedField = array_pop($joinedModels);
+            $joinedModel = $joinedField['foreign_key'];
 
             $refModel = explode('\\', static::class);
             $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($joinedModel['model']);
             $refModel = implode('\\', $refModel);
+
             $refModelConfig = (new linq($refModel::getConfigForListView()))
+                ->where(function($refModelFieldConfig){
+                    return !$refModelFieldConfig['primary_key'];
+                })
                 ->toAssoc(function($refModelFieldConfig){ return $refModelFieldConfig['key'];})
                 ->getData();
-            foreach ($joinedModel['joined_columns'] as $joinedField) {
+            $joinedColumns = isset($joinedModel['joined_columns']) ?
+                $joinedModel['joined_columns'] :
+                array_map(
+                    function($refModelConfigItem) use ($joinedModel) {
+                        return array(
+                            'model' => $joinedModel['model'],
+                            'key' => $refModelConfigItem['key'],
+                        );
+                    },
+                    array_values($refModelConfig)
+                );
+
+            foreach ($joinedColumns as $joinedField) {
                 $fieldName = DataBase::underscoreToCamelCase($joinedField['key']);
                 if (!array_key_exists($fieldName, $refModelConfig)) {
                     $view = new View();
@@ -832,34 +886,13 @@ abstract class Model  {
                     if (isset($joinedField['alias'])) {
                         $refModelFieldConfig['$orig_key'] = $refModelFieldConfig['key'];
                         $refModelFieldConfig['key'] = DataBase::underscoreToCamelCase($joinedField['alias']);
-//                        var_dump($refModelFieldConfig);
                     }
                     $config[] = $refModelFieldConfig;
                 }
             }
-
         }
 
-        usort($config, function(array $a, array $b) {
-            if (
-                array_key_exists('primary_key', $a) &&
-                $a['primary_key']
-            ) {
-                return -1;
-            }
-            if (
-                array_key_exists('primary_key', $b) &&
-                $b['primary_key']
-            ) {
-                return 1;
-            }
-            $orderA = isset($a['list_view_order']) ? $a['list_view_order'] : 0;
-            $orderB = isset($b['list_view_order']) ? $b['list_view_order'] : 0;
-
-            return floatval($orderA) <=> floatval($orderB);
-        });
-
-        return $config;
+        return static::Sort($config);
     }
 
     /**
@@ -899,6 +932,29 @@ abstract class Model  {
             }
         }
         return $entity;
+    }
+
+    public static function Sort(array $config) {
+        usort($config, function(array $a, array $b) {
+            if (
+                array_key_exists('primary_key', $a) &&
+                $a['primary_key']
+            ) {
+                return -1;
+            }
+            if (
+                array_key_exists('primary_key', $b) &&
+                $b['primary_key']
+            ) {
+                return 1;
+            }
+            $orderA = isset($a['list_view_order']) ? $a['list_view_order'] : 0;
+            $orderB = isset($b['list_view_order']) ? $b['list_view_order'] : 0;
+
+            return floatval($orderA) <=> floatval($orderB);
+        });
+
+        return $config;
     }
 
     /**
