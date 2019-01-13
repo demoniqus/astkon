@@ -113,6 +113,15 @@ abstract class Model  {
         return $editedProperties;
     }
 
+    public static function ModelPublicProperties(bool $usePartialClass = false) {
+        return array_map(
+            function(ReflectionProperty $reflectionProperty) {
+                return $reflectionProperty->name;
+            },
+            static::getModelPublicProperties($usePartialClass)
+        );
+    }
+
     /**
      * Метод генерирует форму редактирования экземпляра модели
      * @param array $item
