@@ -10,6 +10,7 @@ namespace Astkon\Traits;
 
 use Astkon\DataBase;
 use function Astkon\Lib\array_keys_CamelCase;
+use Astkon\Model\ArticleBalance;
 use Astkon\View\View;
 
 trait ListView
@@ -72,19 +73,30 @@ trait ListView
         }
         $modelConfig = $model::getConfigForListView();
         if (is_array($displayedFields) && count($displayedFields)) {
-            $displayedFieldsDict = array_flip($displayedFields);
+            $displayedFieldsDict = array_flip(
+                array_map(
+                    function($fieldName){
+                        return DataBase::underscoreToCamelCase($fieldName);
+                    },
+                    $displayedFields
+                )
+            );
             foreach ($modelConfig as &$configItem) {
                 if (!array_key_exists($configItem['key'], $displayedFieldsDict)) {
                     $configItem['nodisplay'] = 'true';
                 }
+                else{
+                    $configItem['list_view_order'] = $displayedFieldsDict[$configItem['key']];
+                }
             }
+            $modelConfig = $model::Sort($modelConfig);
         }
         $view->modelConfig = $modelConfig;
         $rows = array_map(
             function($row){
                 return array_keys_CamelCase($row);
             },
-            $model::getRows(null, $condition, $requiredFields, $substitution, $offset, $limit, true)
+            $model::getRows(null, $condition, $requiredFields, $substitution, $offset, $limit, 2)
         );
         $view->listItems = $rows;
     }
