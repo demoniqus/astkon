@@ -56,15 +56,16 @@ class UsersController extends Controller
             $condition,
             array(
                 User::PrimaryColumnKey,
-                UserGroup::PrimaryColumnKey,
-                'user_name'
+                'user_name',
+                'has_account',
             ),
             $substitution,
             null,
             null,
             array(
+                User::PrimaryColumnKey,
                 'UserName',
-                UserGroup::PrimaryColumnName
+                'HasAccount',
             )
         );
         $view->generate();

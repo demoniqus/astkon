@@ -45,7 +45,19 @@ class BuildObjectsController extends Controller
         $view = new View();
 //        $pageId = isset($context['id']) ? intval($context['id']) : 0;
 //        $pageSize = 5;
-        $this->DictViewAction($view, BuildObject::class);
+        $this->DictViewAction(
+            $view,
+            BuildObject::class,
+            null,
+            null,
+            null,
+            null,
+            null,
+            array(
+                'BuildObjectName',
+                'comment',
+            )
+        );
         $view->generate();
     }
 

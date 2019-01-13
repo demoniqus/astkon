@@ -49,7 +49,20 @@ class ArticleCategoriesController extends Controller
 
     public function ArticleCategoriesDictAction($context) {
         $view = new View();
-        $this->DictViewAction($view, ArticleCategory::class);
+        $this->DictViewAction(
+            $view,
+            ArticleCategory::class,
+            null,
+            null,
+            null,
+            null,
+            null,
+            array(
+                'CategoryName',
+                'IsSaleable',
+                'IsWriteoff',
+            )
+        );
         $view->generate();
     }
 

@@ -47,7 +47,19 @@ class UserGroupsController extends Controller
 
     public function UserGroupsDictAction($context) {
         $view = new View();
-        $this->DictViewAction($view, UserGroup::class);
+        $this->DictViewAction(
+            $view,
+            UserGroup::class,
+            null,
+            null,
+            null,
+            null,
+            null,
+            array(
+                'UserGroupName',
+                'comment',
+            )
+        );
         $view->generate();
     }
 

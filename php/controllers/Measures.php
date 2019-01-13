@@ -47,7 +47,19 @@ class MeasuresController extends Controller
         $view = new View();
 //        $pageId = isset($context['id']) ? intval($context['id']) : 0;
 //        $pageSize = 5;
-        $this->DictViewAction($view, Measure::class);
+        $this->DictViewAction(
+            $view,
+            Measure::class,
+            null,
+            null,
+            null,
+            null,
+            null,
+            array(
+//                'IdMeasure',
+                'MeasureName'
+            )
+        );
         $view->generate();
     }
 

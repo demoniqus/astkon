@@ -286,17 +286,26 @@ class OperationsController extends Controller
             $view,
             Operation::class,
             $options,
-            'id_operation_type = :id_operation_type and id_user_group= :id_user_group',
+            '`' . Operation::DataTable . '`.id_operation_type = :id_operation_type and `' . Operation::DataTable . '`.id_user_group= :id_user_group',
             array(
                 'id_operation',
                 'id_operation_state',
                 'create_datetime',
                 'fix_datetime',
                 'operation_info',
+                'state_label',
             ),
             array(
                 'id_operation_type' => $IdOperationType,
                 'id_user_group' => CURRENT_USER[UserGroup::PrimaryColumnName]
+            ),
+            null,
+            null,
+            array(
+                'id_operation',
+                'state_label',
+                'create_datetime',
+                'fix_datetime',
             )
         );
         $view->generate();

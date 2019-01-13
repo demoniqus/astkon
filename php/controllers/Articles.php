@@ -178,7 +178,27 @@ class ArticlesController extends Controller
         $this->ListViewAction(
             $view,
             Article::class,
-            $options
+            $options,
+            null,
+            array_merge(
+                Article::ModelPublicProperties(),
+                array(
+                    'MeasureName',
+                    'CategoryName',
+                    'IsSaleable',
+                    'IsWriteoff'
+                )
+            ),
+            null,
+            null,
+            null,
+            array(
+                'IdArticle',
+                'CategoryName',
+                'ArticleName',
+                'MeasureName',
+                'VendorCode'
+            )
         );
         $view->generate();
     }

@@ -39,9 +39,19 @@ class ArticleBalanceController extends Controller
             $view,
             ArticleBalance::class,
             $options,
-            'id_user_group = :id_user_group',
+            'article_balance.id_user_group = :id_user_group',
             null,
-            array('id_user_group' => CURRENT_USER['IdUserGroup'])
+            array('id_user_group' => CURRENT_USER['IdUserGroup']),
+            null,
+            null,
+            array(
+                'CategoryName',
+                'ArticleName',
+                'IsWriteoff',
+                'IsSaleable',
+                'MeasureName',
+                'Balance'
+            )
         );
         $view->generate();
 
@@ -86,16 +96,66 @@ class ArticleBalanceController extends Controller
 
             $this->DictViewAction(
                 $view,
-                Article::class
+                Article::class,
+                null,
+                array_merge(
+                    Article::ModelPublicProperties(),
+                    array(
+                        'MeasureName',
+                        'CategoryName'
+                    )
+                ),
+                null,
+                null,
+                null,
+                array(
+                    'CategoryName',
+                    'ArticleName',
+                    'MeasureName',
+                )
+
             );
         }
         else {
+            $conditions = array(
+                '`' . ArticleBalance::DataTable . '`.id_user_group = :id_user_group',
+                'balance > 0'
+            );
+            $substitution = array(
+                'id_user_group' => CURRENT_USER['IdUserGroup']
+            );
+            $requiredFields = array(
+                'MeasureName',
+                'Balance',
+                'CategoryName',
+            );
+            switch (strtolower($operationType['operation_name'])) {
+                case 'sale':
+                    $requiredFields[] = 'IsSaleable';
+                    $conditions[] = 'is_saleable = 1';
+                    break;
+                case 'writeoff':
+                    $requiredFields[] = 'IsWriteoff';
+                    $conditions[] = 'is_writeoff = 1';
+                    break;
+            }
             $this->DictViewAction(
                 $view,
                 ArticleBalance::class,
-                'id_user_group = :id_user_group',
+                implode(' AND ', $conditions),
+                array_merge(
+                    Article::ModelPublicProperties(),
+                    $requiredFields
+                ),
+                $substitution,
                 null,
-                array('id_user_group' => CURRENT_USER['IdUserGroup'])
+                null,
+                array(
+                    'CategoryName',
+                    'ArticleName',
+                    'MeasureName',
+                    'Balance',
+                )
             );
         }
         $view->generate();
