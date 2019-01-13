@@ -612,8 +612,16 @@ class DataBase {
         /*Определим список полей, которые требуется извлечь*/
         $selectedColumns = $this->currentObject['fields'];
 
+        /*Выбираем список моделей для join'a*/
+        $joinedColumns = array_filter(
+            $selectedColumns,
+            function($selectedColumn){
+                return array_key_exists('_joinedForeignKey', $selectedColumn);
+            }
+        );
+
         if (is_array($requiredFields) && count($requiredFields)) {
-            $requiredFields = array_flip(
+            $dictRequiredFields = array_flip(
                 array_map(
                     function($fieldName){
                         return DataBase::camelCaseToUnderscore($fieldName);
@@ -623,18 +631,13 @@ class DataBase {
             );
             $selectedColumns = array_filter(
                 $selectedColumns,
-                function($v, $k) use ($requiredFields) {
-                    return array_key_exists($k, $requiredFields);
+                function($v, $k) use ($dictRequiredFields) {
+                    return array_key_exists($k, $dictRequiredFields);
                 },
                 ARRAY_FILTER_USE_BOTH
             );
         }
-        $joinedColumns = array_filter(
-            $selectedColumns,
-            function($selectedColumn){
-                return array_key_exists('_joinedForeignKey', $selectedColumn);
-            }
-        );
+
         $query = 'SELECT ';
         $query .= implode(
             ', ',
@@ -720,54 +723,90 @@ class DataBase {
             $view->error(ErrorCode::PROGRAMMER_ERROR);
             die();
         }
-        $columnParams = $this->currentObject['fields'][$columnName];
+        $columnParams = &$this->currentObject['fields'][$columnName];
+
+        $fkColumns = array();
+
         if (!is_null($columnParams['ref_table_name'])) {
-            $refTableFields = $this->getTableSchema($columnParams['ref_table_name'])['fields'];
-            if (is_array($joinedFields) && count($joinedFields)) {
-                foreach ($joinedFields as $refTableColumnKey => $refTableColumnAlias) {
-                    $refTableColumnKey = self::camelCaseToUnderscore($refTableColumnKey);
+            $fkColumns[] = array(
+                'recurciveDeep' => $recurciveDeep,
+                'columnParams'  => $columnParams,
+            );
+        }
 
-                    if (!array_key_exists($refTableColumnKey, $refTableFields)) {
-                        $backtrace = (new linq(debug_backtrace(2, 8)))
-                            ->select(function($item){
-                                unset($item['file']);
-                                return $item;
-                            })
-                            ->getData();
-                        $view = new View();
-                        $view->trace = array(
-                            'class'          => __CLASS__,
-                            'line'           => __LINE__,
-                            'message'        => 'Колонка "' . $refTableColumnKey . '" отстуствует в текущем объекте для извлечения',
-                            'refTableFields' => $refTableFields,
-                            'backtrace'      => $backtrace,
-                        );
-                        $view->error(ErrorCode::PROGRAMMER_ERROR);
-                        die();
+        $index = 0;
+        while ($index < count($fkColumns)) {
+            $fkColumn = $fkColumns[$index++];
+            $deep = $fkColumn['recurciveDeep'];
+            if ($deep < 1) {
+                continue;
+            }
+            $fkColumn = $fkColumn['columnParams'];
+
+            $refTableFields = $this->getTableSchema($fkColumn['ref_table_name'])['fields'];
+            /*
+             * Первичный ключ уже имеется в той таблице, к которой присоединяем
+            */
+            $refTableFields = array_filter(
+                $refTableFields,
+                function($v){
+                    return !$v['_primary_key'];
+                }
+            );
+            foreach ($refTableFields as $refTableColumnKey => $refTableColumnParams) {
+                if (array_key_exists($refTableColumnKey, $this->currentObject['fields'])) {
+                    $existsColumn = $this->currentObject['fields'][$refTableColumnKey];
+                    if (
+                        $existsColumn['table_name'] === $refTableColumnParams['table_name'] &&
+                        $existsColumn['column_name'] === $refTableColumnParams['column_name']
+                    ) {
+                        /*Повторно одну и ту же колонку одной и той же таблицы не добавляем*/
+                        continue;
                     }
-
-                    $refTableColumnAlias = self::camelCaseToUnderscore($refTableColumnAlias);
-                    $refTableFields[$refTableColumnKey]['_alias'] = $refTableColumnAlias;
-                    $this->currentObject['fields'][$refTableColumnAlias] = $refTableFields[$refTableColumnKey];
+                    /*
+                     * Теоретически несколько таблиц могут иметь колонку с одинаковым наименованием.
+                     * Псевдоним из наименования таблицы и наименования колонки даст уникальное значение.
+                     * Префикс $fk_ даст понимание, что данный псевдоним сформирован автоматически
+                     */
+                    $refTableColumnKey = '$fk_' . $fkColumn['ref_table_name'] . '_' . $refTableColumnKey;
+                    $refTableColumnParams['_alias'] = $refTableColumnKey;
+                }
+                $this->currentObject['fields'][$refTableColumnKey] = $refTableColumnParams;
+                if (!is_null($refTableColumnParams['ref_table_name'])) {
+                    $fkColumns[] = array(
+                        'recurciveDeep' => $deep - 1,
+                        'columnParams'  => &$this->currentObject['fields'][$refTableColumnKey],
+                    );
                 }
             }
-            else {
-                $refTableFields = array_filter(
-                    $refTableFields,
-                    function($v){
-                        return !$v['_primary_key'];
-                    }
-                );
-                foreach ($refTableFields as $refTableColumnKey => $refTableColumnParams) {
-                    if (array_key_exists($refTableColumnKey, $this->currentObject['fields'])) {
-                        $refTableColumnKey = '$fk_' . $refTableColumnKey;
-                        $refTableColumnParams['_alias'] = $refTableColumnKey;
-                    }
-                    $this->currentObject['fields'][$refTableColumnKey] = $refTableColumnParams;
-                }
-            }
+            $key = isset($fkColumn['_alias']) ? $fkColumn['_alias'] : $fkColumn['column_name'];
+            $this->currentObject['fields'][$key]['_joinedForeignKey'] = true;
+        }
 
-            $this->currentObject['fields'][$columnName]['_joinedForeignKey'] = true;
+        if (is_array($joinedFields) && count($joinedFields)) {
+            /*
+             * !!!!!Вопрос - фильтровать по alias'ам или по реальным наименованиям?
+             * Теоретически несколько таблиц могут иметь колонку с одинаковым наименованием.
+             * В этом случае не будет возможности обратиться к конкретной колонке для ее исключения.
+             * Поэтому правильнее фильтровать по псевдонимам
+            */
+            $tableName = $this->currentObject['name'];
+            $this->currentObject['fields'] = (new linq($this->currentObject['fields'], 'assoc'))
+                ->select(function($field, $key) use ($tableName, $joinedFields) {
+                    if ($field['table_name'] === $tableName) {
+                        return $field;
+                    }
+                    if (array_key_exists($key, $joinedFields)) {
+                        $field['_alias'] = $joinedFields[$key];
+                        return  $field;
+                    }
+                    return null;
+                })
+                ->where(function($field){ return ! is_null($field);})
+                ->toAssoc(function($field, $key){
+                    return isset($field['_alias']) && $field['_alias'] !== $key ? $field['_alias'] : $key;
+                })
+                ->getData();
         }
     }
 
