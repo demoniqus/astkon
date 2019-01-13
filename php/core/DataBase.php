@@ -89,7 +89,7 @@ class DataBase {
                 array(
 //                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
 //                    PDO::ATTR_EMULATE_PREPARES => true, //Не ставить принудительно в false - может сильно глючить!!!
-                    PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
                 )
             );
         }
