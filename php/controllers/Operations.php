@@ -257,14 +257,14 @@ class OperationsController extends Controller
                 'action' => '/Operations/ChangeType?targetType=' . $dictOperationTypes['writeoff'][OperationType::PrimaryColumnKey],
                 'click' => null,
                 'icon' => '/write-off.png',
-                'title' => 'Списать'
+                'title' => 'Списание'
             );
         }
         else {
             /*Операцию Reserving нельзя зафиксировать - ее артикулы можно или списать, или израсходовать*/
             $options[] = array(
-                'action' => '/Operations/Fixation',
-                'click' => null,
+                'action' => null,
+                'click' => 'if (confirm(\'Вы уверены, что хотите зафиксировать документ?\')) {window.location.href=\'/Operations/Fixation/:IdOperation\';}',
                 'icon' => '/set_fixed_state.png',
                 'title' => 'Закрыть документ',
                 'condition' => function($operation) use ($fixedState){
@@ -272,10 +272,9 @@ class OperationsController extends Controller
                 }
             );
         }
-
         $options[] = array(
-            'action' => '/Operations/Delete',
-            'click' => null,
+            'action' => null,
+            'click' => 'if (confirm(\'Вы уверены, что хотите удалить документ?\')) {window.location.href=\'/Operations/Delete/:IdOperation\';}',
             'icon' => '/trash-empty-icon.png',
             'title' => 'Удалить документ',
             'condition' => function($operation) use ($fixedState){
