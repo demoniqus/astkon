@@ -68,8 +68,7 @@
                 <?php
                     if(!isset($option['condition']) || $option['condition']($item) !== false) {
                         ?>
-                        <a
-                                href="<?php
+                        <a href="<?php
                                     if (isset($option['action']))  {
                                         $action = explode('?', $option['action'], 2);
                                         $params = count($action) > 1 ? '?' . $action[1] : '';
@@ -80,7 +79,24 @@
                                         echo 'javascript:void(0);';
                                     }
                                 ?>"
-                                onclick="<?= isset($option['click']) ? $option['click'] : 'return true;'; ?>">
+                                onclick="<?php
+                                if (isset($option['click'])) {
+                                    $matches = null;
+                                    preg_match_all('/:[A-Z]+/i', $option['click'], $matches);
+
+                                    if (is_array($matches)) {
+                                        foreach ($matches as $match) {
+                                            $replacement = $item[mb_substr($match[0], 1)];
+                                            $option['click'] = str_replace($match[0], $replacement, $option['click']);
+                                        }
+                                    }
+                                    echo $option['click'];
+                                }
+                                else {
+
+                                    echo 'return true;';
+                                }
+                                ?>">
                             <img src="<?= $option['icon']; ?>"
                                  title="<?= isset($option['title']) ? $option['title'] : ''; ?>" class="action-icon"/>
                         </a>
