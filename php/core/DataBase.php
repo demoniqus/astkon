@@ -1184,6 +1184,7 @@ class DataBase {
                 case 'bigint':
                 case 'mediumint':
                 case 'smallint':
+                case 'tinyint':
                     $entity[$k] = (int)$v;
                     break;
                 case 'decimal':
@@ -1201,8 +1202,8 @@ class DataBase {
                 case 'mediumtext':
                     $entity[$k] = $v . '';
                     break;
-                case 'tinyint':
-                    $entity[$k] = $v === TRUE || (gettype($v) === gettype('aaa') && strtolower($v) === 'true') || (int)$v === 1 ? 1 : 0;
+//                case 'tinyint':
+//                    $entity[$k] = $v === TRUE || (gettype($v) === gettype('aaa') && strtolower($v) === 'true') || (int)$v === 1 ? 1 : 0;
                     break;
                 case 'bit':
                     $entity[$k] = $v === '1' || $v === true || $v === 1;
