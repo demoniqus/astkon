@@ -3,6 +3,7 @@
 
     use Astkon\Controllers\OperationsController;
     use Astkon\Controllers\UsersController;
+    use Astkon\DataBase;
     use Astkon\GlobalConst;
     use Astkon\Model\Article;
     use Astkon\Model\User;
