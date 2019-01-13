@@ -65,7 +65,7 @@ $jqueryUIVers = '1.12.1';
                         <p class="d-inline-block text-nowrap mb-0" title="Группа">
                             <img src="/users.png" style="width: 24px; height: 24px; border: 0px none;" class="ml-3 mr-1"/>
                             <span class="d-inline-block">
-                                <?= CURRENT_USER['$fkIdUserGroup']; ?>
+                                <?= CURRENT_USER['UserGroupName']; ?>
                             </span>
                         </p>
                     </div>

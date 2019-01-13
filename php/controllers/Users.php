@@ -38,7 +38,26 @@ class UsersController extends Controller
         $this->ListViewAction(
             $view,
             User::class,
-            $options
+            $options,
+            null,
+            array(
+                User::PrimaryColumnName,
+                'UserName',
+                'UserGroupName',
+                'HasAccount',
+                'IsAdmin',
+                UserGroup::PrimaryColumnName,
+            ),
+            null,
+            null,
+            null,
+            array(
+                User::PrimaryColumnName,
+                'UserName',
+                'UserGroupName',
+                'HasAccount',
+                'IsAdmin'
+            )
         );
         $view->generate();
     }
