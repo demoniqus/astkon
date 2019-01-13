@@ -103,7 +103,7 @@ protected static $fieldsInfo = array (
 	/**
 	* @foreign_key_display_value
 	* @database_column_name state_label
-	* @caption
+	* @caption Статус документа
 	* @var string
 	*/
 	public $StateLabel;

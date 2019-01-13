@@ -87,6 +87,7 @@ protected static $fieldsInfo = array (
   ),
 );
 	/**
+    * @list_view_order 1
 	* @database_column_name id_measure
 	* @caption Идентификатор
 	* @var int
@@ -94,6 +95,7 @@ protected static $fieldsInfo = array (
 	public $IdMeasure;
 
 	/**
+     * @list_view_order 3
 	* @database_column_name is_split
 	* @caption Признак делимости
 	* @var bool
@@ -101,14 +103,16 @@ protected static $fieldsInfo = array (
 	public $IsSplit;
 
 	/**
+     * @list_view_order 2
 	* @foreign_key_display_value
 	* @database_column_name measure_name
-	* @caption Обозначение
+	* @caption Единица измерения
 	* @var string
 	*/
 	public $MeasureName;
 
 	/**
+     * @list_view_order 4
 	* @database_column_name precision
 	* @caption Точность деления (дес. зн)
 	* @var int

@@ -89,7 +89,7 @@ protected static $fieldsInfo = array (
 	/**
 	* @foreign_key_display_value
 	* @database_column_name category_name
-	* @caption Наименование категории
+	* @caption Категория
 	* @var string
 	*/
 	public $CategoryName;
