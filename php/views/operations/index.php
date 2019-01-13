@@ -4,6 +4,7 @@
 
     use Astkon\DataBase;
     use Astkon\GlobalConst;
+    use function Astkon\Lib\TileMenu;
     use Astkon\linq;
 
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php';
@@ -48,7 +49,7 @@
                 ),
             );
 
-            \Astkon\Lib\TileMenu($menu, 4, 2);
+            TileMenu($menu, 4, 2);
             ?>
 
         </div>
