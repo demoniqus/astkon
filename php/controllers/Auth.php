@@ -53,7 +53,7 @@ class AuthController extends Controller
             $user = (new linq($usersList))
                 ->first(function($user) use ($password){ return $user['password'] === $password;});
             if ($user) {
-                $user = User::getFirstRow($db, User::PrimaryColumnKey . ' = ' . $user[User::PrimaryColumnKey], null, null, null, true);
+                $user = User::getFirstRow($db, User::PrimaryColumnKey . ' = ' . $user[User::PrimaryColumnKey], null, null, null, 1);
                 unset($user['password']);
                 $_SESSION[AuthController::CurrentUserKey] = $GLOBALS[AuthController::CurrentUserKey] = array_keys_CamelCase($user);
                 Redirect('Index', 'Index');
