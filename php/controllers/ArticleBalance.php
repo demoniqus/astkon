@@ -10,10 +10,17 @@ namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
 use Astkon\ErrorCode;
+use Astkon\linq;
 use Astkon\Model\Article;
 use Astkon\Model\ArticleBalance;
+use Astkon\Model\BuildObject;
 use Astkon\Model\ChangeBalanceMethod;
+use Astkon\Model\Operation;
+use Astkon\Model\OperationItem;
+use Astkon\Model\OperationState;
 use Astkon\Model\OperationType;
+use Astkon\Model\User;
+use Astkon\Model\UserGroup;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
@@ -31,10 +38,151 @@ class ArticleBalanceController extends Controller
         parent::Run($action, $context);
     }
 
+    public function ArticleBalanceByAction(array $context) {
+        $view = new View();
+
+        $targetModelName = $_GET['model'];
+
+        $modelName = explode('\\', User::class);
+        array_pop($modelName);
+        $modelName[] = $targetModelName;
+        $model = implode('\\', $modelName);
+        if (!class_exists($model)) {
+            $view->error(ErrorCode::NOT_FOUND);
+            die();
+        }
+
+        $articleBalance = ArticleBalance::getFirstRow(
+            null,
+            UserGroup::PrimaryColumnKey . ' = :' . UserGroup::PrimaryColumnKey .
+                ' AND ' . ArticleBalance::PrimaryColumnKey . ' = :' . ArticleBalance::PrimaryColumnKey
+            ,
+            array(Article::PrimaryColumnKey),
+            array(
+                UserGroup::PrimaryColumnKey      => CURRENT_USER[UserGroup::PrimaryColumnName],
+                ArticleBalance::PrimaryColumnKey => intval($context['id']),
+            ),
+            null
+        );
+        if (!$articleBalance) {
+            $view->error(ErrorCode::NOT_FOUND);
+            die();
+        }
+
+        $opStateNew = OperationState::getFirstRow(
+            null,
+            '`state_name` = \'new\'',
+            array(OperationState::PrimaryColumnKey)
+        );
+
+        $targetModelName = strtolower($targetModelName);
+        $substitution = array(
+            OperationState::PrimaryColumnKey => $opStateNew[OperationState::PrimaryColumnKey],
+        );
+
+        switch ($targetModelName) {
+            case strtolower(User::Name()):
+                $view->linkedDataCaprionFieldName = 'user_name';
+                $substitution[OperationType::PrimaryColumnKey] = OperationType::getFirstRow(
+                    null,
+                    '`operation_name` = \'Reserving\'',
+                    array(OperationType::PrimaryColumnKey)
+                )[OperationType::PrimaryColumnKey];
+                break;
+            case strtolower(BuildObject::Name()):
+                $view->linkedDataCaprionFieldName = 'build_object_name';
+                $substitution[OperationType::PrimaryColumnKey] = OperationType::getFirstRow(
+                    null,
+                    '`operation_name` = \'Sale\'',
+                    array(OperationType::PrimaryColumnKey)
+                )[OperationType::PrimaryColumnKey];
+                break;
+            default:
+                $view->error(ErrorCode::FORBIDDEN);
+                die();
+        }
+        $view->article = Article::GetByPrimaryKey($articleBalance[Article::PrimaryColumnKey]);
+
+        $rows = OperationItem::getRows(
+            null,
+            implode(
+                ' AND ',
+                array(
+                    '`' . Operation::DataTable . '`.`' . OperationState::PrimaryColumnKey . '` = :' . OperationState::PrimaryColumnKey,
+                    '`' . Operation::DataTable . '`.`' . OperationType::PrimaryColumnKey . '` = :' . OperationType::PrimaryColumnKey,
+                )
+            ),
+            array(
+                'operation_count',
+                'measure_name',
+                'linked_data',
+                Operation::PrimaryColumnKey,
+            ),
+            $substitution,
+            null,
+            null,
+            1
+        );
+
+        $dictionary = (new linq($model::getRows()))
+            ->toAssoc(
+                function($dictItem) use ($model) {
+                    return $dictItem[$model::PrimaryColumnKey];
+                },
+                function($dictItem) use ($model) {
+                    /*Для большей безопасности, если работа пойдет с моделью User, удалим из нее поля логина и пароля*/
+                    unset ($dictItem['password']);
+                    unset ($dictItem['login']);
+
+                    return $dictItem;
+                }
+            )
+            ->getData();
+
+        $rows = array_map(
+            function($row) use ($dictionary) {
+                if (!is_array($row['linked_data']) || !count($row['linked_data'])) {
+                    return $row;
+                }
+                foreach ($row['linked_data'] as $modelName => $listId) {
+                    $linkedData = array_map(
+                        function($linkedDataItemId) use ($dictionary) {
+                            return array_key_exists($linkedDataItemId, $dictionary) ? $dictionary[$linkedDataItemId] : $linkedDataItemId;
+                        },
+                        $listId
+                    );
+                    $row['linked_data'][$modelName] = $linkedData;
+                    /*Пока с накладной связывается только один заранее известный тип данных*/
+                    break;
+                }
+                return $row;
+
+            },
+            $rows
+        );
+        $view->rows = $rows;
+
+        $view->generate();
+    }
+
+
     public function ArticleBalanceListAction($context) {
 
         $view = new View();
-        $options = array();
+        $options = array(
+            array(
+                'action' => '/ArticleBalance/ArticleBalanceBy?model=' . User::Name(),
+                'click' => null,
+                'icon' => '/tools-pict-time.png',
+                'title' => 'Остатки во временном пользовании'
+            ),
+            array(
+                'action' => '/ArticleBalance/ArticleBalanceBy?model=' . BuildObject::Name(),
+                'click' => null,
+                'icon' => '/building.png',
+                'title' => 'Остатки по объектам'
+            ),
+        );
         $this->ListViewAction(
             $view,
             ArticleBalance::class,

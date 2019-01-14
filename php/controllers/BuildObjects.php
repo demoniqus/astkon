@@ -14,12 +14,14 @@ use function Astkon\Lib\array_keys_CamelCase;
 use Astkon\Model\BuildObject;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
+use Astkon\Traits\ReserveView;
 use Astkon\View\View;
 
 class BuildObjectsController extends Controller
 {
     use ListView;
     use EditAction;
+    use ReserveView;
     /**
      * @param string $action - запрашиваемый метод
      * @param array $context - дополнительный контекст
@@ -29,10 +31,29 @@ class BuildObjectsController extends Controller
         parent::Run($action, $context);
     }
 
+    public function ReservesListAction($context) {
+        $view = new View();
+        $view->linkedDataCaprionFieldName = 'build_object_name';
+        $this->ReservesList(
+            $context,
+            $view,
+            BuildObject::class,
+            'Sale'
+        );
+        $view->generate();
+
+    }
+
     public function BuildObjectsListAction($context) {
         $view = new View();
         $options = array();
         static::editOption($options, __CLASS__);
+        $options[] = array(
+            'action' => '/' . self::Name() . '/ReservesList',
+            'click' => null,
+            'icon' => '/building.png',
+            'title' => 'Зарезервировано на объекте'
+        );
         $this->ListViewAction(
             $view,
             BuildObject::class,

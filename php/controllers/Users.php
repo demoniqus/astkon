@@ -17,11 +17,13 @@ use Astkon\Model\Model;
 use Astkon\Model\User;
 use Astkon\Model\UserGroup;
 use Astkon\Traits\ListView;
+use Astkon\Traits\ReserveView;
 use Astkon\View\View;
 
 class UsersController extends Controller
 {
     use ListView;
+    use ReserveView;
     /**
      * @param string $action - запрашиваемый метод
      * @param array $context - дополнительный контекст
@@ -31,10 +33,29 @@ class UsersController extends Controller
         parent::Run($action, $context);
     }
 
+    public function ReservesListAction($context) {
+        $view = new View();
+        $view->linkedDataCaprionFieldName = 'user_name';
+
+        $this->ReservesList(
+            $context,
+            $view,
+            User::class,
+            'Reserving'
+        );
+        $view->generate();
+    }
+
     public function UsersListAction($context) {
         $view = new View();
         $options = array();
         static::editOption($options, __CLASS__);
+        $options[] = array(
+            'action' => '/' . self::Name() . '/ReservesList',
+            'click' => null,
+            'icon' => '/tools-pict-time.png',
+            'title' => 'Артикулы во временном пользовании'
+        );
         $this->ListViewAction(
             $view,
             User::class,
