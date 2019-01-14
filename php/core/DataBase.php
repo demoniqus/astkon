@@ -102,12 +102,6 @@ class DataBase {
     }
 
     /**
-     * Контейнер для запросов транзакции
-     * @var array
-     */
-    private $PDOStatementsQueue = array();
-
-    /**
      * @param string $query       - строка запроса к выполнению
      * @param array $substitution - значения для подстановки в запрос на место placeholder'ов. Ключи в CamelCase
      * @param string $mode        - метод формирования списка значений
@@ -1117,19 +1111,19 @@ class DataBase {
     /**
      * @param string $condition
      * @param string $required_fields
-     * @param array $values
-     * @param null $offset
+     * @param array  $substitution
+     * @param null   $offset
      * @return array|null
      * @throws Exception
      */
     public function getFirstRow(
-            $condition = null, //строка
-            $required_fields = null, //массив строк
-            $values = array(),
-            $offset = null
+        $condition = null, //строка
+        $required_fields = null, //массив строк
+        $substitution = array(),
+        $offset = null
             ) {
         $this->setInitState();
-        $rows = $this->getRows($condition, $required_fields, $values, $offset, 1);
+        $rows = $this->getRows($condition, $required_fields, $substitution, $offset, 1);
         return $rows != null  && count($rows) > 0 ? $rows[0] : null;
     }
 
