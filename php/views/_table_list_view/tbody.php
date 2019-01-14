@@ -9,15 +9,17 @@
         <?php
         $PKVal = 0;
         foreach ($config as $fieldConfig) {
+            $val = isset($item[$fieldConfig['key']]) ? $item[$fieldConfig['key']] : '';
+            if ($fieldConfig['primary_key']) {
+                $PKVal = $val;
+            }
             if (array_key_exists('nodisplay', $fieldConfig)) {
                 continue;
             }
-            $val = isset($item[$fieldConfig['key']]) ? $item[$fieldConfig['key']] : '';
             if ($fieldConfig['primary_key']) {
                 ?>
                 <th scope="row">
                     <?php
-                        $PKVal = $val;
                         echo $val;
                     ?>
                 </th>
@@ -73,7 +75,7 @@
                                         $action = explode('?', $option['action'], 2);
                                         $params = count($action) > 1 ? '?' . $action[1] : '';
                                         $action = str_replace('//', '/', $action[0] . '/');
-                                        echo $action . $PKVal . $params;
+                                        echo $action . ($PKVal > 0 ? $PKVal : ''). $params;
                                     }
                                     else {
                                         echo 'javascript:void(0);';
