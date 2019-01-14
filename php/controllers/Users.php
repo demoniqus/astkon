@@ -112,6 +112,13 @@ class UsersController extends Controller
                 /*
                  * Если парольное поле НЕ ЗАПОЛНЕНО, тогда именно это поле не обновляем в БД
                  */
+                if (
+                    $inputValues['Password'] === $inputValues['PasswordConfirm'] &&
+                    $inputValues['Password'] === ''
+
+                ) {
+                    unset ($inputValues['Password']);
+                }
             }
             $res = User::SaveInstance($inputValues);
             if (isset($res['@error'])) {
