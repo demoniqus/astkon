@@ -145,9 +145,6 @@ abstract class Model  {
 
         $isFormProcessed = is_array($options) && isset($options['validation']);
 
-//        $Controller = explode('\\', static::class);
-//        $Controller = array_pop($Controller);
-
         // https://getbootstrap.com/docs/4.1/components/forms/
         $Model = static::class;
         $Entity = $item;

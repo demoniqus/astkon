@@ -14,6 +14,7 @@ use Astkon\ErrorCode;
 use function Astkon\Lib\array_keys_CamelCase;
 use Astkon\linq;
 use Astkon\Model\Article;
+use Astkon\Model\ArticleBalance;
 use Astkon\Model\ArticleCategory;
 use Astkon\Model\Measure;
 use Astkon\Model\OperationType;
@@ -235,7 +236,12 @@ class ArticlesController extends Controller
                 )
             );
         }
-        $controllerName = self::ThisAction()[0];
+        if (CURRENT_USER['IsAdmin']) {
+            $controllerName = self::Name();
+        }
+        else {
+            $controllerName = ArticleBalance::Name();
+        }
         $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->Entity = $entity;

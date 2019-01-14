@@ -17,7 +17,14 @@
             <a href="/<?= ArticlesController::Name(); ?>/Edit/0" class="btn btn-success">Добавить артикул</a>
             <a href="/<?= ArticleCategoriesController::Name(); ?>/<?= ArticleCategoriesController::Name(); ?>List" class="btn btn-outline-secondary">Категории</a>
             <a href="/<?= MeasuresController::Name(); ?>/<?= MeasuresController::Name(); ?>List" class="btn btn-outline-secondary">Единицы измерения</a>
-            <a href="/<?= ArticlesController::Name(); ?>/Import" class="btn offset-2 py-0"><img src="/icon_import_csv.jpg" style="border: 0px none; width: 38px; height: 38px;" title="Импорт из файла CSV"/></a>
+            <?php
+            if (CURRENT_USER['IsAdmin']) {
+                ?>
+                    <a href="/<?= ArticlesController::Name(); ?>/Import" class="btn offset-2 py-0"><img src="/icon_import_csv.jpg" style="border: 0px none; width: 38px; height: 38px;" title="Импорт из файла CSV"/></a>
+                <?php
+            }
+            ?>
+
         </div>
         <?php
         View::TableList($modelConfig, $listItems, $listItemOptions);

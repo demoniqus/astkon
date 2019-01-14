@@ -201,7 +201,7 @@ class UsersController extends Controller
             );
             unset($user['Password']);
         }
-        $controllerName = self::ThisAction()[0];
+        $controllerName = self::Name();
         $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->User = $user;

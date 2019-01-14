@@ -29,6 +29,11 @@
                         'Icon' => '/refbook.png',
                     ),
                     array(
+                        'Action' => '/Operations/Index',
+                        'Caption' => 'Операции',
+                        'Icon' => '/operations-icon.png',
+                    ),
+                    array(
                         'Action' => '/Users/UsersList',
                         'Caption' => 'Пользователи',
                         'Icon' => '/users.png',

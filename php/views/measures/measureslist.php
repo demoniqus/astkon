@@ -13,7 +13,13 @@
     require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php'; ?>
     <div class="col-md text-center">
         <div class="text-left">
-            <a href="/<?= MeasuresController::Name(); ?>/Edit/0" class="btn btn-success">Добавить единицу измерения</a>
+            <?php
+            if (CURRENT_USER['IsAdmin']) {
+                ?>
+                <a href="/<?= MeasuresController::Name(); ?>/Edit/0" class="btn btn-success">Добавить единицу измерения</a>
+                <?php
+            }
+            ?>
             <a href="/<?= ArticlesController::Name(); ?>/<?= ArticlesController::Name(); ?>List" class="btn btn-outline-secondary">Артикулы</a>
         </div>
         <?php

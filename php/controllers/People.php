@@ -70,7 +70,7 @@ class PeopleController extends Controller
                 )
             );
         }
-        $controllerName = self::ThisAction()[0];
+        $controllerName = self::Name();
         $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->Entity = $entity;

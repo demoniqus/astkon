@@ -32,7 +32,9 @@ class MeasuresController extends Controller
     public function MeasuresListAction($context) {
         $view = new View();
         $options = array();
-        static::editOption($options, __CLASS__);
+        if (CURRENT_USER['IsAdmin']) {
+            static::editOption($options, __CLASS__);
+        }
         $this->ListViewAction(
             $view,
             Measure::class,
@@ -84,7 +86,7 @@ class MeasuresController extends Controller
                 )
             );
         }
-        $controllerName = self::ThisAction()[0];
+        $controllerName = self::Name();
         $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->Entity = $entity;
