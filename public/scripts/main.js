@@ -201,7 +201,7 @@ function setSelectedArticlesAsEditable(/*DOM.form-group*/ selectedArticlesContai
 
         });
 
-        cell = $('<div class="col-md-2"></div>');
+        cell = $('<div class="col-md-2 option-cell"></div>');
         row.append(cell);
         let optionDelete = $('<img src="/trash-empty-icon.png" class="action-icon"  title="Удалить" style="cursor: pointer;"/>');
         cell.append(optionDelete);
