@@ -50,3 +50,8 @@
     max-width: 24px;
     max-height: 24px;
 }
+.graphic-button {
+    border: 0px none;
+    width: 38px;
+    height: 38px;
+}

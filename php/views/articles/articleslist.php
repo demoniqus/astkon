@@ -20,7 +20,7 @@
             <?php
             if (CURRENT_USER['IsAdmin']) {
                 ?>
-                    <a href="/<?= ArticlesController::Name(); ?>/Import" class="btn offset-2 py-0"><img src="/icon_import_csv.jpg" style="border: 0px none; width: 38px; height: 38px;" title="Импорт из файла CSV"/></a>
+                    <a href="/<?= ArticlesController::Name(); ?>/Import" class="btn offset-2 py-0"><img src="/icon_import_csv.jpg" class="graphic-button" title="Импорт из файла CSV"/></a>
                 <?php
             }
             ?>
