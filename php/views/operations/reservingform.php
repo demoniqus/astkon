@@ -49,10 +49,15 @@
             </div>
         </div>
         <div class="row mt-3">
-
             <button id="btn-save" type="button" class="btn btn-primary" onclick="saveOperation(false)">Сохранить</button>
             <a id="btn-gotolist" href="<?= '/' . OperationsController::Name() . '/OperationsList/' . $operationType['IdOperationType']; ?>" class="btn btn-outline-secondary ml-2">К списку документов</a>
+            <a href="javascript: void(0);" onclick="window.print();" class="btn offset-1 pl-2 py-0"><img src="/icon-print.png" class="graphic-button" title="Печать" /></a>
         </div>
+        <?php
+        if (strtolower($operationType['OperationName']) === 'reserving') {
+            require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_reserving_sign_panel.php';
+        }
+        ?>
     </div>
 </div>
 

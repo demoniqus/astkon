@@ -15,6 +15,9 @@ if (isset($linkedData)) {
         require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_set_' . DataBase::camelCaseToUnderscore($model::Name()) . '_script.php';
     }
 }
+if (strtolower($operationType['OperationName']) === 'reserving') {
+    require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_print_styles.php';
+}
 ?>
 
     <div class="col-md text-center" id="operation-form">
@@ -40,7 +43,19 @@ if (isset($linkedData)) {
         <div class="row mt-3">
             <a href="<?= '/' . OperationsController::Name() . '/OperationsList/' . $operationType[OperationType::PrimaryColumnName]; ?>" class="btn btn-outline-secondary mr-2">К списку документов</a>
             <a href="<?= '/' . OperationsController::Name() . '/Edit/' . $operation[Operation::PrimaryColumnName]; ?>" class="btn btn-outline-info mr-2">Редактировать</a>
+            <?php
+            if (strtolower($operationType['OperationName']) === 'reserving') {
+                ?>
+                    <a href="javascript: void(0);" onclick="window.print();" class="btn offset-1 pl-2 py-0"><img src="/icon-print.png" class="graphic-button" title="Печать" /></a>
+                <?php
+            }
+            ?>
         </div>
+        <?php
+            if (strtolower($operationType['OperationName']) === 'reserving') {
+                require_once OPERATION_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . '_reserving_sign_panel.php';
+            }
+        ?>
     </div>
     <script type="application/javascript">
         setSelectedArticles(
