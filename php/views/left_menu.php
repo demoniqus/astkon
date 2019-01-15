@@ -7,7 +7,10 @@
 <div class="left-menu col-md-2 mb-3">
     <ul class="nav flex-column">
         <?php
-            if (CURRENT_USER['IsAdmin']) {
+
+        use Astkon\Model\User;
+
+        if (CURRENT_USER['IsAdmin']) {
                 $leftMenuItems = array(
                     array(
                         'Action' => '/',
@@ -68,6 +71,11 @@
 //                    ),
                 );
             }
+            $leftMenuItems[] = array(
+                'Action' => '/Users/ReservesList/' . CURRENT_USER[User::PrimaryColumnName],
+                'Caption' => 'Инструмент в пользовании',
+                'Icon' => '/tools-pict-time.png',
+            );
 
             if (!isset($activeMenu)) {
                 $activeMenu = null;
