@@ -36,6 +36,12 @@
         }
         ?>
         </table>
-        <a href="/<?= UsersController::Name() . '/BuildObjectsList'; ?>" class="btn btn-outline-secondary">К списку объектов</a>
+        <?php
+            if (CURRENT_USER['IsAdmin']) {
+            ?>
+                <a href="/<?= UsersController::Name() . '/' . UsersController::Name() . 'List'; ?>" class="btn btn-outline-secondary">К списку пользователей</a>
+            <?php
+            }
+        ?>
     </div>
 </div>
