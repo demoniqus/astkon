@@ -500,10 +500,10 @@ class DataBase {
                         */
 
                         foreach ($fieldNames as $fieldName) {
-                            $_field_name = self::camelCaseToUnderscore($fieldName);
+                            $underscoreFieldName = self::camelCaseToUnderscore($fieldName);
                             if (
-                                mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
-                                mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
+                                mb_strpos($errInfo['errorMessage'], "'" . $underscoreFieldName . "'") !== false ||
+                                mb_strpos($errInfo['errorMessage'], '"' . $underscoreFieldName . '"') !== false
                             ) {
                                 $expectedErrorColumn[] = $fieldName;
                             }
@@ -539,8 +539,8 @@ class DataBase {
                         }
                     }
                     foreach ($fieldNames as $fieldName) {
-                        $_field_name = self::camelCaseToUnderscore($fieldName);
-                        if (mb_strpos($errMessage, $keyPrefix . $_field_name . $keySuffix) !== false) {
+                        $underscoreFieldName = self::camelCaseToUnderscore($fieldName);
+                        if (mb_strpos($errMessage, $keyPrefix . $underscoreFieldName . $keySuffix) !== false) {
                             $expectedErrorColumn[] = $fieldName;
                         }
                     }
@@ -552,10 +552,10 @@ class DataBase {
                 default:
                     if ($errInfo['errorMessage']) {
                         foreach ($fieldNames as $fieldName) {
-                            $_field_name = self::camelCaseToUnderscore($fieldName);
+                            $underscoreFieldName = self::camelCaseToUnderscore($fieldName);
                             if (
-                                mb_strpos($errInfo['errorMessage'], "'" . $_field_name . "'") !== false ||
-                                mb_strpos($errInfo['errorMessage'], '"' . $_field_name . '"') !== false
+                                mb_strpos($errInfo['errorMessage'], "'" . $underscoreFieldName . "'") !== false ||
+                                mb_strpos($errInfo['errorMessage'], '"' . $underscoreFieldName . '"') !== false
                             ) {
                                 $expectedErrorColumn[] = $fieldName;
                             }
@@ -576,18 +576,18 @@ class DataBase {
 
     /**
      * @param null|string $condition
-     * @param null|array $required_fields
-     * @param null|int $offset
-     * @param null|int $limit
+     * @param null|array  $requiredFields
+     * @param null|int    $offset
+     * @param null|int    $limit
      * @return string
      */
     public function getQueryString(
         $condition = null, //строка
-        $required_fields = null, //массив наименований колонок для выборки,
+        $requiredFields = null, //массив наименований колонок для выборки,
         $offset = null,
         $limit = null
     ) : string {
-        return $this->_getQueryString($condition, $required_fields, $offset, $limit);
+        return $this->_getQueryString($condition, $requiredFields, $offset, $limit);
     }
 
     /**
@@ -805,16 +805,16 @@ class DataBase {
     }
 
     /**
-     * @param null|string $condition       - условие для выборки
-     * @param null|array  $required_fields - требуемые для выборки поля
-     * @param array       $substitution    - значения для подставновки в запрос вместо placeholder'ов
+     * @param null|string $condition      - условие для выборки
+     * @param null|array  $requiredFields - требуемые для выборки поля
+     * @param array       $substitution   - значения для подставновки в запрос вместо placeholder'ов
      * @param null|int    $offset
      * @param null|int    $limit
      * @return array
      */
     public function getRows(
         $condition = null, //строка
-        $required_fields = null, //массив наименований колонок для выборки
+        $requiredFields = null, //массив наименований колонок для выборки
         $substitution = array(),
         $offset = null,
         $limit = null
@@ -826,7 +826,7 @@ class DataBase {
         /*Отберем список колонок, которым надо преобразовать тип из строкового*/
         $columns = $this->currentObject['fields'];
         /*Запросим строки и сразу произведем типизацию*/
-        $query = $this->_getQueryString($condition, $required_fields, $offset, $limit);
+        $query = $this->_getQueryString($condition, $requiredFields, $offset, $limit);
         $rows = (new linq($this->query($query, $substitution)))
             ->where(function($row){ return count($row) > 0;})
             ->for_each(function(&$row) use ($columns){
@@ -1110,7 +1110,7 @@ class DataBase {
 
     /**
      * @param string $condition
-     * @param string $required_fields
+     * @param string $requiredFields
      * @param array  $substitution
      * @param null   $offset
      * @return array|null
@@ -1118,12 +1118,12 @@ class DataBase {
      */
     public function getFirstRow(
         $condition = null, //строка
-        $required_fields = null, //массив строк
+        $requiredFields = null, //массив строк
         $substitution = array(),
         $offset = null
             ) {
         $this->setInitState();
-        $rows = $this->getRows($condition, $required_fields, $substitution, $offset, 1);
+        $rows = $this->getRows($condition, $requiredFields, $substitution, $offset, 1);
         return $rows != null  && count($rows) > 0 ? $rows[0] : null;
     }
 
