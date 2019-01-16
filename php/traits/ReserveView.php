@@ -14,6 +14,7 @@ use Astkon\Model\Operation;
 use Astkon\Model\OperationItem;
 use Astkon\Model\OperationState;
 use Astkon\Model\OperationType;
+use Astkon\QueryConfig;
 use Astkon\View\View;
 
 trait ReserveView
@@ -34,14 +35,18 @@ trait ReserveView
 
         $opStateNew = OperationState::getFirstRow(
             null,
-            '`state_name` = \'new\'',
-            array(OperationState::PrimaryColumnKey)
+            new QueryConfig(
+                '`state_name` = \'new\'',
+                array(OperationState::PrimaryColumnKey)
+            )
         );
 
         $opTypeReserving = OperationType::getFirstRow(
             null,
-            '`operation_name` = \'' . $targetOperationName . '\'',
-            array(OperationType::PrimaryColumnKey)
+            new QueryConfig(
+                '`operation_name` = \'' . $targetOperationName . '\'',
+                array(OperationType::PrimaryColumnKey)
+            )
         );
 
         $substitution = array(
@@ -55,23 +60,23 @@ trait ReserveView
 
         $rows = OperationItem::getRows(
             null,
-            implode(
-                ' AND ',
+            new QueryConfig(
+                implode(
+                    ' AND ',
+                    array(
+                        '`' . Operation::DataTable . '`.`' . OperationState::PrimaryColumnKey . '` = :' . OperationState::PrimaryColumnKey,
+                        '`' . Operation::DataTable . '`.`' . OperationType::PrimaryColumnKey . '` = :' . OperationType::PrimaryColumnKey,
+                    )
+                ),
                 array(
-                    '`' . Operation::DataTable . '`.`' . OperationState::PrimaryColumnKey . '` = :' . OperationState::PrimaryColumnKey,
-                    '`' . Operation::DataTable . '`.`' . OperationType::PrimaryColumnKey . '` = :' . OperationType::PrimaryColumnKey,
-                )
+                    'operation_count',
+                    'measure_name',
+                    'linked_data',
+                    'article_name',
+                    Operation::PrimaryColumnKey,
+                ),
+                $substitution
             ),
-            array(
-                'operation_count',
-                'measure_name',
-                'linked_data',
-                'article_name',
-                Operation::PrimaryColumnKey,
-            ),
-            $substitution,
-            null,
-            null,
             2
         );
         $model = $targetModel::Name();

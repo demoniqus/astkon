@@ -24,6 +24,7 @@ use Astkon\Model\OperationState;
 use Astkon\Model\OperationType;
 use Astkon\Model\User;
 use Astkon\Model\UserGroup;
+use Astkon\QueryConfig;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
 use DateTime;
@@ -49,25 +50,30 @@ class OperationsController extends Controller
     public function EditAction(array $context) {
         $db = new DataBase();
         $view = new View();
-        $operation = Operation::getFirstRow(
-            $db,
-            Operation::PrimaryColumnKey . ' = :' . Operation::PrimaryColumnKey,
-            null,
-            array(Operation::PrimaryColumnKey => $context['id'])
-        );
+        $queryConfig = new QueryConfig();
+        $queryConfig->Condition = Operation::PrimaryColumnKey . ' = :' . Operation::PrimaryColumnKey;
+        $queryConfig->Substitution = array(Operation::PrimaryColumnKey => $context['id']);
+
+        $operation = Operation::getFirstRow($db, $queryConfig);
         if (!$operation) {
             $view->generate(self::Name() . '/_operation_404');
             die();
         }
-        $operationType = OperationType::getFirstRow(
-            $db,
-            OperationType::PrimaryColumnKey . ' = :' . OperationType::PrimaryColumnKey,
-            null,
-            array(OperationType::PrimaryColumnKey => $operation[OperationType::PrimaryColumnKey])
-        );
-        if ($operation[OperationState::PrimaryColumnKey] === OperationState::getFirstRow($db, '`state_name`=\'fixed\'')[OperationState::PrimaryColumnKey]) {
+
+        $queryConfig->Reset();
+        $queryConfig->Condition = OperationType::PrimaryColumnKey . ' = :' . OperationType::PrimaryColumnKey;
+        $queryConfig->Substitution = array(OperationType::PrimaryColumnKey => $operation[OperationType::PrimaryColumnKey]);
+
+        $operationType = OperationType::getFirstRow($db, $queryConfig);
+
+        $queryConfig->Reset();
+        $queryConfig->Condition = '`state_name`=\'fixed\'';
+
+        $fixedState = OperationState::getFirstRow($db, $queryConfig);
+
+        if ($operation[OperationState::PrimaryColumnKey] === $fixedState[OperationState::PrimaryColumnKey]) {
             $view->operationType = array_keys_CamelCase($operationType);
-            $view->message = 'Не допускается редактировать документ в статусе "' . OperationState::getFirstRow(null, 'state_name=\'fixed\'')['state_label'] . '"';
+            $view->message = 'Не допускается редактировать документ в статусе "' . $fixedState['state_label'] . '"';
             /*Запрещено редактировать закрытый документ*/
             $view->generate(self::Name() . '/_denied_action');
             die();
@@ -84,22 +90,22 @@ class OperationsController extends Controller
     public function DetailAction(array $context) {
         $db = new DataBase();
         $view = new View();
-        $operation = Operation::getFirstRow(
-            $db,
-            Operation::PrimaryColumnKey . ' = :' . Operation::PrimaryColumnKey,
-            null,
-            array(Operation::PrimaryColumnKey => $context['id'])
-        );
+        $queryConfig = new QueryConfig();
+        $queryConfig->Condition = Operation::PrimaryColumnKey . ' = :' . Operation::PrimaryColumnKey;
+        $queryConfig->Substitution = array(Operation::PrimaryColumnKey => $context['id']);
+
+        $operation = Operation::getFirstRow($db, $queryConfig);
+
         if (!$operation) {
             $view->generate(self::Name() . '/_operation_404');
             die();
         }
-        $operationType = OperationType::getFirstRow(
-            $db,
-            OperationType::PrimaryColumnKey . ' = :' . OperationType::PrimaryColumnKey,
-            null,
-            array(OperationType::PrimaryColumnKey => $operation[OperationType::PrimaryColumnKey])
-        );
+
+        $queryConfig->Reset();
+        $queryConfig->Condition = OperationType::PrimaryColumnKey . ' = :' . OperationType::PrimaryColumnKey;
+        $queryConfig->Substitution = array(OperationType::PrimaryColumnKey => $operation[OperationType::PrimaryColumnKey]);
+
+        $operationType = OperationType::getFirstRow($db, $queryConfig);
         $opTypeName = $operationType['operation_name'];
         $operation = $this->defineCommonFormContext($view, $opTypeName, $context);
         $this->loadLinkedDataItems($view, $operation);
@@ -108,16 +114,15 @@ class OperationsController extends Controller
     }
 
     private function getOperationItems(DataBase $db, array $operation) : array {
-        $operationItems = OperationItem::getRows(
-            $db,
+        $queryConfig = new QueryConfig(
             Operation::PrimaryColumnKey . ' = :' . Operation::PrimaryColumnKey,
             null,
             array(Operation::PrimaryColumnKey => $operation[Operation::PrimaryColumnKey])
         );
+        $operationItems = OperationItem::getRows($db, $queryConfig);
 
-        $articles = Article::getRows(
-            $db,
-            Article::PrimaryColumnKey . ' in (' .
+        $queryConfig->Reset();
+        $queryConfig->Condition =Article::PrimaryColumnKey . ' in (' .
             implode(
                 ',',
                 array_map(
@@ -125,8 +130,8 @@ class OperationsController extends Controller
                     $operationItems
                 )
             )
-            . ')'
-        );
+            . ')';
+        $articles = Article::getRows($db, $queryConfig);
         $operationItems = (new linq($operationItems))
             ->toAssoc(
                 function($operationItem){ return $operationItem[Article::PrimaryColumnKey];},
@@ -229,10 +234,10 @@ class OperationsController extends Controller
             ),
 
         );
-        $fixedState = OperationState::getFirstRow(
-            null,
-            '`state_name`=\'fixed\''
-        );
+
+        $queryConfig = new QueryConfig('`state_name`=\'fixed\'');
+
+        $fixedState = OperationState::getFirstRow(null, $queryConfig);
 
         $listOperationTypes = OperationType::getRows();
         $dictOperationTypes = (new linq($listOperationTypes))
@@ -282,25 +287,27 @@ class OperationsController extends Controller
             }
         );
 
+        $queryConfig->Reset();
+        $queryConfig->Condition = '`' . Operation::DataTable . '`.id_operation_type = :id_operation_type and `'
+            . Operation::DataTable . '`.id_user_group= :id_user_group';
+        $queryConfig->RequiredFields = array(
+            'id_operation',
+            'id_operation_state',
+            'create_datetime',
+            'fix_datetime',
+            'operation_info',
+            'state_label',
+        );
+        $queryConfig->Substitution = array(
+            'id_operation_type' => $IdOperationType,
+            'id_user_group' => CURRENT_USER[UserGroup::PrimaryColumnName]
+        );
+
         $this->ListViewAction(
             $view,
             Operation::class,
             $options,
-            '`' . Operation::DataTable . '`.id_operation_type = :id_operation_type and `' . Operation::DataTable . '`.id_user_group= :id_user_group',
-            array(
-                'id_operation',
-                'id_operation_state',
-                'create_datetime',
-                'fix_datetime',
-                'operation_info',
-                'state_label',
-            ),
-            array(
-                'id_operation_type' => $IdOperationType,
-                'id_user_group' => CURRENT_USER[UserGroup::PrimaryColumnName]
-            ),
-            null,
-            null,
+            $queryConfig,
             array(
                 'id_operation',
                 'state_label',
@@ -400,17 +407,17 @@ class OperationsController extends Controller
             $view->JSONView();
         }
 
+        $queryConfig = new QueryConfig();
+
         $db->beginTransaction();
         /*Проверяем, что запрошен допустимый тип операции*/
         $operation = $_POST['operation'];
-        $operationType = OperationType::getFirstRow(
-            $db,
-            OperationType::PrimaryColumnKey . ' = :' . OperationType::PrimaryColumnKey,
-            null,
-            array(
-                OperationType::PrimaryColumnKey => $operation[OperationType::PrimaryColumnName]
-            )
+        $queryConfig->Condition = OperationType::PrimaryColumnKey . ' = :' . OperationType::PrimaryColumnKey;
+        $queryConfig->Substitution = array(
+            OperationType::PrimaryColumnKey => $operation[OperationType::PrimaryColumnName],
         );
+
+        $operationType = OperationType::getFirstRow($db, $queryConfig);
         if (is_null($operationType)) {
             $errors[] = 'Запрошен недопустимый тип операции';
         }
@@ -450,14 +457,11 @@ class OperationsController extends Controller
             function($id){ return !is_null($id);}
         );
 
-        $articles = Article::getRows(
-            $db,
-            Article::PrimaryColumnKey . ' in (' . implode(',', $articleListId) . ')',
-            null,
-            null,
-            null,
-            count($articleListId)
-        );
+        $queryConfig->Reset();
+        $queryConfig->Condition = Article::PrimaryColumnKey . ' in (' . implode(',', $articleListId) . ')';
+        $queryConfig->Limit = count($articleListId);
+
+        $articles = Article::getRows($db, $queryConfig);
 
         if (
             count($articles) !== count($articleListId) ||
@@ -470,20 +474,20 @@ class OperationsController extends Controller
         /*
          * Проверим, что переданы правильные по типу количества - целые или дробные,
          * а заодно и приведем все $selectedItems к числовым типам
-         * */
+         */
 
-        $measures = Measure::getRows(
-            $db,
-            Measure::PrimaryColumnKey . ' in (' .
-                implode(
-                    ',',
-                    array_map(
-                        function($article){ return $article[Measure::PrimaryColumnKey];},
-                        $articles
-                    )
+        $queryConfig->Reset();
+        $queryConfig->Condition = Measure::PrimaryColumnKey . ' in (' .
+            implode(
+                ',',
+                array_map(
+                    function($article){ return $article[Measure::PrimaryColumnKey];},
+                    $articles
                 )
-            . ')'
-        );
+            )
+            . ')';
+
+        $measures = Measure::getRows($db, $queryConfig);
 
         $measures = (new linq($measures))
             ->toAssoc(function($measure){
@@ -541,17 +545,16 @@ class OperationsController extends Controller
             $view->JSONView();
         }
 
-        $changeBalanceMethod = ChangeBalanceMethod::getFirstRow(
-            $db,
-            ChangeBalanceMethod::PrimaryColumnKey . ' = :' . ChangeBalanceMethod::PrimaryColumnKey,
-            null,
-            array(
-                ChangeBalanceMethod::PrimaryColumnKey => $operationType[ChangeBalanceMethod::PrimaryColumnKey]
-            )
+        $queryConfig->Reset();
+        $queryConfig->Condition = ChangeBalanceMethod::PrimaryColumnKey . ' = :' . ChangeBalanceMethod::PrimaryColumnKey;
+        $queryConfig->Substitution = array(
+            ChangeBalanceMethod::PrimaryColumnKey => $operationType[ChangeBalanceMethod::PrimaryColumnKey],
         );
 
+        $changeBalanceMethod = ChangeBalanceMethod::getFirstRow($db, $queryConfig);
+
         $saveMethod = 'Save_ChangeBalance' . DataBase::underscoreToCamelCase($changeBalanceMethod['method_name']);
-//        $articles = array_values($articles);
+
         $operation = $this->$saveMethod(
             $db,
             $view,
@@ -608,7 +611,10 @@ class OperationsController extends Controller
             );
             if ($operationState['state_name'] === 'fixed') {
                 $view->operationType = array_keys_CamelCase($operationType);
-                $view->message = 'Не допускается удалять документ в статусе "' . OperationState::getFirstRow(null, 'state_name=\'fixed\'')['state_label'] . '"';
+
+                $queryConfig = new QueryConfig('state_name=\'fixed\'');
+
+                $view->message = 'Не допускается удалять документ в статусе "' . OperationState::getFirstRow(null, $queryConfig)['state_label'] . '"';
                 /*Запрещено удалять закрытый документ*/
                 $view->generate(self::Name() . '/_denied_action');
                 die();
@@ -670,13 +676,14 @@ class OperationsController extends Controller
                     break;
             }
 
+            $queryConfig = new QueryConfig();
+
             $changeBalanceMethod = ChangeBalanceMethod::GetByPrimaryKey($operationType[ChangeBalanceMethod::PrimaryColumnKey], $db);
             if ($changeBalanceMethod['method_name'] === 'in_fixation') {
-                $listOperationItems = OperationItem::getRows(
-                    $db,
-                    '`' . Operation::PrimaryColumnKey . '` = ' . $operation[Operation::PrimaryColumnKey],
-                    array(Article::PrimaryColumnKey, 'operation_count')
-                );
+                $queryConfig->Condition = '`' . Operation::PrimaryColumnKey . '` = ' . $operation[Operation::PrimaryColumnKey];
+                $queryConfig->RequiredFields = array(Article::PrimaryColumnKey, 'operation_count');
+
+                $listOperationItems = OperationItem::getRows($db, $queryConfig);
                 switch (strtolower($operationType['operation_name'])) {
                     case 'income':
                         OperationItem::AddToBalance($listOperationItems, $db);
@@ -686,10 +693,12 @@ class OperationsController extends Controller
                         break;
                 }
             }
-            $fixedState = OperationState::getFirstRow(
-                $db,
-                '`state_name`=\'fixed\''
-            );
+
+            $queryConfig->Reset();
+            $queryConfig->Condition ='`state_name`=\'fixed\'';
+
+            $fixedState = OperationState::getFirstRow($db, $queryConfig);
+
             $operation['operation_info']['fixer'] = array(
                 'value' => CURRENT_USER[User::PrimaryColumnName],
                 'caption' => CURRENT_USER['UserName'],
@@ -724,8 +733,11 @@ class OperationsController extends Controller
         array $selectedItems,
         array &$foundArticles
         ) : array {
+        $queryConfig = new QueryConfig();
+
         if ($operation[Operation::PrimaryColumnName] == 0) {
-            $operationNewState = OperationState::getFirstRow($db, '`state_name`=\'new\'');
+            $queryConfig->Condition = '`state_name`=\'new\'';
+            $operationNewState = OperationState::getFirstRow($db, $queryConfig);
             $operation = Operation::Create(
                 array(
                     'create_datetime' => new DateTime(),
@@ -745,14 +757,13 @@ class OperationsController extends Controller
             );
         }
         else {
-            $operation = Operation::getFirstRow(
-                $db,
-                Operation::PrimaryColumnKey . ' = :' . Operation::PrimaryColumnKey,
-                null,
-                array(
-                    Operation::PrimaryColumnKey => $operation[Operation::PrimaryColumnName]
-                )
+            $queryConfig->Condition = Operation::PrimaryColumnKey . ' = :' . Operation::PrimaryColumnKey;
+            $queryConfig->Substitution =array(
+                Operation::PrimaryColumnKey => $operation[Operation::PrimaryColumnName],
             );
+
+            $operation = Operation::getFirstRow($db, $queryConfig);
+
             /*Дописываем инфу о модификации накладной*/
             $opInfo = $operation['operation_info'];
             if (!is_array($opInfo)) {
@@ -778,12 +789,13 @@ class OperationsController extends Controller
                 $db
             );
 
+            $queryConfig->Reset();
+            $queryConfig->Condition = Operation::PrimaryColumnKey . ' = ' . $operation[Operation::PrimaryColumnKey];
+            $queryConfig->RequiredFields = array(OperationItem::PrimaryColumnKey);
+
             /*Стираем старые элементы*/
-            $oldItems = OperationItem::getRows(
-                $db,
-                Operation::PrimaryColumnKey . ' = ' . $operation[Operation::PrimaryColumnKey],
-                array(OperationItem::PrimaryColumnKey)
-            );
+            $oldItems = OperationItem::getRows($db, $queryConfig);
+
             OperationItem::Delete(
                 array_map(
                     function($oldOperationItem){ return $oldOperationItem[OperationItem::PrimaryColumnKey];},
@@ -825,14 +837,17 @@ class OperationsController extends Controller
         array &$foundArticles
     ) : array {
         /*Проверяем, что не снимают больше, чем есть на запасе*/
-        $articleBalanceItems = ArticleBalance::getRows(
-            $db,
+        $queryConfig = new QueryConfig(
             UserGroup::PrimaryColumnKey . ' = :' . UserGroup::PrimaryColumnKey .
             ' AND ' . Article::PrimaryColumnKey . ' in (' . implode(',', array_keys($foundArticles)) . ')',
             array(Article::PrimaryColumnKey, 'balance'),
             array(UserGroup::PrimaryColumnKey => CURRENT_USER[UserGroup::PrimaryColumnName]),
             null,
             count($foundArticles)
+        );
+        $articleBalanceItems = ArticleBalance::getRows(
+            $db,
+            $queryConfig
         );
         $articleBalanceItems = (new linq($articleBalanceItems))
             ->toAssoc(
@@ -845,9 +860,11 @@ class OperationsController extends Controller
              * Т.к. накладная изменяется, то нужно при проверке учесть и то количество,
              * которое зарезервировано в накладной
             */
+            $queryConfig->Reset();
+            $queryConfig->Condition = Operation::PrimaryColumnKey . ' = ' . $operation[Operation::PrimaryColumnName];
             $oldOperationItems = OperationItem::getRows(
                 $db,
-                Operation::PrimaryColumnKey . ' = ' . $operation[Operation::PrimaryColumnName]
+                $queryConfig
             );
             $operationReservedItems = (new linq($oldOperationItems))
                 ->toAssoc(
@@ -879,8 +896,12 @@ class OperationsController extends Controller
             $view->JSONView();
         }
 
+        $queryConfig->Reset();
+
         if ($operation[Operation::PrimaryColumnName] == 0) {
-            $operationNewState = OperationState::getFirstRow($db, '`state_name`=\'new\'');
+            $queryConfig->Condition = '`state_name`=\'new\'';
+
+            $operationNewState = OperationState::getFirstRow($db, $queryConfig);
 
             $operation = Operation::Create(
                 array(
@@ -902,14 +923,13 @@ class OperationsController extends Controller
 
         }
         else {
-            $operation = Operation::getFirstRow(
-                $db,
-                Operation::PrimaryColumnKey . ' = :' . Operation::PrimaryColumnKey,
-                null,
-                array(
-                    Operation::PrimaryColumnKey => $operation[Operation::PrimaryColumnName]
-                )
+            $queryConfig->Condition = Operation::PrimaryColumnKey . ' = :' . Operation::PrimaryColumnKey;
+            $queryConfig->Substitution = array(
+                Operation::PrimaryColumnKey => $operation[Operation::PrimaryColumnName],
             );
+
+            $operation = Operation::getFirstRow($db, $queryConfig);
+
             /*Дописываем инфу о модификации накладной*/
             $opInfo = $operation['operation_info'];
             if (!is_array($opInfo)) {
@@ -934,11 +954,14 @@ class OperationsController extends Controller
                 )
             );
 
+            $queryConfig->Reset();
+            $queryConfig->Condition = Operation::PrimaryColumnKey . ' = ' . $operation[Operation::PrimaryColumnKey];
+            $queryConfig->RequiredFields = array(OperationItem::PrimaryColumnKey);
+
             /*Возвращаем старые элементы на баланс*/
             $oldItems = OperationItem::getRows(
                 $db,
-                Operation::PrimaryColumnKey . ' = ' . $operation[Operation::PrimaryColumnKey],
-                array(OperationItem::PrimaryColumnKey)
+                $queryConfig
             );
 
             OperationItem::ReturnOnBalance(
@@ -986,7 +1009,9 @@ class OperationsController extends Controller
                 $model = implode('\\', $_model);
                 $listLinkedItems = $model::getRows(
                     $db,
-                    '`' . $model::PrimaryColumnKey . '` in (' . implode(',', $listId) . ')'
+                    new QueryConfig(
+                        '`' . $model::PrimaryColumnKey . '` in (' . implode(',', $listId) . ')'
+                    )
                 );
                 $linkedData[$model] = (new linq($listLinkedItems))
                     ->select(function($linkedItem){ return array_keys_CamelCase($linkedItem);})
@@ -1000,7 +1025,10 @@ class OperationsController extends Controller
     private function defineCommonFormContext(View $view, string $OpTypeName, array $context) : array {
         $db = new DataBase();
 
-        $operationType = OperationType::getFirstRow($db, 'operation_name=\'' . $OpTypeName . '\'');
+        $operationType = OperationType::getFirstRow(
+            $db,
+            new QueryConfig('operation_name=\'' . $OpTypeName . '\'')
+        );
 
         $view->title = OperationType::getLabel($OpTypeName);
         $view->activeMenu = '/' . static::Name() . '/Index';
@@ -1009,16 +1037,18 @@ class OperationsController extends Controller
         if ($context['id'] > 0) {
             $operation = Operation::getFirstRow(
                 $db,
-                Operation::PrimaryColumnKey . '= :' . Operation::PrimaryColumnKey,
-                null,
-                array(Operation::PrimaryColumnKey => $context['id'])
+                new QueryConfig(
+                    Operation::PrimaryColumnKey . '= :' . Operation::PrimaryColumnKey,
+                    null,
+                    array(Operation::PrimaryColumnKey => $context['id'])
+                )
             );
         }
         else {
             $operation = Operation::EmptyEntity(
                 array(
                     OperationType::PrimaryColumnKey => $operationType[OperationType::PrimaryColumnKey],
-                    OperationState::PrimaryColumnKey => OperationState::getFirstRow($db, 'state_name=\'new\'')[OperationState::PrimaryColumnKey],
+                    OperationState::PrimaryColumnKey => OperationState::getFirstRow($db, new QueryConfig('state_name=\'new\''))[OperationState::PrimaryColumnKey],
                 )
             );
         }

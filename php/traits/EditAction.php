@@ -12,6 +12,7 @@ use Astkon\DataBase;
 use function Astkon\Lib\array_keys_CamelCase;
 use function Astkon\Lib\Redirect;
 use Astkon\Model\Model;
+use Astkon\QueryConfig;
 
 trait EditAction
 {
@@ -69,11 +70,19 @@ trait EditAction
                     'message' => 'Данные успешно сохранены'
                 );
                 $dataTable = $model::DataTable;
+
                 $pkName = DataBase::camelCaseToUnderscore($model::PrimaryColumnName);
+
+                $queryConfig = new QueryConfig(
+                    $pkName . ' = :' . $pkName,
+                    null,
+                    array($pkName => $context['id'])
+                );
+
                 $entity = array_keys_CamelCase(
                     (new DataBase())->
                     $dataTable->
-                    getFirstRow($pkName . ' = :' . $pkName, null, array($pkName => $context['id']))
+                    getFirstRow($queryConfig)
                 );
             }
         }

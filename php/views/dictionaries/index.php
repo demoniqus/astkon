@@ -15,7 +15,7 @@
                     array(
                         'Action' => '/' . ArticlesController::Name() . '/' . ArticlesController::Name() . 'List',
                         'Caption' => 'Артикулы',
-                        'Icon' => '/barcode.png',
+                        'Icon' => '/icon-articles-dict.png',
                     ),
                     array(
                         'Action' => '/' . ArticleCategoriesController::Name() . '/' . ArticleCategoriesController::Name() . 'List',
@@ -30,7 +30,7 @@
                     array(
                         'Action' => '/' . ArticleBalanceController::Name() . '/' . ArticleBalanceController::Name() . 'List',
                         'Caption' => 'Текущий запас',
-                        'Icon' => '/balance.png',
+                        'Icon' => '/icon-balance.png',
                     ),
                     array(
                         'Action' => '/' . UserGroupsController::Name() . '/' . UserGroupsController::Name() . 'List',
@@ -55,12 +55,12 @@
                     array(
                         'Action' => '/' . ArticleBalanceController::Name() . '/' . ArticleBalanceController::Name() . 'List',
                         'Caption' => 'Текущий запас',
-                        'Icon' => '/balance.png',
+                        'Icon' => '/icon-balance.png',
                     ),
                     array(
                         'Action' => '/' . ArticlesController::Name() . '/' . ArticlesController::Name() . 'List',
                         'Caption' => 'Артикулы',
-                        'Icon' => '/barcode.png',
+                        'Icon' => '/icon-articles-dict.png',
                     ),
                     array(
                         'Action' => '/' . ArticleCategoriesController::Name() . '/' . ArticleCategoriesController::Name() . 'List',

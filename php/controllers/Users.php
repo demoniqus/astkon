@@ -16,6 +16,7 @@ use function Astkon\Lib\Redirect;
 use Astkon\Model\Model;
 use Astkon\Model\User;
 use Astkon\Model\UserGroup;
+use Astkon\QueryConfig;
 use Astkon\Traits\ListView;
 use Astkon\Traits\ReserveView;
 use Astkon\View\View;
@@ -56,22 +57,22 @@ class UsersController extends Controller
             'icon' => '/tools-pict-time.png',
             'title' => 'Артикулы во временном пользовании'
         );
+
+        $queryConfig = new QueryConfig();
+        $queryConfig->RequiredFields = array(
+            User::PrimaryColumnName,
+            'UserName',
+            'UserGroupName',
+            'HasAccount',
+            'IsAdmin',
+            UserGroup::PrimaryColumnName,
+        );
+
         $this->ListViewAction(
             $view,
             User::class,
             $options,
-            null,
-            array(
-                User::PrimaryColumnName,
-                'UserName',
-                'UserGroupName',
-                'HasAccount',
-                'IsAdmin',
-                UserGroup::PrimaryColumnName,
-            ),
-            null,
-            null,
-            null,
+            $queryConfig,
             array(
                 User::PrimaryColumnName,
                 'UserName',
@@ -90,18 +91,19 @@ class UsersController extends Controller
 //        $pageId = isset($context['id']) ? intval($context['id']) : 0;
 //        $pageSize = 5;
 
+        $queryConfig = new QueryConfig();
+        $queryConfig->Condition = $condition;
+        $queryConfig->RequiredFields = array(
+            User::PrimaryColumnKey,
+            'user_name',
+            'has_account',
+        );
+        $queryConfig->Substitution = $substitution;
+
         $this->DictViewAction(
             $view,
             User::class,
-            $condition,
-            array(
-                User::PrimaryColumnKey,
-                'user_name',
-                'has_account',
-            ),
-            $substitution,
-            null,
-            null,
+            $queryConfig,
             array(
                 User::PrimaryColumnKey,
                 'UserName',
@@ -118,6 +120,15 @@ class UsersController extends Controller
             $view = new View();
             $view->error(ErrorCode::FORBIDDEN);
         }
+
+        $queryConfig = new QueryConfig(
+            '`' . User::PrimaryColumnKey . '` = :' . User::PrimaryColumnKey,
+            null,
+            array(
+                User::PrimaryColumnKey => $context['id'],
+            )
+        );
+
         if (array_key_exists('submit', $_POST)) {
             $inputValues = array_filter($_POST, function($v, $k){ return $k !== 'submit'; }, ARRAY_FILTER_USE_BOTH);
             if ($inputValues[User::PrimaryColumnName] == 0) {
@@ -185,7 +196,7 @@ class UsersController extends Controller
                     $user = array_keys_CamelCase(
                         (new DataBase())->
                         user->
-                        getFirstRow('id_user = :id_user', null, array('id_user' => $context['id']))
+                        getFirstRow($queryConfig)
                     );
                     unset($user['Password']);
 
@@ -197,7 +208,7 @@ class UsersController extends Controller
             $user = array_keys_CamelCase(
                 (new DataBase())->
                 user->
-                getFirstRow('id_user = :id_user', null, array('id_user' => $context['id']))
+                getFirstRow($queryConfig)
             );
             unset($user['Password']);
         }

@@ -9,6 +9,7 @@ use Astkon\ErrorCode;
 use Astkon\GlobalConst;
 use function Astkon\Lib\array_keys_underscore;
 use Astkon\linq;
+use Astkon\QueryConfig;
 use Astkon\Traits\ModelUpdate;
 use Astkon\View\View;
 use ReflectionClass;
@@ -145,6 +146,10 @@ abstract class Model  {
 
         $isFormProcessed = is_array($options) && isset($options['validation']);
 
+        $db = new DataBase();
+
+        $queryConfig = new QueryConfig();
+
         // https://getbootstrap.com/docs/4.1/components/forms/
         $Model = static::class;
         $Entity = $item;
@@ -200,14 +205,18 @@ abstract class Model  {
             }
             else  if ($fieldInfo && isset($fieldInfo['foreign_key'])){
                 $ForeignKeyParams = $fieldInfo['foreign_key'];
+
                 $model = $ForeignKeyParams['model'];
+
                 $refModel = explode('\\', __CLASS__);
                 $refModel[count($refModel) - 1] = DataBase::underscoreToCamelCase($model);
-                $refItem = (new DataBase())->$model->getFirstRow(
-                    $ForeignKeyParams['field'] . ' = :' . $ForeignKeyParams['field'],
-                    call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys'),
-                    array($ForeignKeyParams['field'] => intval($value))
-                );
+
+                $queryConfig->Condition = $ForeignKeyParams['field'] . ' = :' . $ForeignKeyParams['field'];
+                $queryConfig->RequiredFields = call_user_func(implode('\\', $refModel) . '::getReferenceDisplayedKeys');
+                $queryConfig->Substitution = array($ForeignKeyParams['field'] => intval($value));
+
+                $refItem = $db->$model->getFirstRow($queryConfig);
+
                 $displayValue = is_array($refItem) ? implode(' ', $refItem) : '';
                 $dictionaryAction = '';
                 if (isset($docCommentParams['foreign_key_action'])) {
@@ -385,13 +394,17 @@ abstract class Model  {
                             $required_keys[] = $refModel::PrimaryColumnKey;
                         }
 
-                        $rows = $refModel::getRows(
-                            $db,
+                        $queryConfig = new QueryConfig(
                             $refModel::PrimaryColumnKey .  ' in (' . implode(',', $listId) . ')',
                             $required_keys,
                             null,
                             null,
-                            count($listItems),
+                            count($listItems)
+                        );
+
+                        $rows = $refModel::getRows(
+                            $db,
+                            $queryConfig,
                             true
                         );
 
@@ -446,14 +459,18 @@ abstract class Model  {
                             $required_keys[] = $refModel::PrimaryColumnKey;
                         }
 
-                        $rows = $refModel::getRows(
-                            $db,
+                        $queryConfig = new QueryConfig(
                             $refModel::PrimaryColumnKey .  ' in (' . implode(',', $listId) . ')',
                             $required_keys,
                             null,
                             null,
-                            count($listItems),
-                            true
+                            count($listItems)
+                        );
+
+                        $rows = $refModel::getRows(
+                            $db,
+                            $queryConfig,
+                            2
                         );
 
                         $rows = (new linq($rows))
@@ -605,11 +622,7 @@ abstract class Model  {
 
     public static function getRows(
         $db = null,
-        ?string $condition = null, //строка
-        ?array $required_fields = null, //массив наименований колонок для выборки
-        ?array $substitution = array(),
-        ?int $offset = null,
-        ?int $limit = null,
+        ?QueryConfig $queryConfig = null,
         int $deepDecodeForeignKeys = 0
     ) : array {
         if (!self::checkIsClassOfModel()) {
@@ -667,30 +680,21 @@ abstract class Model  {
             }
         }
         $rows = $db->getRows(
-            $condition,
-            $required_fields,
-            $substitution,
-            $offset,
-            $limit
+            $queryConfig
         );
         return $rows;
     }
 
     public static function getFirstRow(
         $db = null,
-        ?string $condition = null, //строка
-        ?array $required_fields = null, //массив наименований колонок для выборки
-        ?array $substitution = array(),
-        ?int $offset = null,
+        ?QueryConfig $queryConfig = null,
         int $deepDecodeForeignKeys = 0
     ) : ?array {
+        $queryConfig = $queryConfig ?? new QueryConfig();
+        $queryConfig->Limit = 1;
         $rows = static::getRows(
             $db,
-            $condition,
-            $required_fields,
-            $substitution,
-            $offset,
-            1,
+            $queryConfig,
             $deepDecodeForeignKeys
         );
         return count($rows) ? $rows[0] : null;
@@ -991,7 +995,7 @@ abstract class Model  {
         if ($return) {
             return static::getFirstRow(
                 $db,
-                '`' . static::PrimaryColumnKey . '` = ' . $db->LastInsertId()
+                new QueryConfig('`' . static::PrimaryColumnKey . '` = ' . $db->LastInsertId())
             );
         }
         return true;
@@ -1012,7 +1016,7 @@ abstract class Model  {
             die();
         }
         $model = static::DataTable;
-        return $db->$model->getFirstRow('`' . static::PrimaryColumnKey . '` = ' . $pk);
+        return $db->$model->getFirstRow(new QueryConfig('`' . static::PrimaryColumnKey . '` = ' . $pk));
     }
 
     public static function Update(array $substitution, ?DataBase $db = null, ?bool $return = false) {
@@ -1063,11 +1067,14 @@ abstract class Model  {
             return false;
         }
         if ($return) {
-            return static::getFirstRow(
-                $db,
+            $queryConfig = new QueryConfig(
                 '`' . static::PrimaryColumnKey . '` = :' . static::PrimaryColumnKey,
                 null,
                 array(static::PrimaryColumnKey => $pkValue)
+            );
+            return static::getFirstRow(
+                $db,
+                $queryConfig
             );
         }
         return true;

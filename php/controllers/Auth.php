@@ -17,6 +17,7 @@ use Astkon\linq;
 use Astkon\Model\Model;
 use Astkon\Model\Partial\UserPartial;
 use Astkon\Model\User;
+use Astkon\QueryConfig;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
@@ -45,7 +46,11 @@ class AuthController extends Controller
         $options = array();
         if (array_key_exists('submit', $_POST)) {
             $db = new DataBase();
-            $usersList = $db->user->getRows('login = :login AND has_account = 1', null, array('login' => $_POST['Login']));
+            $usersList = $db->user->getRows(new QueryConfig(
+                'login = :login AND has_account = 1',
+                null,
+                array('login' => $_POST['Login'])
+            ));
             $pwdFunction = DocComment::getDocCommentItem(new ReflectionProperty(UserPartial::class, 'Password'), 'save_wrapper');
             $pwdFunction = $pwdFunction ?? 'password';
             $password = $db->query('select ' . $pwdFunction . '(:password) as pwd', array('password' => $_POST['Password']));
@@ -53,7 +58,11 @@ class AuthController extends Controller
             $user = (new linq($usersList))
                 ->first(function($user) use ($password){ return $user['password'] === $password;});
             if ($user) {
-                $user = User::getFirstRow($db, User::PrimaryColumnKey . ' = ' . $user[User::PrimaryColumnKey], null, null, null, 1);
+                $user = User::getFirstRow(
+                    $db,
+                    new QueryConfig(User::PrimaryColumnKey . ' = ' . $user[User::PrimaryColumnKey]),
+                    1
+                );
                 unset($user['password']);
                 $_SESSION[AuthController::CurrentUserKey] = $GLOBALS[AuthController::CurrentUserKey] = array_keys_CamelCase($user);
                 Redirect('Index', 'Index');

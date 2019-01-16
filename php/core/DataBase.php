@@ -7,6 +7,8 @@ use PDO;
 use PDOException;
 use PDOStatement;
 
+require_once 'QueryConfig.php';
+
 /*
  * Данный класс выполняет работу с базой данных
  */
@@ -591,18 +593,17 @@ class DataBase {
     }
 
     /**
-     * @param null|string $condition
-     * @param null|array  $requiredFields
-     * @param null|int    $offset
-     * @param null|int    $limit
+     * @param QueryConfig $queryConfig
      * @return string
      */
     private function _getQueryString (
-        ?string $condition = null, //строка
-        ?array $requiredFields = null, //массив наименований колонок для выборки,
-        ?int $offset = null,
-        ?int $limit = null
+        QueryConfig $queryConfig
     ) : string {
+        $condition = $queryConfig->Condition;
+        $requiredFields = $queryConfig->RequiredFields;
+        $offset = $queryConfig->Offset;
+        $limit = $queryConfig->Limit;
+        $orderBy = $queryConfig->OrderBy;
         /*Определим список полей, которые требуется извлечь*/
         $selectedColumns = $this->currentObject['fields'];
 
@@ -668,6 +669,7 @@ class DataBase {
 
         /*Запросим строки и сразу произведем типизацию*/
         return $query . ($condition ? 'where ' . $condition : '') . ' ' .
+            (!is_null($orderBy) ? 'order by ' . implode(', ', $orderBy) : '') . ' ' .
             (!is_null($limit) ? 'limit ' . $limit : '') . ' ' .
             (!is_null($offset) ? 'offset ' . $offset : '');
 
@@ -805,29 +807,21 @@ class DataBase {
     }
 
     /**
-     * @param null|string $condition      - условие для выборки
-     * @param null|array  $requiredFields - требуемые для выборки поля
-     * @param array       $substitution   - значения для подставновки в запрос вместо placeholder'ов
-     * @param null|int    $offset
-     * @param null|int    $limit
+     * @param QueryConfig|null $queryConfig
      * @return array
+     * @throws Exception
      */
-    public function getRows(
-        $condition = null, //строка
-        $requiredFields = null, //массив наименований колонок для выборки
-        $substitution = array(),
-        $offset = null,
-        $limit = null
-            ) : array {
+    public function getRows(?QueryConfig $queryConfig = null) : array {
         $this->setInitState();
         if (!$this->currentObject) {
             throw new Exception('Не установлен объект для извелечения из БД');
         }
+        $queryConfig = $queryConfig ?? new QueryConfig();
         /*Отберем список колонок, которым надо преобразовать тип из строкового*/
         $columns = $this->currentObject['fields'];
         /*Запросим строки и сразу произведем типизацию*/
-        $query = $this->_getQueryString($condition, $requiredFields, $offset, $limit);
-        $rows = (new linq($this->query($query, $substitution)))
+        $query = $this->_getQueryString($queryConfig);
+        $rows = (new linq($this->query($query, $queryConfig->Substitution)))
             ->where(function($row){ return count($row) > 0;})
             ->for_each(function(&$row) use ($columns){
                 self::_convertValue($row, $this->currentObject['fields']);
@@ -1109,21 +1103,15 @@ class DataBase {
     }
 
     /**
-     * @param string $condition
-     * @param string $requiredFields
-     * @param array  $substitution
-     * @param null   $offset
+     * @param QueryConfig|null $queryConfig
      * @return array|null
      * @throws Exception
      */
-    public function getFirstRow(
-        $condition = null, //строка
-        $requiredFields = null, //массив строк
-        $substitution = array(),
-        $offset = null
-            ) {
+    public function getFirstRow(?QueryConfig $queryConfig = null) {
         $this->setInitState();
-        $rows = $this->getRows($condition, $requiredFields, $substitution, $offset, 1);
+        $queryConfig = $queryConfig ?? new QueryConfig();
+        $queryConfig->Limit = 1;
+        $rows = $this->getRows($queryConfig);
         return $rows != null  && count($rows) > 0 ? $rows[0] : null;
     }
 
@@ -1272,6 +1260,7 @@ class DataBase {
             throw new Exception('Неизвестный тип объекта.');
         }
         else {
+            $this->setInitState();
             $tableParams = $list[0];
         }
         /*Получим необходимые характеристики, чтобы по ним построить выборку*/

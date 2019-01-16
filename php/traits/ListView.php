@@ -10,35 +10,27 @@ namespace Astkon\Traits;
 
 use Astkon\DataBase;
 use function Astkon\Lib\array_keys_CamelCase;
-use Astkon\Model\ArticleBalance;
+use Astkon\QueryConfig;
 use Astkon\View\View;
 
 trait ListView
 {
     /**
-     * @param View        $view
-     * @param string      $model
-     * @param array       $options
-     * @param string|null $condition
-     * @param array|null  $requiredFields - список полей, которые следует получить из БД (в underscore)
-     * @param array|null  $substitution
-     * @param int|null    $offset
-     * @param int|null    $limit
-     * @param array       $displayedFields - список полей, которые следует отображать (в camelCase)
+     * @param View             $view
+     * @param string           $model
+     * @param array            $options
+     * @param QueryConfig|null $queryConfig
+     * @param array            $displayedFields - список полей, которые следует отображать (в camelCase)
      */
     public function ListViewAction(
         View $view,
         $model,
         ?array $options = array(),
-        ?string $condition = null,
-        ?array $requiredFields = null,
-        ?array $substitution = null,
-        ?int $offset = null,
-        ?int $limit = null,
+        ?QueryConfig $queryConfig = null,
         ?array $displayedFields = null
     ) {
         $view->listItemOptions = $options ?? array();
-        $this->configureListView($view, $model, $condition, $requiredFields, $substitution, $offset, $limit, $displayedFields);
+        $this->configureListView($view, $model, $queryConfig, $displayedFields);
     }
 
     public static function editOption(array &$options, string $controller) {
@@ -56,19 +48,16 @@ trait ListView
     public function configureListView(
         View $view,
         $model,
-        ?string $condition = null,
-        ?array $requiredFields = null,
-        ?array $substitution = null,
-        ?int $offset = null,
-        ?int $limit = null,
+        ?QueryConfig $queryConfig = null,
         ?array $displayedFields = array()
     ) {
-        if (is_array($requiredFields)) {
-            $requiredFields = array_map(
+        $queryConfig = $queryConfig ?? new QueryConfig();
+        if (is_array($queryConfig->RequiredFields)) {
+            $queryConfig->RequiredFields = array_map(
                 function($fieldName){
                     return DataBase::camelCaseToUnderscore($fieldName);
                 },
-                $requiredFields
+                $queryConfig->RequiredFields
             );
         }
         $modelConfig = $model::getConfigForListView();
@@ -92,11 +81,12 @@ trait ListView
             $modelConfig = $model::Sort($modelConfig);
         }
         $view->modelConfig = $modelConfig;
+
         $rows = array_map(
             function($row){
                 return array_keys_CamelCase($row);
             },
-            $model::getRows(null, $condition, $requiredFields, $substitution, $offset, $limit, 2)
+            $model::getRows(null, $queryConfig, 2)
         );
         $view->listItems = $rows;
     }
@@ -104,11 +94,7 @@ trait ListView
     public function DictViewAction(
         View $view,
         $model,
-        ?string $condition = null,
-        ?array $requiredFields = null,
-        ?array $substitution = null,
-        ?int $offset = null,
-        ?int $limit = null,
+        ?QueryConfig $queryConfig = null,
         ?array $displayedFields = array()
     ){
         $listItemOptions = [];
@@ -131,7 +117,7 @@ trait ListView
         $view->listItemOptions = $listItemOptions;
         $view->setHeaderTemplate(null);
         $view->setFooterTemplate(null);
-        $this->configureListView($view, $model, $condition, $requiredFields, $substitution, $offset, $limit, $displayedFields);
+        $this->configureListView($view, $model, $queryConfig, $displayedFields);
     }
 }
 

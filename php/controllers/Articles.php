@@ -10,14 +10,13 @@ namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
-use Astkon\ErrorCode;
 use function Astkon\Lib\array_keys_CamelCase;
 use Astkon\linq;
 use Astkon\Model\Article;
 use Astkon\Model\ArticleBalance;
 use Astkon\Model\ArticleCategory;
 use Astkon\Model\Measure;
-use Astkon\Model\OperationType;
+use Astkon\QueryConfig;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
@@ -176,23 +175,24 @@ class ArticlesController extends Controller
         $view = new View();
         $options = array();
         static::editOption($options, __CLASS__);
+
+        $queryConfig = new QueryConfig();
+        $queryConfig->RequiredFields = array_merge(
+            Article::ModelPublicProperties(),
+            array(
+                'MeasureName',
+                'CategoryName',
+                'IsSaleable',
+                'IsWriteoff'
+            )
+        );
+
+
         $this->ListViewAction(
             $view,
             Article::class,
             $options,
-            null,
-            array_merge(
-                Article::ModelPublicProperties(),
-                array(
-                    'MeasureName',
-                    'CategoryName',
-                    'IsSaleable',
-                    'IsWriteoff'
-                )
-            ),
-            null,
-            null,
-            null,
+            $queryConfig,
             array(
                 'IdArticle',
                 'CategoryName',
@@ -210,8 +210,11 @@ class ArticlesController extends Controller
         $substitution = null;
 //        $pageId = isset($context['id']) ? intval($context['id']) : 0;
 //        $pageSize = 5;
+        $queryConfig = new QueryConfig();
+        $queryConfig->Condition = $condition;
+        $queryConfig->Substitution = $substitution;
 
-        $this->DictViewAction($view, Article::class, $condition, null, $substitution);
+        $this->DictViewAction($view, Article::class, $queryConfig);
         $view->generate();
     }
 
@@ -225,15 +228,19 @@ class ArticlesController extends Controller
         }
         else {
             $dataTable = $model::DataTable;
+
+            $queryConfig = new QueryConfig(
+                $model::PrimaryColumnKey . ' = :' . $model::PrimaryColumnKey,
+                null,
+                array(
+                    $model::PrimaryColumnKey => $context['id']
+                )
+            );
+
             $entity = array_keys_CamelCase(
                 (new DataBase())->
                 $dataTable->
-                getFirstRow(
-                    $model::PrimaryColumnKey . ' = :' . $model::PrimaryColumnKey,
-                    null, array(
-                        $model::PrimaryColumnKey => $context['id']
-                    )
-                )
+                getFirstRow($queryConfig)
             );
         }
         if (CURRENT_USER['IsAdmin']) {

@@ -1,4 +1,3 @@
-
 <div class="row mx-0">
     <?php
 
@@ -11,8 +10,6 @@
     ?>
     <div class="col-md text-center">
         <div class="container-fluid">
-
-
             <?php
             $operationTypes = (new linq((new DataBase())->operation_type->getRows()))
                 ->toAssoc(
@@ -51,7 +48,6 @@
 
             TileMenu($menu, 4, 2);
             ?>
-
         </div>
     </div>
 </div>

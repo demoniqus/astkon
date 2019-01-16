@@ -12,6 +12,7 @@ use Astkon\Controller\Controller;
 use Astkon\DataBase;
 use function Astkon\Lib\array_keys_CamelCase;
 use Astkon\Model\Measure;
+use Astkon\QueryConfig;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
@@ -53,10 +54,6 @@ class MeasuresController extends Controller
             $view,
             Measure::class,
             null,
-            null,
-            null,
-            null,
-            null,
             array(
 //                'IdMeasure',
                 'MeasureName'
@@ -79,9 +76,12 @@ class MeasuresController extends Controller
                 (new DataBase())->
                 $dataTable->
                 getFirstRow(
-                    $model::PrimaryColumnKey . ' = :' . $model::PrimaryColumnKey,
-                    null, array(
-                        $model::PrimaryColumnKey => $context['id']
+                    new QueryConfig(
+                        $model::PrimaryColumnKey . ' = :' . $model::PrimaryColumnKey,
+                        null,
+                        array(
+                            $model::PrimaryColumnKey => $context['id'],
+                        )
                     )
                 )
             );

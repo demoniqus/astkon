@@ -12,6 +12,7 @@ use Astkon\Controller\Controller;
 use Astkon\DataBase;
 use function Astkon\Lib\array_keys_CamelCase;
 use Astkon\Model\UserGroup;
+use Astkon\QueryConfig;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
@@ -51,10 +52,6 @@ class UserGroupsController extends Controller
             $view,
             UserGroup::class,
             null,
-            null,
-            null,
-            null,
-            null,
             array(
                 'UserGroupName',
                 'comment',
@@ -81,9 +78,12 @@ class UserGroupsController extends Controller
                 (new DataBase())->
                 $dataTable->
                 getFirstRow(
-                    $model::PrimaryColumnKey . ' = :' . $model::PrimaryColumnKey,
-                    null, array(
-                        $model::PrimaryColumnKey => $context['id']
+                    new QueryConfig(
+                        $model::PrimaryColumnKey . ' = :' . $model::PrimaryColumnKey,
+                        null,
+                        array(
+                            $model::PrimaryColumnKey => $context['id'],
+                        )
                     )
                 )
             );

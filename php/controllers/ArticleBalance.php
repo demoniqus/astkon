@@ -21,6 +21,7 @@ use Astkon\Model\OperationState;
 use Astkon\Model\OperationType;
 use Astkon\Model\User;
 use Astkon\Model\UserGroup;
+use Astkon\QueryConfig;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\View\View;
@@ -54,15 +55,16 @@ class ArticleBalanceController extends Controller
 
         $articleBalance = ArticleBalance::getFirstRow(
             null,
-            UserGroup::PrimaryColumnKey . ' = :' . UserGroup::PrimaryColumnKey .
-                ' AND ' . ArticleBalance::PrimaryColumnKey . ' = :' . ArticleBalance::PrimaryColumnKey
-            ,
-            array(Article::PrimaryColumnKey),
-            array(
-                UserGroup::PrimaryColumnKey      => CURRENT_USER[UserGroup::PrimaryColumnName],
-                ArticleBalance::PrimaryColumnKey => intval($context['id']),
-            ),
-            null
+            new QueryConfig(
+                UserGroup::PrimaryColumnKey . ' = :' . UserGroup::PrimaryColumnKey .
+                    ' AND ' . ArticleBalance::PrimaryColumnKey . ' = :' . ArticleBalance::PrimaryColumnKey
+                ,
+                array(Article::PrimaryColumnKey),
+                array(
+                    UserGroup::PrimaryColumnKey      => CURRENT_USER[UserGroup::PrimaryColumnName],
+                    ArticleBalance::PrimaryColumnKey => intval($context['id']),
+                )
+            )
         );
         if (!$articleBalance) {
             $view->error(ErrorCode::NOT_FOUND);
@@ -71,8 +73,10 @@ class ArticleBalanceController extends Controller
 
         $opStateNew = OperationState::getFirstRow(
             null,
-            '`state_name` = \'new\'',
-            array(OperationState::PrimaryColumnKey)
+            new QueryConfig(
+                '`state_name` = \'new\'',
+                array(OperationState::PrimaryColumnKey)
+            )
         );
 
         $targetModelName = strtolower($targetModelName);
@@ -80,22 +84,23 @@ class ArticleBalanceController extends Controller
             OperationState::PrimaryColumnKey => $opStateNew[OperationState::PrimaryColumnKey],
         );
 
+        $queryConfig = new QueryConfig();
+        $queryConfig->RequiredFields = array(OperationType::PrimaryColumnKey);
+
         switch ($targetModelName) {
             case strtolower(User::Name()):
                 $view->linkedDataCaprionFieldName = 'user_name';
-                $substitution[OperationType::PrimaryColumnKey] = OperationType::getFirstRow(
-                    null,
-                    '`operation_name` = \'Reserving\'',
-                    array(OperationType::PrimaryColumnKey)
-                )[OperationType::PrimaryColumnKey];
+
+                $queryConfig->Condition = '`operation_name` = \'Reserving\'';
+
+                $substitution[OperationType::PrimaryColumnKey] = OperationType::getFirstRow(null, $queryConfig)[OperationType::PrimaryColumnKey];
                 break;
             case strtolower(BuildObject::Name()):
                 $view->linkedDataCaprionFieldName = 'build_object_name';
-                $substitution[OperationType::PrimaryColumnKey] = OperationType::getFirstRow(
-                    null,
-                    '`operation_name` = \'Sale\'',
-                    array(OperationType::PrimaryColumnKey)
-                )[OperationType::PrimaryColumnKey];
+
+                $queryConfig->Condition = '`operation_name` = \'Sale\'';
+
+                $substitution[OperationType::PrimaryColumnKey] = OperationType::getFirstRow(null, $queryConfig)[OperationType::PrimaryColumnKey];
                 break;
             default:
                 $view->error(ErrorCode::FORBIDDEN);
@@ -105,22 +110,24 @@ class ArticleBalanceController extends Controller
 
         $rows = OperationItem::getRows(
             null,
-            implode(
-                ' AND ',
+            new QueryConfig(
+                implode(
+                    ' AND ',
+                    array(
+                        '`' . Operation::DataTable . '`.`' . OperationState::PrimaryColumnKey . '` = :' . OperationState::PrimaryColumnKey,
+                        '`' . Operation::DataTable . '`.`' . OperationType::PrimaryColumnKey . '` = :' . OperationType::PrimaryColumnKey,
+                    )
+                ),
                 array(
-                    '`' . Operation::DataTable . '`.`' . OperationState::PrimaryColumnKey . '` = :' . OperationState::PrimaryColumnKey,
-                    '`' . Operation::DataTable . '`.`' . OperationType::PrimaryColumnKey . '` = :' . OperationType::PrimaryColumnKey,
-                )
+                    'operation_count',
+                    'measure_name',
+                    'linked_data',
+                    Operation::PrimaryColumnKey,
+                ),
+                $substitution,
+                null,
+                null
             ),
-            array(
-                'operation_count',
-                'measure_name',
-                'linked_data',
-                Operation::PrimaryColumnKey,
-            ),
-            $substitution,
-            null,
-            null,
             1
         );
 
@@ -167,7 +174,6 @@ class ArticleBalanceController extends Controller
 
 
     public function ArticleBalanceListAction($context) {
-
         $view = new View();
         $options = array(
             array(
@@ -183,15 +189,16 @@ class ArticleBalanceController extends Controller
                 'title' => 'Остатки по объектам'
             ),
         );
+
+        $queryConfig = new QueryConfig();
+        $queryConfig->Condition ='article_balance.id_user_group = :id_user_group';
+        $queryConfig->Substitution = array('id_user_group' => CURRENT_USER['IdUserGroup']);
+
         $this->ListViewAction(
             $view,
             ArticleBalance::class,
             $options,
-            'article_balance.id_user_group = :id_user_group',
-            null,
-            array('id_user_group' => CURRENT_USER['IdUserGroup']),
-            null,
-            null,
+            $queryConfig,
             array(
                 'CategoryName',
                 'ArticleName',
@@ -202,60 +209,34 @@ class ArticleBalanceController extends Controller
             )
         );
         $view->generate();
-
-
-//        if (isset($_GET['operation'])) {
-//            $dataTableName = OperationType::DataTable;
-//            $operationType = (new DataBase())->$dataTableName->getFirstRow('operation_name = :operation_name', null, array('operation_name' => $_GET['operation']));
-//            if (!$operationType) {
-//                $view->trace = 'Запрошена недопустимая операция';
-//                $view->error(ErrorCode::PROGRAMMER_ERROR);
-//                die();
-//            }
-//            switch ($operationType['operation_name']) {
-//                case 'Income':
-////                    Обозначение архивности нужно для того, чтобы не захламлять справочник артикулов, когда
-////                    остатки по нему нулевые и поступлений не ожидается, по крайней мере некоторое время
-//                    $condition = 'is_archive <> 1';
-//                    break;
-//                default:
-//                    $condition = 'balance > 0 && is_archive <> 1';
-//                    break;
-//            }
-//
-//        }
-
     }
 
     public function ArticleBalanceDictAction($context) {
         $view = new View();
-        $operationType = OperationType::getFirstRow(
-            null,
-            '`operation_name` = :operation_name',
-            null,
-            array('operation_name' => $_GET['operation'])
-        );
+        $queryConfig = new QueryConfig();
+        $queryConfig->Condition = '`operation_name` = :operation_name';
+        $queryConfig->Substitution = array('operation_name' => $_GET['operation']);
+
+        $operationType = OperationType::getFirstRow(null, $queryConfig);
         if (!$operationType) {
             $view->error(ErrorCode::NOT_FOUND);
             die();
         }
+
+        $queryConfig->Reset();
         $changeBalanceMethod = ChangeBalanceMethod::GetByPrimaryKey($operationType[ChangeBalanceMethod::PrimaryColumnKey]);
         if ($changeBalanceMethod['method_name'] === 'in_fixation') {
-
+            $queryConfig->RequiredFields = array_merge(
+                Article::ModelPublicProperties(),
+                array(
+                    'MeasureName',
+                    'CategoryName'
+                )
+            );
             $this->DictViewAction(
                 $view,
                 Article::class,
-                null,
-                array_merge(
-                    Article::ModelPublicProperties(),
-                    array(
-                        'MeasureName',
-                        'CategoryName'
-                    )
-                ),
-                null,
-                null,
-                null,
+                $queryConfig,
                 array(
                     'CategoryName',
                     'ArticleName',
@@ -287,17 +268,18 @@ class ArticleBalanceController extends Controller
                     $conditions[] = 'is_writeoff = 1';
                     break;
             }
+
+            $queryConfig->Condition = implode(' AND ', $conditions);
+            $queryConfig->RequiredFields = array_merge(
+                Article::ModelPublicProperties(),
+                $requiredFields
+            );
+            $queryConfig->Substitution = $substitution;
+
             $this->DictViewAction(
                 $view,
                 ArticleBalance::class,
-                implode(' AND ', $conditions),
-                array_merge(
-                    Article::ModelPublicProperties(),
-                    $requiredFields
-                ),
-                $substitution,
-                null,
-                null,
+                $queryConfig,
                 array(
                     'CategoryName',
                     'ArticleName',

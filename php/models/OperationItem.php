@@ -7,6 +7,7 @@ use  Astkon\DataBase;
 
 use Astkon\linq;
 use  Astkon\Model\Partial\OperationItemPartial;
+use Astkon\QueryConfig;
 
 /**
 * В этом классе реализуются все особенности поведения и строения соответствующего типа
@@ -28,8 +29,10 @@ class OperationItem extends OperationItemPartial {
 
         $listArticleBalance = ArticleBalance::getRows(
             $db,
-            '`' . UserGroup::PrimaryColumnKey . '` = ' . CURRENT_USER[UserGroup::PrimaryColumnName] . ' AND ' .
-            '`' . Article::PrimaryColumnKey . '` in (' . implode(',', array_keys($dictOperationItems)) . ')'
+            new QueryConfig(
+                '`' . UserGroup::PrimaryColumnKey . '` = ' . CURRENT_USER[UserGroup::PrimaryColumnName] . ' AND ' .
+                '`' . Article::PrimaryColumnKey . '` in (' . implode(',', array_keys($dictOperationItems)) . ')'
+            )
         );
 
         $dictArticleBalance = (new linq($listArticleBalance))
@@ -70,8 +73,10 @@ class OperationItem extends OperationItemPartial {
 
         $listArticleBalance = ArticleBalance::getRows(
             $db,
-            '`' . UserGroup::PrimaryColumnKey . '` = ' . CURRENT_USER[UserGroup::PrimaryColumnName] . ' AND ' .
-            '`' . Article::PrimaryColumnKey . '` in (' . implode(',', array_keys($dictOperationItems)) . ')'
+            new QueryConfig(
+                '`' . UserGroup::PrimaryColumnKey . '` = ' . CURRENT_USER[UserGroup::PrimaryColumnName] . ' AND ' .
+                '`' . Article::PrimaryColumnKey . '` in (' . implode(',', array_keys($dictOperationItems)) . ')'
+            )
         );
 
         $dictArticleBalance = (new linq($listArticleBalance))
@@ -113,28 +118,24 @@ class OperationItem extends OperationItemPartial {
 	        $listId = array($listId);
         }
 	    $db = $db ?? new DataBase();
-	    $operationItems = static::getRows(
-	        $db,
-            '`' . static::PrimaryColumnKey . '` in (' . implode(',', $listId) . ')',
-            null,
-            null,
-            null,
-            count($listId)
-        );
-	    $listArticleBalance = ArticleBalance::getRows(
-            $db,
-            '`' . Article::PrimaryColumnKey . '` in (' . implode(
+
+	    $queryConfig = new QueryConfig();
+	    $queryConfig->Condition = '`' . static::PrimaryColumnKey . '` in (' . implode(',', $listId) . ')';
+	    $queryConfig->Limit = count($listId);
+
+	    $operationItems = static::getRows($db, $queryConfig);
+
+	    $queryConfig->Reset();
+        $queryConfig->Condition = '`' . Article::PrimaryColumnKey . '` in (' . implode(
                 ',',
                 array_map(
                     function($operationItem){ return $operationItem[Article::PrimaryColumnKey];},
                     $operationItems
                 )
-            ) . ') AND `' . UserGroup::PrimaryColumnKey . '` = ' . CURRENT_USER[UserGroup::PrimaryColumnName],
-            null,
-            null,
-            null,
-            count($operationItems)
-        );
+            ) . ') AND `' . UserGroup::PrimaryColumnKey . '` = ' . CURRENT_USER[UserGroup::PrimaryColumnName];
+        $queryConfig->Limit = count($operationItems);
+
+	    $listArticleBalance = ArticleBalance::getRows($db, $queryConfig);
 	    $dictArticleBalance = (new linq($listArticleBalance))
             ->toAssoc(
                 function($articleBalance){ return $articleBalance[Article::PrimaryColumnKey];}
@@ -169,17 +170,14 @@ class OperationItem extends OperationItemPartial {
             )
             ->getData();
 
-        $listArticleBalance = ArticleBalance::getRows(
-            $db,
-            '`' . Article::PrimaryColumnKey . '` in (' . implode(
+	    $queryConfig = new QueryConfig();
+        $queryConfig->Condition = '`' . Article::PrimaryColumnKey . '` in (' . implode(
                 ',',
                 array_keys($articlesDict)
-            ) . ') AND `' . UserGroup::PrimaryColumnKey . '` = ' . CURRENT_USER[UserGroup::PrimaryColumnName],
-            null,
-            null,
-            null,
-            count($articlesDict)
-        );
+            ) . ') AND `' . UserGroup::PrimaryColumnKey . '` = ' . CURRENT_USER[UserGroup::PrimaryColumnName];
+        $queryConfig->Limit = count($articlesDict);
+
+        $listArticleBalance = ArticleBalance::getRows($db, $queryConfig);
 
         $dictArticleBalance = (new linq($listArticleBalance))
             ->toAssoc(
@@ -193,7 +191,7 @@ class OperationItem extends OperationItemPartial {
             ArticleBalance::Update(
                 array(
                     ArticleBalance::PrimaryColumnKey => $articleBalance[ArticleBalance::PrimaryColumnKey],
-                    /*Ручная проверка показала, что PHP адекватно складывает числа, т.е. 0,7+0,1 =0,8, а не 0,7999999*/
+                    /*Ручная проверка показала, что PHP адекватно складывает числа, т.е. 0,7 + 0,1 = 0,8, а не 0,7999999*/
                     'balance' => $newBalance
                 ),
                 $db

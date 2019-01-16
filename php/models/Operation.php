@@ -6,6 +6,7 @@ require_once getcwd() . '//php/partialModels/OperationPartial.php';
 use  Astkon\DataBase;
 
 use  Astkon\Model\Partial\OperationPartial;
+use Astkon\QueryConfig;
 
 /**
 * В этом классе реализуются все особенности поведения и строения соответствующего типа
@@ -18,10 +19,10 @@ class Operation extends OperationPartial {
 	}
 
     public static function getItems($operation, ?array $requiredFields = null, ?Database $db = null) {
-        return OperationItem::getRows(
-            $db,
+	    $queryConfig = new QueryConfig(
             '`' . static::PrimaryColumnKey . '` = ' . (is_array($operation) ? $operation[Operation::PrimaryColumnKey] : $operation),
             $requiredFields
         );
+        return OperationItem::getRows($db, $queryConfig);
     }
 }
