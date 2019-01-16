@@ -667,6 +667,17 @@ class DataBase {
         }
         $query .= ' ';
 
+        if (!is_null($orderBy)) {
+            $orderBy = array_map(
+                function($order){
+                    $order = explode(' ', $order, 2);
+                    $order[0] = self::camelCaseToUnderscore($order[0]);
+                    return implode(' ', $order);
+                },
+                $orderBy
+            );
+        }
+
         /*Запросим строки и сразу произведем типизацию*/
         return $query . ($condition ? 'where ' . $condition : '') . ' ' .
             (!is_null($orderBy) ? 'order by ' . implode(', ', $orderBy) : '') . ' ' .
