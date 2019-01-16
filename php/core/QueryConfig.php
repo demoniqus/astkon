@@ -39,7 +39,7 @@ class QueryConfig
     public $Limit;
 
     /**
-     * Массив строк вида array('field_name DESC', 'field_name2 ASC')
+     * Массив строк вида array('field_name DESC', 'fieldName2 ASC')
      * @var ?array
      */
     public $OrderBy;
