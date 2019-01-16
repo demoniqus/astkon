@@ -7,12 +7,15 @@ use  Astkon\DataBase;
 
 use  Astkon\Model\Partial\OperationPartial;
 use Astkon\QueryConfig;
+use Astkon\Traits\FullModelMethods;
 
 /**
 * В этом классе реализуются все особенности поведения и строения соответствующего типа
 */
 
 class Operation extends OperationPartial {
+
+    use FullModelMethods;
 
 	public function __construct (array $fields = array()) {
 		parent::__construct($fields, DataBase::camelCaseToUnderscore(__CLASS__));

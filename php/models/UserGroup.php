@@ -4,6 +4,7 @@ namespace Astkon\Model;
 use  Astkon\GlobalConst;
 use  Astkon\DataBase;
 use  Astkon\Model\Partial\UserGroupPartial;
+use Astkon\Traits\FullModelMethods;
 
 require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::PartialModelsDirectory . DIRECTORY_SEPARATOR . 'UserGroupPartial.php';
 
@@ -12,6 +13,8 @@ require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::PartialModelsDirector
 */
 
 class UserGroup extends UserGroupPartial {
+
+    use FullModelMethods;
 
 	public function __construct (array $fields = array()) {
 		parent::__construct($fields, DataBase::camelCaseToUnderscore(__CLASS__));

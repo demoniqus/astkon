@@ -46,19 +46,7 @@ abstract class Model  {
      * @param string $fieldName
      * @return string
      */
-    public static function getFieldAlias(string $fieldName) {
-        if (!self::checkIsClassOfModel()) {
-            $view = new View();
-            $view->trace = nl2br(
-                'Файл ' . __FILE__ . PHP_EOL .
-                'Класс ' . __CLASS__ . PHP_EOL .
-                'Метод ' . __METHOD__ . PHP_EOL .
-                'Строка ' . __LINE__ . PHP_EOL .
-                'Метод может быть вызван только из класса модели, а не ее родительских классов'
-            );
-            $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
-        }
+    protected static function getFieldAlias(string $fieldName) {
         $editedProperties = self::getModelPublicProperties();
 
         $editedProperties = array_filter($editedProperties, function(ReflectionProperty $property) use ($fieldName) {
@@ -128,19 +116,7 @@ abstract class Model  {
      * @param array $item
      * @param array $options
      */
-    public static function EditForm($item = array(), $options = array()) {
-        if (!self::checkIsClassOfModel()) {
-            $view = new View();
-            $view->trace = nl2br(
-                'Файл ' . __FILE__ . PHP_EOL .
-                'Класс ' . __CLASS__ . PHP_EOL .
-                'Метод ' . __METHOD__ . PHP_EOL .
-                'Строка ' . __LINE__ . PHP_EOL .
-                'Метод может быть вызван только из класса модели, а не ее родительских классов'
-            );
-            $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
-        }
+    protected static function EditForm($item = array(), $options = array()) {
 
         $editedProperties = self::getModelPublicProperties();
 
@@ -308,19 +284,7 @@ abstract class Model  {
      * Метод возвращает список полей, значение которых будет выводиться вместо справочного поля
      * @return array
      */
-    public static function ReferenceDisplayedKeys() : array {
-        if (!self::checkIsClassOfModel()) {
-            $view = new View();
-            $view->trace = nl2br(
-                'Файл ' . __FILE__ . PHP_EOL .
-                'Класс ' . __CLASS__ . PHP_EOL .
-                'Метод ' . __METHOD__ . PHP_EOL .
-                'Строка ' . __LINE__ . PHP_EOL .
-                'Метод может быть вызван только из класса модели, а не ее родительских классов'
-            );
-            $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
-        }
+    protected static function ReferenceDisplayedKeys() : array {
         return static::getReferenceDisplayedKeys();
     }
 
@@ -329,6 +293,8 @@ abstract class Model  {
      * @param array $listItems - ключи в under_score стиле
      */
     public static function decodeForeignKeys(array &$listItems) {
+        /*Функционал реализуется через join'ы и данная функция пока применения не имеет*/
+        return;
         $fieldsInfo = array_filter(static::$fieldsInfo, function($fieldInfo){ return isset($fieldInfo['foreign_key']);});
         if (count($listItems) && count($fieldsInfo)) {
             $db = new DataBase();
@@ -535,20 +501,7 @@ abstract class Model  {
      * @param array $values
      * @return array
      */
-    public static function SaveInstance(array $values) {
-        if (!self::checkIsClassOfModel()) {
-            $view = new View();
-            $view->trace = nl2br(
-                'Файл ' . __FILE__ . PHP_EOL .
-                'Класс ' . __CLASS__ . PHP_EOL .
-                'Метод ' . __METHOD__ . PHP_EOL .
-                'Строка ' . __LINE__ . PHP_EOL .
-                'Метод может быть вызван только из класса модели, а не ее родительских классов'
-            );
-            $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
-        }
-
+    protected static function SaveInstance(array $values) {
         $PKName = static::PrimaryColumnName;
         if (!array_key_exists($PKName, $values)) {
             $view = new View();
@@ -620,23 +573,11 @@ abstract class Model  {
         }
     }
 
-    public static function getRows(
+    protected static function getRows(
         $db = null,
         ?QueryConfig $queryConfig = null,
         int $deepDecodeForeignKeys = 0
     ) : array {
-        if (!self::checkIsClassOfModel()) {
-            $view = new View();
-            $view->trace = nl2br(
-                'Файл ' . __FILE__ . PHP_EOL .
-                'Класс ' . __CLASS__ . PHP_EOL .
-                'Метод ' . __METHOD__ . PHP_EOL .
-                'Строка ' . __LINE__ . PHP_EOL .
-                'Метод может быть вызван только из класса модели, а не ее родительских классов'
-            );
-            $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
-        }
         $db = $db ?? (new DataBase());
         $model = static::DataTable;
         $db->$model;
@@ -685,7 +626,7 @@ abstract class Model  {
         return $rows;
     }
 
-    public static function getFirstRow(
+    protected static function getFirstRow(
         $db = null,
         ?QueryConfig $queryConfig = null,
         int $deepDecodeForeignKeys = 0
@@ -803,7 +744,7 @@ abstract class Model  {
      * @param null $excludeFields - список полей в CamelCase, которые не нужно выводить на страницу
      * @return array
      */
-    public static function getConfigForListView($excludeFields = null) {
+    protected static function getConfigForListView($excludeFields = null) {
         $excludeFields = is_array($excludeFields) ? array_flip($excludeFields) : array();
 
         $config = array_map(
@@ -909,19 +850,7 @@ abstract class Model  {
      * @param array|null $substitution - возможные значения для подстановки в пустую модель в under_score стиле
      * @return array
      */
-    public static function EmptyEntity(?array $substitution) : array {
-        if (!self::checkIsClassOfModel()) {
-            $view = new View();
-            $view->trace = nl2br(
-                'Файл ' . __FILE__ . PHP_EOL .
-                'Класс ' . __CLASS__ . PHP_EOL .
-                'Метод ' . __METHOD__ . PHP_EOL .
-                'Строка ' . __LINE__ . PHP_EOL .
-                'Метод может быть вызван только из класса модели, а не ее родительских классов'
-            );
-            $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
-        }
+    protected static function EmptyEntity(?array $substitution) : array {
         $entity = array();
         foreach (static::$fieldsInfo as $fieldInfo) {
             $entity[$fieldInfo['column_name']] = null;
@@ -964,19 +893,7 @@ abstract class Model  {
      * @param bool|null     $return
      * @return array|bool|null
      */
-    public static function Create(array $substitution, ?DataBase $db, ?bool $return = false) {
-        if (!self::checkIsClassOfModel()) {
-            $view = new View();
-            $view->trace = nl2br(
-                'Файл ' . __FILE__ . PHP_EOL .
-                'Класс ' . __CLASS__ . PHP_EOL .
-                'Метод ' . __METHOD__ . PHP_EOL .
-                'Строка ' . __LINE__ . PHP_EOL .
-                'Метод может быть вызван только из класса модели, а не ее родительских классов'
-            );
-            $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
-        }
+    protected static function Create(array $substitution, ?DataBase $db, ?bool $return = false) {
         $db = $db ?? new DataBase();
         $query = 'INSERT INTO `' . static::DataTable . '` SET ';
         $substitution = array_keys_underscore($substitution);
@@ -1001,37 +918,13 @@ abstract class Model  {
         return true;
     }
 
-    public static function GetByPrimaryKey(int $pk, ?DataBase $db = null) {
+    protected static function GetByPrimaryKey(int $pk, ?DataBase $db = null) {
         $db = $db ?? new DataBase();
-        if (!self::checkIsClassOfModel()) {
-            $view = new View();
-            $view->trace = nl2br(
-                'Файл ' . __FILE__ . PHP_EOL .
-                'Класс ' . __CLASS__ . PHP_EOL .
-                'Метод ' . __METHOD__ . PHP_EOL .
-                'Строка ' . __LINE__ . PHP_EOL .
-                'Метод может быть вызван только из класса модели, а не ее родительских классов'
-            );
-            $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
-        }
         $model = static::DataTable;
         return $db->$model->getFirstRow(new QueryConfig('`' . static::PrimaryColumnKey . '` = ' . $pk));
     }
 
-    public static function Update(array $substitution, ?DataBase $db = null, ?bool $return = false) {
-        if (!self::checkIsClassOfModel()) {
-            $view = new View();
-            $view->trace = nl2br(
-                'Файл ' . __FILE__ . PHP_EOL .
-                'Класс ' . __CLASS__ . PHP_EOL .
-                'Метод ' . __METHOD__ . PHP_EOL .
-                'Строка ' . __LINE__ . PHP_EOL .
-                'Метод может быть вызван только из класса модели, а не ее родительских классов'
-            );
-            $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
-        }
+    protected static function Update(array $substitution, ?DataBase $db = null, ?bool $return = false) {
         $db = $db ?? new DataBase();
         $query = 'UPDATE `' . static::DataTable . '` SET ';
         $substitution = array_keys_underscore($substitution);
@@ -1080,7 +973,7 @@ abstract class Model  {
         return true;
     }
 
-    public static function Delete($listId, ?DataBase $db) {
+    protected static function Delete($listId, ?DataBase $db) {
         $db = $db ?? new DataBase();
         if (is_numeric($listId)) {
             $db->query('delete from `' . static::DataTable .
@@ -1095,261 +988,6 @@ abstract class Model  {
                 ') limit ' . count($listId)
             );
         }
-
     }
-
-//    protected $fields = array();
-//    /**
-//     * @var string
-//     */
-//    protected $entityName = null;
-//    /**
-//     * @var \PDOStatement
-//     */
-//    protected $db = null;
-//    protected $extLinks = null;
-//
-//    public static $regexp = array(
-//        'safeSQLValue' => '/[\'\\`*\\/\\\\]+/i'
-//    );
-//    /**
-//     * Список полей, значения которых в БД хранятся в виде base64-кодированной строки
-//     * @var array
-//     */
-//    protected $base64Keys = array();
-//
-//    /*
-//     * Якоря - если существует хоть одна внешняя связь с объектом типа, указанного
-//     * в данном массиве, то текущий объект не может быть удален.
-//     * Типы указываются в нижнем регистре.
-//     * Это используется для того, чтобы сохранять целостность данных: например,
-//     * если с лотом связаны финансовые данные, то такой лот нельзя удалять из БД.
-//     */
-//    protected $anchors = array(
-//        /*'table_name' => 'table_name'*/
-//    );
-//
-//    /**
-//     * @param array $fields
-//     * @param string $entityName
-//     * @return StandPrototype|mixed
-//     */
-//    public static function CreateInstance(array $fields, string $entityName) {
-//        if (class_exists($entityName)) {
-//            return new $entityName($fields, $entityName);
-//        }
-//        else {
-//            return new StandPrototype($fields, $entityName);
-//        }
-//
-//    }
-//
-//    protected static function clearValueForSQL($val) {
-//        return preg_replace(self::$regexp['safeSQLValue'], '', $val);
-//    }
-//
-//    /**
-//     * StandPrototype constructor.
-//     * @param array $fields - массив полей нового объекта
-//     * @param string $entityName - наименование объекта (наименование таблицы БД, реализующей объект). Регистр имеет значение
-//     */
-//    public function __construct(/*array $fields, string $entityName*/) {
-////        $this->fields = $fields;
-////        $this->entityName = $entityName;
-//    }
-//
-//    /**
-//     * Метод проверяет, нет ли связанных объектов, из-за которых удаление текущего объкта невозможно
-//     * @param \PDOStatement|null $db
-//     * @return bool
-//     */
-//    public function CanDelete(\PDOStatement $db = null) {
-//        /*
-//         * Чтобы не создавать множество новых экземпляров подключения к БД,
-//         * будем по возможности передавать одно подключение всем связанным объектам -
-//         * это поможет сэкономить время
-//         */
-//        $this->_setDBConnection($db);
-//        $_self = $this;
-//        /*Получим все внешние объекты, связанные с текущим, если данная операция еще не была произведена*/
-//        $this->extLinks === null && ($this->extLinks = $this->getExternalLinks($_self->db));
-//        return (new linq($this->extLinks))->first(function($extLink) use ( $_self) {
-//            return array_key_exists(strtolower($extLink->ObjType()), $_self->anchors) || $extLink->CanDelete($_self->db) === FALSE;
-//        }) !== null ? FALSE : TRUE;
-//    }
-//
-//    /**
-//     * @param null|\PDOStatement $db
-//     * @return bool
-//     */
-//    public function Delete(\PDOStatement $db = null) {
-//        /*
-//         * Чтобы не создавать множество новых экземпляров подключения к БД,
-//         * будем по возможности передавать одно подключение всем связанным объектам -
-//         * это поможет сэкономить время
-//         */
-//        $this->_setDBConnection($db);
-//        if ($this->CanDelete() !== false) {
-//            $entityName = $this->entityName;
-//            $this->db->$entityName->Delete($this->fields);
-//            $_self = $this;
-//            (new linq($this->extLinks))->for_each(function($extLink) use ($_self){
-//                $extLink->Delete($_self->db);
-//            });
-//            return true;
-//        }
-//        return false;
-//    }
-//
-//    /**
-//     * @param null|\PDOStatement $db
-//     */
-//    protected function _setDBConnection(\PDOStatement $db = null) {
-//        !$this->db && ($this->db = ($db ? $db : new DataBase(
-//            GlobalVars::$host,
-//            GlobalVars::$dbName,
-//            GlobalVars::$hostUser,
-//            GlobalVars::$hostPass
-//        )));
-//
-//    }
-//
-//    /**
-//     * @return bool
-//     */
-//    public function Insert() {
-//        $this->_setDBConnection();
-//
-//        if (($fields = $this->_beforeInsert($this->fields)) !== false) {
-//            $entName = $this->entityName;
-//            $this->fields = $this->_base64Decode($this->db->$entName->Insert($this->_base64Encode($fields)));
-//            return true;
-//        }
-//        return false;
-//
-//    }
-//
-//    /**
-//     * Метод позволяет в зависимости от конкретного типа
-//     * обработать поля или остановить дальнейшее выполнение
-//     * процедуры, если обнаружены существенные ошибки в данных
-//     * @param array $fields
-//     * @return mixed
-//     */
-//    protected function _beforeInsert(array $fields) {
-//        return $fields;
-//    }
-//
-//    /**
-//     * @return bool
-//     */
-//    public function Update() {
-//        $this->_setDBConnection();
-//        if (($fields = $this->_beforeUpdate($this->fields)) !== false) {
-//            $entName = $this->entityName;
-//            $this->fields = $this->_base64Decode($this->db->$entName->Update($this->_base64Encode($fields)));
-//            return true;
-//        }
-//        return false;
-//    }
-//
-//    /**
-//     * Метод позволяет в зависимости от конкретного типа
-//     * обработать поля или остановить дальнейшее выполнение
-//     * процедуры, если обнаружены существенные ошибки в данных
-//     * @param array $fields
-//     * @return mixed
-//     */
-//    protected function _beforeUpdate(array $fields) {
-//        return $fields;
-//    }
-//
-//    /**
-//     * @return string
-//     */
-//    public function ObjType () {
-//        return $this->entityName;
-//    }
-//
-//    /**
-//     * @return array
-//     */
-//    public function getFields() {
-//        return $this->fields;
-//    }
-//
-//    /**
-//     * @param null|\PDOStatement $db
-//     * @return array
-//     */
-//    public function getExternalLinks(\PDOStatement $db = null) {
-//        $_self = $this;
-//        $res = array();
-//        !$this->db && ($this->db = ($db ? $db : new DataBase(
-//            GlobalVars::$host,
-//            GlobalVars::$dbName,
-//            GlobalVars::$hostUser,
-//            GlobalVars::$hostPass
-//        )));
-//        $query = 'SELECT `REFERENCED_COLUMN_NAME`,`TABLE_NAME`,`COLUMN_NAME` FROM '
-//            . 'INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE `REFERENCED_TABLE_SCHEMA`=\'' . GlobalVars::$dbName . '\' '
-//            . 'and `REFERENCED_TABLE_NAME`=\'' . $this->entityName . '\'';
-//        (new linq($this->db->query($query)))
-//            ->where(function($row){ return $row !== null && count($row) > 0; })
-//            ->for_each(function($row) use ($_self, &$res){
-//                $extLinkType = $row['TABLE_NAME'];
-//                $key = $row['REFERENCED_COLUMN_NAME'];
-//                $extLinks = $_self->db->$extLinkType->getObjects('`' . $row['COLUMN_NAME'] . '`=' . $_self->$key);
-//                $i = 0;
-//                $c = count($extLinks);
-//                while($i < $c) {
-//                    $res[] = $extLinks[$i++];
-//                }
-//            });
-//        return $res;
-//    }
-//
-//    /**
-//     * @param array $fields
-//     * @return array
-//     */
-//    protected function _base64Encode (array $fields) {
-//        foreach ($this->base64Keys as $key) {
-//            if (array_key_exists($key, $fields)) {
-//                $fields[$key] && ($fields[$key] = base64_encode($fields[$key]));
-//            }
-//        }
-//        return $fields;
-//    }
-//
-//    /**
-//     * @param $fields
-//     * @return mixed
-//     */
-//    protected function _base64Decode ($fields) {
-//        foreach ($this->base64Keys as $key) {
-//            if (array_key_exists($key, $fields)) {
-//                $fields[$key] && ($fields[$key] = base64_decode($fields[$key]));
-//            }
-//        }
-//        return $fields;
-//    }
-//
-//    public function Base64EncodeFields() {
-//        $this->fields = $this->_base64Encode($this->fields);
-//    }
-//
-//    public function Base64DecodeFields() {
-//        $this->fields = $this->_base64Decode($this->fields);
-//    }
-//
-//    public function __get($name) {
-//        return array_key_exists($name, $this->fields) ? $this->fields[$name] : null;
-//    }
-//    public function __set($name, $value) {
-//        $this->fields[$name] = $value;
-//    }
-
-
 
 }
