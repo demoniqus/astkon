@@ -96,3 +96,9 @@ function array_keys_underscore($a) {
     }
     return $r;
 }
+
+function cleanedDump($value) {
+    ob_clean();
+    var_dump($value);
+    die();
+}
