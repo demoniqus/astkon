@@ -269,7 +269,7 @@ class OperationsController extends Controller
             /*Операцию Reserving нельзя зафиксировать - ее артикулы можно или списать, или израсходовать*/
             $options[] = array(
                 'action' => null,
-                'click' => 'if (confirm(\'Вы уверены, что хотите зафиксировать документ?\')) {window.location.href=\'/Operations/Fixation/:IdOperation\';}',
+                'click' => 'if (confirm(\'Вы уверены, что хотите зафиксировать документ?\')) {window.location.href=\'/Operations/Fixation/@IdOperation\';}',
                 'icon' => '/set_fixed_state.png',
                 'title' => 'Закрыть документ',
                 'condition' => function($operation) use ($fixedState){
@@ -279,7 +279,7 @@ class OperationsController extends Controller
         }
         $options[] = array(
             'action' => null,
-            'click' => 'if (confirm(\'Вы уверены, что хотите удалить документ?\')) {window.location.href=\'/Operations/Delete/:IdOperation\';}',
+            'click' => 'if (confirm(\'Вы уверены, что хотите удалить документ?\')) {window.location.href=\'/Operations/Delete/@IdOperation\';}',
             'icon' => '/trash-empty-icon.png',
             'title' => 'Удалить документ',
             'condition' => function($operation) use ($fixedState){

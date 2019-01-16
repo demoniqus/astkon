@@ -84,9 +84,8 @@
                                 onclick="<?php
                                 if (isset($option['click'])) {
                                     $matches = null;
-                                    preg_match_all('/:[A-Z]+/i', $option['click'], $matches);
 
-                                    if (is_array($matches)) {
+                                    if (preg_match_all('/@[A-Z]+/i', $option['click'], $matches)) {
                                         foreach ($matches as $match) {
                                             $replacement = $item[mb_substr($match[0], 1)];
                                             $option['click'] = str_replace($match[0], $replacement, $option['click']);
