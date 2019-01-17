@@ -9,26 +9,6 @@ session_start();
 
 require_once  '.' . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'main_require.php';
 
-//try {
-//    \Astkon\Model\Model::UpdateModelPhpCode();
-//}
-//catch (\Exception $exception) {
-//    $view = new View();
-//    $view->trace = array(
-//        'errorCode' => $exception->getCode(),
-//        'errorMessage' => $exception->getMessage(),
-//        'trace' => $exception->getTrace()
-//    );
-//
-//    $view->error(ErrorCode::PROGRAMMER_ERROR);
-//    die();
-//}
-
-//foreach (array_keys($_SESSION) as $key) {
-//    unset($_SESSION[$key]);
-//}
-//$user = null;
-//unset ($GLOBALS[$key]);
 if ((!isset($_SESSION[AuthController::CurrentUserKey]) || !$_SESSION[AuthController::CurrentUserKey])) {
     define('CURRENT_USER', null);
     $db = new DataBase();
@@ -88,6 +68,8 @@ else {
 
     $index = 2;
     $requestUri[$index] = $requestUri[$index] === '' ? null : $requestUri[$index];
+
+    define('REQUIRED_ID', $requestUri[$index]);
 
 //    $existsControllers = (new linq(get_declared_classes()))
 //        ->where(function($item){ return strpos($item, 'stkon')!== false;})
