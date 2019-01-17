@@ -17,12 +17,14 @@ use Astkon\Model\Model;
 use Astkon\Model\User;
 use Astkon\Model\UserGroup;
 use Astkon\QueryConfig;
+use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
 use Astkon\Traits\ReserveView;
 use Astkon\View\View;
 
 class UsersController extends Controller
 {
+    use EditAction;
     use ListView;
     use ReserveView;
     /**
@@ -113,7 +115,7 @@ class UsersController extends Controller
 
     public function EditAction($context) {
         $options = array();
-        $user = array();
+        $entity = array();
         if (!CURRENT_USER['IsAdmin']) {
             $view = new View();
             $view->error(ErrorCode::FORBIDDEN);
@@ -128,15 +130,25 @@ class UsersController extends Controller
         );
 
         if (array_key_exists('submit', $_POST)) {
+            $res = array();
             $inputValues = array_filter($_POST, function($v, $k){ return $k !== 'submit'; }, ARRAY_FILTER_USE_BOTH);
             if ($inputValues[User::PrimaryColumnName] == 0) {
                 if (!$inputValues['Password']) {
                     //Ошибка
+                    $res['@error'] = true;
+                    $res['errors'] = array(array(
+                        'expected_error_column_name' => 'Password',
+                        'err_code_explain' => 'Необходимо задать пароль',
+                    ));
                 }
                 if ($inputValues['Password'] !== $inputValues['PasswordConfirm']) {
                     //Ошибка
+                    $res['@error'] = true;
+                    $res['errors'] = array(array(
+                        'expected_error_column_name' => 'Password,PasswordConfirm',
+                        'err_code_explain' => 'Пароли не совпадают',
+                    ));
                 }
-
             }
             else {
                 /*
@@ -150,70 +162,29 @@ class UsersController extends Controller
                     unset ($inputValues['Password']);
                 }
             }
-            $res = User::SaveInstance($inputValues);
-            if (isset($res['@error'])) {
-                //Заполняем все значения обратно
-                $user = $inputValues;
-                //Выделяем поля, в которых возникла ошибка, либо выводим общее сообщение об ошибке, если не удалось определить конктретное поле
-                $options['validation'] = array(
-                    'state' => Model::ValidStateError,
-                    'message' => 'Ошибка при сохранении данных'
-                );
-                if (isset($res['expected_error_column_name'])) {
-                    $message = isset($res['err_code_explain']) ? $res['err_code_explain'] : 'Недопустимое значение';
-                    $options['validation']['fields'] =  array();
-                    $errorColumns = explode(',', $res['expected_error_column_name']);
-                    foreach ($errorColumns as $errorColumn) {
-                        $options['validation']['fields'][$errorColumn] = array(
-                            'state' => Model::ValidStateError,
-                            'message' => $message
-                        );
-                    }
-                    foreach (array_keys($user) as $fieldName) {
-                        if (!array_key_exists($fieldName, $options['validation']['fields'])) {
-                            $options['validation']['fields'][$fieldName] = array(
-                                'state' => Model::ValidStateOK
-                            );
-                        }
-                    }
-                }
+            if (isset ($res) && isset($res['@error'])) {
+                $entity = array_filter($_POST, function($v, $k){ return $k !== 'submit'; }, ARRAY_FILTER_USE_BOTH);
+                $this->processErrors($entity, $options, $res['errors']);
             }
-            else  {
-                if ($_POST[User::PrimaryColumnName] == 0) {
-                    /*Нужно сменить URL на вновь созданный элемент*/
-                    list($controller, $action) = self::ThisAction();
-                    Redirect(
-                        $controller, $action, $res[DataBase::camelCaseToUnderscore(User::PrimaryColumnName)]
-                    );
-                }
-                else {
-                    $options['validation'] = array(
-                        'state' => Model::ValidStateOK,
-                        'message' => 'Данные успешно сохранены'
-                    );
-                    $user = array_keys_CamelCase(
-                        (new DataBase())->
-                        user->
-                        getFirstRow($queryConfig)
-                    );
-                    unset($user['Password']);
-
-                }
+            else {
+                $this->processPostData($entity, $options, User::class, $context, $inputValues);
+                unset($entity['Password']);
+                unset($entity['PasswordConfirm']);
             }
 
         }
         else {
-            $user = array_keys_CamelCase(
+            $entity = array_keys_CamelCase(
                 (new DataBase())->
                 user->
                 getFirstRow($queryConfig)
             );
-            unset($user['Password']);
+            unset($entity['Password']);
         }
         $controllerName = self::Name();
         $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
-        $view->User = $user;
+        $view->User = $entity;
         $view->options = $options;
         $view->generate();
     }
