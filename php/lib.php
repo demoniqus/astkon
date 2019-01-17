@@ -1,6 +1,7 @@
 <?php
 namespace Astkon\Lib;
 
+use Astkon\Controllers\ArticlesController;
 use Astkon\DataBase;
 use Astkon\ErrorCode;
 use Astkon\View\View;
@@ -101,4 +102,42 @@ function cleanedDump($value) {
     ob_clean();
     var_dump($value);
     die();
+}
+
+function getReferer() {
+    $referer = null;
+    if (isset($_SERVER['HTTP_REFERER'])) {
+        $matches = null;
+        if (
+            preg_match(
+                '=[^:]*:/+' . str_replace('.', '\\.', $_SERVER['HTTP_HOST']) . '(/[a-z0-9]+)?(/[a-z0-9]+)?(/[a-z0-9]+)?(/?\?.+)?=i',
+                $_SERVER['HTTP_REFERER'],
+                $matches
+            ) &&
+            count($matches) > 1
+        ) {
+
+            $referer = array(
+                'ControllerName' => isset($matches[1]) ? $matches[1] : 'Index',
+                'Action' => isset($matches[2]) ? $matches[2] : 'Index',
+                'Id' => isset($matches[3]) ? $matches[3] : null,
+                'QueryString' => isset($matches[4]) ? $matches[4] : 'Index',
+            );
+            foreach ($referer as $k => $v) {
+                if ($v[0] === '/') {
+                    $referer[$k] = substr($v, 1);
+                }
+            }
+            $k = 'QueryString';
+            if ($referer[$k][0] === '?') {
+                $referer[$k] = substr($referer[$k], 1);
+            }
+
+            $controllerNS = explode('\\', ArticlesController::class);
+            $controllerNS[count($controllerNS) - 1] = $referer['ControllerName'] . 'Controller';
+            $requiredController = implode('\\', $controllerNS);
+            $referer['Controller'] = $requiredController;
+        }
+    }
+    return $referer;
 }

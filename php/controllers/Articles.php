@@ -10,7 +10,9 @@ namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
+use Astkon\GlobalConst;
 use function Astkon\Lib\array_keys_CamelCase;
+use function Astkon\Lib\getReferer;
 use Astkon\linq;
 use Astkon\Model\Article;
 use Astkon\Model\ArticleBalance;
@@ -243,12 +245,20 @@ class ArticlesController extends Controller
                 getFirstRow($queryConfig)
             );
         }
-        if (CURRENT_USER['IsAdmin']) {
-            $controllerName = self::Name();
+
+        $referer =  getReferer();
+        if ($referer) {
+            $controllerName = $referer['ControllerName'];
         }
         else {
-            $controllerName = ArticleBalance::Name();
+            if (CURRENT_USER['IsAdmin']) {
+                $controllerName = self::Name();
+            }
+            else {
+                $controllerName = ArticleBalance::Name();
+            }
         }
+
         $options['backToList'] = '/' . $controllerName . '/' . $controllerName . 'List';
         $view = new View();
         $view->Entity = $entity;
