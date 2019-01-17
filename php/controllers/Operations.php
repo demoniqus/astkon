@@ -102,6 +102,17 @@ class OperationsController extends Controller
         }
 
         $queryConfig->Reset();
+        $queryConfig->Condition = '`' . OperationState::PrimaryColumnKey . '` = :' . OperationState::PrimaryColumnKey;
+        $queryConfig->Substitution = array(
+            OperationState::PrimaryColumnKey => $operation[OperationState::PrimaryColumnKey]
+        );
+
+        $view->operationState = OperationState::getFirstRow(
+            $db,
+            $queryConfig
+        );
+
+        $queryConfig->Reset();
         $queryConfig->Condition = OperationType::PrimaryColumnKey . ' = :' . OperationType::PrimaryColumnKey;
         $queryConfig->Substitution = array(OperationType::PrimaryColumnKey => $operation[OperationType::PrimaryColumnKey]);
 
@@ -1025,9 +1036,11 @@ class OperationsController extends Controller
     private function defineCommonFormContext(View $view, string $OpTypeName, array $context) : array {
         $db = new DataBase();
 
+        $queryConfig = new QueryConfig('operation_name=\'' . $OpTypeName . '\'');
+
         $operationType = OperationType::getFirstRow(
             $db,
-            new QueryConfig('operation_name=\'' . $OpTypeName . '\'')
+            $queryConfig
         );
 
         $view->title = OperationType::getLabel($OpTypeName);
@@ -1066,5 +1079,9 @@ class OperationsController extends Controller
             )->getData();
         $view->dictionaryAction = ArticleBalanceController::Name() . '/ArticleBalanceDict/';
         return $operation;
+    }
+
+    private function getDefaultOrder() {
+        return array('CreateDatetime desc');
     }
 }

@@ -138,11 +138,6 @@ DictionaryField = (function(){
                                 }
                             ).collection;
                         this.this.setValue(objectsData);
-
-                        // if (typeof function(){} === typeof options.onClose) {
-                        //     options.onClose();
-                        // }
-                        // this.this.close(this.storage);
                     }
                 }
             ]

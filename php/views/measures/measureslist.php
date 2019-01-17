@@ -23,7 +23,7 @@
             <a href="/<?= ArticlesController::Name(); ?>/<?= ArticlesController::Name(); ?>List" class="btn btn-outline-secondary">Артикулы</a>
         </div>
         <?php
-            View::TableList($modelConfig, $listItems, $listItemOptions);
+            View::TableList($modelConfig, $listItems, $listItemOptions, $tableViewConfig);
         ?>
     </div>
 </div>

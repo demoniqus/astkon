@@ -11,6 +11,8 @@ namespace Astkon\View;
 use Astkon\GlobalConst;
 use Astkon\linq;
 
+require_once GlobalConst::CoreDirectory . DIRECTORY_SEPARATOR . 'TableViewConfig.php';
+
 define(__NAMESPACE__ . '\FORM_EDIT_FIELDS_TEMPLATES', getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_form_edit_fields');
 
 class View
@@ -148,7 +150,8 @@ class View
      * @param $items - набор элементов для вывода в списке
      * @param array $options - набор опций для действий пользователя с элементами набора $items
      */
-    public static function TableList($config, $items, $options = array()) {
+    public static function TableList(array $config, array $items, ?array $options = array(), ?TableViewConfig $tableViewConfig = null) {
+
         /*Bool значения заменим иконками для наглядности*/
         (new linq($config))
             ->where(function($fieldConfig){
@@ -166,6 +169,9 @@ class View
                 }
             });
         define('TABLE_LIST_VIEW_DIRECTORY', getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . '_table_list_view');
+
+        $tableViewConfig = $tableViewConfig ?? new TableViewConfig();
+
         require_once TABLE_LIST_VIEW_DIRECTORY . DIRECTORY_SEPARATOR . 'table.php';
     }
 

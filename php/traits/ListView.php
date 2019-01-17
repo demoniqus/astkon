@@ -9,8 +9,10 @@
 namespace Astkon\Traits;
 
 use Astkon\DataBase;
+use Astkon\GlobalConst;
 use function Astkon\Lib\array_keys_CamelCase;
 use Astkon\QueryConfig;
+use Astkon\View\TableViewConfig;
 use Astkon\View\View;
 
 trait ListView
@@ -27,10 +29,13 @@ trait ListView
         $model,
         ?array $options = array(),
         ?QueryConfig $queryConfig = null,
-        ?array $displayedFields = null
+        ?array $displayedFields = null,
+        ?TableViewConfig $tableViewConfig = null
     ) {
         $view->listItemOptions = $options ?? array();
-        $this->configureListView($view, $model, $queryConfig, $displayedFields);
+        $tableViewConfig = $tableViewConfig ?? new TableViewConfig();
+        $tableViewConfig->displayMode = 'relocation';
+        $this->configureListView($view, $model, $queryConfig, $displayedFields, $tableViewConfig);
     }
 
     public static function editOption(array &$options, string $controller) {
@@ -49,7 +54,8 @@ trait ListView
         View $view,
         $model,
         ?QueryConfig $queryConfig = null,
-        ?array $displayedFields = array()
+        ?array $displayedFields = array(),
+        ?TableViewConfig $tableViewConfig = null
     ) {
         $queryConfig = $queryConfig ?? new QueryConfig();
         if (is_array($queryConfig->RequiredFields)) {
@@ -60,6 +66,24 @@ trait ListView
                 $queryConfig->RequiredFields
             );
         }
+
+        $queryConfig->Offset = isset($_GET['offset']) ? intval($_GET['offset']) : 0;
+        if (!isset($queryConfig->OrderBy) || !count($queryConfig->OrderBy)) {
+            $queryConfig->OrderBy = $this->getDefaultOrder();
+        }
+
+        $tableViewConfig = $tableViewConfig ?? new TableViewConfig();
+
+        if (!isset($queryConfig->Limit)) {
+            $queryConfig->Limit = isset($_GET['pageSize']) ?
+                intval($_GET['pageSize']) :
+                $tableViewConfig->displayMode === 'relocation' ?
+                    GlobalConst::DefaultListViewItemsCount :
+                    GlobalConst::DefaultDictViewItemsCount
+
+            ;
+        }
+
         $modelConfig = $model::getConfigForListView();
         if (is_array($displayedFields) && count($displayedFields)) {
             $displayedFieldsDict = array_flip(
@@ -88,36 +112,56 @@ trait ListView
             },
             $model::getRows(null, $queryConfig, 2)
         );
+
         $view->listItems = $rows;
+
+        $tableViewConfig->pageSize = $queryConfig->Limit ?? GlobalConst::DefaultDictViewItemsCount;
+        $tableViewConfig->currentPage = floor($queryConfig->Offset / $tableViewConfig->pageSize);
+        $tableViewConfig->totalItemsCount = $model::getCount(null, $queryConfig, 2);
+
+        $view->tableViewConfig = $tableViewConfig;
     }
 
     public function DictViewAction(
         View $view,
         $model,
         ?QueryConfig $queryConfig = null,
-        ?array $displayedFields = array()
+        ?array $displayedFields = array(),
+        ?TableViewConfig $tableViewConfig = null
     ){
         $listItemOptions = [];
-        if (array_key_exists('mode', $_GET) && trim(strtolower($_GET['mode'])) === 'multiple') {
-            $listItemOptions[] = array(
-                'action' => null,
-                'click' => htmlspecialchars('DictionaryItemChangeCheckedState($(this).find("img:first"))'),
-                'icon' => '/checkbox-unchecked.png',
-                'title' => 'Отметить элемент'
-            );
+        $tableViewConfig = $tableViewConfig ?? new TableViewConfig();
+        if (array_key_exists('mode', $_GET)) {
+            $tableViewConfig->GETParams['mode'] = $_GET['mode'];
+            if ( trim(strtolower($_GET['mode'])) === 'multiple') {
+                $listItemOptions[] = array(
+                    'action' => null,
+                    'click'  => htmlspecialchars('DictionaryItemChangeCheckedState($(this).find("img:first"))'),
+                    'icon'   => '/checkbox-unchecked.png',
+                    'title'  => 'Отметить элемент'
+                );
+            }
         }
         $listItemOptions[] = array(
             'action' => null,
             'click' => 'DictionarySelector.setValue(\'' .
-                $_POST['dialogId'] . '\', [JSON.parse($(this).parents(\'tr:first\').get(0).dataset.item)],' .
+                $_REQUEST['dialogId'] . '\', [JSON.parse($(this).parents(\'tr:first\').get(0).dataset.item)],' .
                 htmlspecialchars(json_encode($model::ReferenceDisplayedKeys())) . ')',
             'icon' => '/icon-next.png',
             'title' => 'Выбрать элемент'
         );
         $view->listItemOptions = $listItemOptions;
+
+        $tableViewConfig->displayMode = 'reload';
+        $tableViewConfig->GETParams['dialogId'] = $_REQUEST['dialogId'];
+
         $view->setHeaderTemplate(null);
         $view->setFooterTemplate(null);
-        $this->configureListView($view, $model, $queryConfig, $displayedFields);
+        $this->configureListView($view, $model, $queryConfig, $displayedFields, $tableViewConfig);
+    }
+
+    private function getDefaultOrder() {
+        return array();
     }
 }
 

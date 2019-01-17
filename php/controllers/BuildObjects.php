@@ -65,8 +65,6 @@ class BuildObjectsController extends Controller
 
     public function BuildObjectsDictAction($context) {
         $view = new View();
-//        $pageId = isset($context['id']) ? intval($context['id']) : 0;
-//        $pageSize = 5;
         $this->DictViewAction(
             $view,
             BuildObject::class,
@@ -110,5 +108,9 @@ class BuildObjectsController extends Controller
         $view->options = $options;
         $view->Model = $model;
         $view->generate();
+    }
+
+    private function getDefaultOrder() {
+        return array('BuildObjectName');
     }
 }

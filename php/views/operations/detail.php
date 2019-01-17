@@ -27,11 +27,11 @@ if (strtolower($operationType['OperationName']) === 'reserving') {
         <?php
         if (isset($linkedData)) {
             foreach ($linkedData as $model => $linkedItems) {
-        ?>
-                <div class="row" id="<?= $model::Name(); ?>ListItems">
+            ?>
+            <div class="row" id="<?= $model::Name(); ?>ListItems">
 
-                </div>
-        <?php
+            </div>
+            <?php
             }
         }
         ?>
@@ -42,13 +42,17 @@ if (strtolower($operationType['OperationName']) === 'reserving') {
         </div>
         <div class="row mt-3">
             <a href="<?= '/' . OperationsController::Name() . '/OperationsList/' . $operationType[OperationType::PrimaryColumnName]; ?>" class="btn btn-outline-secondary mr-2">К списку документов</a>
-            <a href="<?= '/' . OperationsController::Name() . '/Edit/' . $operation[Operation::PrimaryColumnName]; ?>" class="btn btn-outline-info mr-2">Редактировать</a>
             <?php
-            if (strtolower($operationType['OperationName']) === 'reserving') {
-                ?>
-                    <a href="javascript: void(0);" onclick="window.print();" class="btn offset-1 pl-2 py-0"><img src="/icon-print.png" class="graphic-button" title="Печать" /></a>
-                <?php
-            }
+                if (strtolower($operationState['state_name']) !== 'fixed') {
+                    ?>
+                        <a href="<?= '/' . OperationsController::Name() . '/Edit/' . $operation[Operation::PrimaryColumnName]; ?>" class="btn btn-outline-info mr-2">Редактировать</a>
+                    <?php
+                }
+                if (strtolower($operationType['OperationName']) === 'reserving') {
+                    ?>
+                        <a href="javascript: void(0);" onclick="window.print();" class="btn offset-1 pl-2 py-0"><img src="/icon-print.png" class="graphic-button" title="Печать" /></a>
+                    <?php
+                }
             ?>
         </div>
         <?php

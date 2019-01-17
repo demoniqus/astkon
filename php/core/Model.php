@@ -573,12 +573,34 @@ abstract class Model  {
         }
     }
 
+    protected static function getCount(
+        ?DataBase $db = null,
+        ?QueryConfig $queryConfig = null,
+        int $deepDecodeForeignKeys = 0
+    ) : int {
+        $db = $db ?? (new DataBase());
+        static::prepareQuery($db, $deepDecodeForeignKeys);
+        return $db->getCount(
+            $queryConfig
+        );
+    }
+
     protected static function getRows(
-        $db = null,
+        ?DataBase $db = null,
         ?QueryConfig $queryConfig = null,
         int $deepDecodeForeignKeys = 0
     ) : array {
         $db = $db ?? (new DataBase());
+        static::prepareQuery($db, $deepDecodeForeignKeys);
+        return $db->getRows(
+            $queryConfig
+        );
+    }
+
+    private static function prepareQuery(
+        DataBase $db,
+        int $deepDecodeForeignKeys = 0
+    ) : void {
         $model = static::DataTable;
         $db->$model;
         if ($deepDecodeForeignKeys) {
@@ -617,13 +639,8 @@ abstract class Model  {
                     ->for_each(function($fieldInfo) use (&$fkFields){
                         $fkFields[] = $fieldInfo;
                     });
-
             }
         }
-        $rows = $db->getRows(
-            $queryConfig
-        );
-        return $rows;
     }
 
     protected static function getFirstRow(

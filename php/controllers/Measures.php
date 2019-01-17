@@ -36,20 +36,17 @@ class MeasuresController extends Controller
         if (CURRENT_USER['IsAdmin']) {
             static::editOption($options, __CLASS__);
         }
+
         $this->ListViewAction(
             $view,
             Measure::class,
             $options
         );
         $view->generate();
-//        $pageId = isset($context['id']) ? intval($context['id']) : 0;
-//        $pageSize = 5;
     }
 
     public function MeasuresDictAction($context) {
         $view = new View();
-//        $pageId = isset($context['id']) ? intval($context['id']) : 0;
-//        $pageSize = 5;
         $this->DictViewAction(
             $view,
             Measure::class,
@@ -93,5 +90,9 @@ class MeasuresController extends Controller
         $view->options = $options;
         $view->Model = $model;
         $view->generate();
+    }
+
+    private function getDefaultOrder() {
+        return array('MeasureName');
     }
 }

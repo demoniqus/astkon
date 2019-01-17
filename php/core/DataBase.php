@@ -575,28 +575,37 @@ class DataBase {
 
     }
 
-
     /**
-     * @param null|string $condition
-     * @param null|array  $requiredFields
-     * @param null|int    $offset
-     * @param null|int    $limit
+     * @param QueryConfig|null $queryConfig
      * @return string
      */
     public function getQueryString(
-        $condition = null, //строка
-        $requiredFields = null, //массив наименований колонок для выборки,
-        $offset = null,
-        $limit = null
+        ?QueryConfig $queryConfig = null
     ) : string {
-        return $this->_getQueryString($condition, $requiredFields, $offset, $limit);
+        $queryConfig = $queryConfig ?? new QueryConfig();
+        return $this->_getQueryString($queryConfig, false);
     }
 
     /**
      * @param QueryConfig $queryConfig
+     * @param bool        $isRequestedCount
      * @return string
      */
     private function _getQueryString (
+        QueryConfig $queryConfig,
+        bool $isRequestedCount = false
+    ) : string {
+        return $isRequestedCount ?
+            $this->_getQueryString_SelectCount($queryConfig) :
+            $this->_getQueryString_SelectData($queryConfig);
+    }
+
+    /**
+     * Метод формирует запрос для извлечения данных из БД
+     * @param QueryConfig $queryConfig
+     * @return string
+     */
+    private function _getQueryString_SelectData (
         QueryConfig $queryConfig
     ) : string {
         $condition = $queryConfig->Condition;
@@ -637,7 +646,7 @@ class DataBase {
         $query .= implode(
             ', ',
             array_map(
-                function($selectedColumn){
+                function ($selectedColumn) {
                     $querySubstring = '`' . $selectedColumn['table_name'] . '`.`' . $selectedColumn['column_name'] . '`';
                     if (array_key_exists('_alias', $selectedColumn)) {
                         $querySubstring .= ' AS `' . $selectedColumn['_alias'] . '`';
@@ -680,9 +689,55 @@ class DataBase {
 
         /*Запросим строки и сразу произведем типизацию*/
         return $query . ($condition ? 'where ' . $condition : '') . ' ' .
-            (!is_null($orderBy) ? 'order by ' . implode(', ', $orderBy) : '') . ' ' .
+            (is_array($orderBy) && count($orderBy) ? 'order by ' . implode(', ', $orderBy) : '') . ' ' .
             (!is_null($limit) ? 'limit ' . $limit : '') . ' ' .
             (!is_null($offset) ? 'offset ' . $offset : '');
+    }
+
+    /**
+     * Метод формирует запрос для получения количества строк, соответствующих запросу
+     * @param QueryConfig $queryConfig
+     * @return string
+     */
+    private function _getQueryString_SelectCount (
+        QueryConfig $queryConfig
+    ) : string {
+        $condition = $queryConfig->Condition;
+        /*Определим список полей, которые требуется извлечь*/
+        $selectedColumns = $this->currentObject['fields'];
+
+        /*Выбираем список моделей для join'a*/
+        $joinedColumns = array_filter(
+            $selectedColumns,
+            function($selectedColumn){
+                return array_key_exists('_joinedForeignKey', $selectedColumn);
+            }
+        );
+
+        $query = 'SELECT COUNT(*) AS `count` ';
+        $query .= ' FROM `' . $this->currentObject['name'] . '` ';
+
+        if (count($joinedColumns)) {
+            $joinSubqueries = array();
+            foreach ($joinedColumns as $joinedColumn) {
+                $subquery = 'LEFT JOIN `' . $joinedColumn['ref_table_name'] . '` ON `'
+                    . $joinedColumn['table_name'] . '`.`' . $joinedColumn['column_name'] . '` = `'
+                    . $joinedColumn['ref_table_name'] . '`.`' . $joinedColumn['ref_column_name'] . '`';
+
+                if (!array_key_exists($joinedColumn['ref_table_name'], $joinSubqueries)) {
+                    /*
+                     * Если вдруг где-то встретится повторный join таблицы, не будем это считать за ошибку, а просто проигнорируем его,
+                     * поскольку невозможно предсказать ожидаемую сложность и вложенность запросов
+                    */
+                    $joinSubqueries[$joinedColumn['ref_table_name']] = $subquery;
+                }
+            }
+            $query .= implode(' ', $joinSubqueries);
+        }
+        $query .= ' ';
+
+        /*Запросим строки и сразу произведем типизацию*/
+        return $query . ($condition ? 'where ' . $condition : '');
 
     }
 
@@ -840,277 +895,21 @@ class DataBase {
         return $rows;
     }
 
-    /**
-     * @param string $condition
-     * @param array $values
-     * @return array|null
-     */
-//    public function getObjects($condition, $values = array()) {
-//        if (!$this->currentObject) {
-//            throw new Exception('Не установлен объект для извелечения из БД');
-//        }
-//        $className = $this->getObjClassName();
-//        $entityName = $this->currentObject['name'];
-//        return (new linq($this->getRows($condition, $values)))
-//            ->select(function($row) use ($className, $entityName){
-//                return new $className($row, $entityName);
-//            })->getData();
-//    }
-
-    /**
-     * @return string
-     */
-//    private function getObjClassName(){
-//        return class_exists($this->currentObject['name']) ? $this->currentObject['name'] : 'StandPrototype';
-//    }
-
-    /**
-     * @param array $entity
-     * @return bool|PDOStatement
-     * @throws Exception
-     */
-    public function Delete(
-            array $entity
-            ) {
-//        if (!$this->currentObject) {
-//            throw new Exception('Не установлен объект для удаления из БД');
-//        }
-//        if ($entity === null || gettype($entity) !== gettype($entity) || count($entity) < 1) {
-//            throw new Exception('Нет информации для удаления из БД');
-//        }
-//        /*Проверим наличие первичного ключа в таблице - без него удаление этим методом невозможно*/
-//        if (($pk = (new linq($this->currentObject['fields'], 'assoc'))
-//        ->first(function($column){ return $column['_primary_key'];})) === null) {
-//            throw new Exception('Данная таблица не имеет первичного ключа. Поэтому удаление данным методом невозможно');
-//        }
-//        if (!array_key_exists($pk['column_name'], $entity)) {
-//            throw new Exception('Полученный объект не содержит информации о первичном ключе. Удаление невозможно.');
-//        }
-//        /*Создаем запрос для удаления записи*/
-//        $query = 'DELETE FROM ' . $this->currentObject['name'] . ' WHERE  ' . $pk['column_name'] . '=' . $entity[$pk['column_name']] . ' LIMIT 1';
-//        $smtp = $this->_execQueryCommand($query, self::QueryTypeDelete);
-//        return $smtp->errorCode();
-    }
-
-    /**
-     * @param array $entity
-     * @return array|null
-     * @throws Exception
-     */
-    public function Insert(
-            array $entity
-            ) {
-//        if (!$this->currentObject) {
-//            throw new Exception('Не установлен объект для вставки в БД');
-//        }
-//        if ($entity === null || gettype($entity) !== gettype($entity) || count($entity) < 1) {
-//            throw new Exception('Нет информации для вставки в БД');
-//        }
-//        $values = array();
-//        /*Создаем запрос для вставки записи*/
-//        $query = 'INSERT INTO ' . $this->currentObject['name'] . ' (' .
-//                join(
-//                    ',',
-//                    (new linq($this->currentObject['fields'], 'assoc'))
-//                    ->where(function($column){ return $column['_primary_key'] ? false : true;})
-//                    ->select(function($column){return '`' . $column['column_name'] . '`';})
-//                    ->getData()
-//                )
-//                .') VALUES(' .
-//                join(
-//                    ',',
-//                    (new linq($this->currentObject['fields'], 'assoc'))
-//                        ->where(function($column) {return $column['_primary_key'] ? false : true;})
-//                        ->select(function($column) use ($entity, &$values) {
-//                            $colKey = $column['column_name'];
-//                            $values[$colKey] = self::_getValueForQuery(
-//                                array_key_exists($colKey, $entity) ? $entity[$colKey] : NULL,
-//                                $column
-//                            );
-//                            return ':' . $colKey;
-//                        })
-//                    ->getData()
-//                )
-//                .')';
-//
-//        $this->_execQueryCommand($query, self::QueryTypeInsert, $values);
-//        /*После вставки попробуем вернуть вставленную запись, если данная таблица имеет первичный ключ*/
-//        $result = null;
-//        if ((new linq($this->currentObject['fields'], 'assoc'))
-//        ->first(function($column){ return $column['_primary_key'];})) {
-//            $command = 'SELECT last_insert_id() as `liid`';
-//            $lastId = $this->query($command)[0]['liid'];
-//            $table_name = $this->currentObject['name'];
-//            $result = $this->$table_name->getEntity($lastId);
-//        }
-//        return $result;
-    }
-    
-    public function entityPKColumn() {
-//        if (!$this->currentObject) {
-//            throw new Exception('Не установлен объект для извелечения из БД');
-//        }
-//        return (new linq($this->currentObject['fields'], 'assoc'))
-//        ->first(function($column){ return $column['_primary_key'];});
-    }
-
-    /**
-     * Метод обновляет запись в БД
-     * @param array $entity
-     * @return array|null
-     * @throws Exception
-     */
-    public function Update(
-            $entity
-            ) {
-//        if (!$this->currentObject) {
-//            throw new Exception('Не установлен объект для извелечения из БД');
-//        }
-//        if ($entity === null || gettype($entity) !== gettype($entity) || count($entity) < 1) {
-//            throw new Exception('Нет информации для вставки в БД');
-//        }
-//        /*Проверим наличие первичного ключа в таблице - без него обновление этим методом невозможно*/
-//        if (($pk = (new linq($this->currentObject['fields'], 'assoc'))
-//        ->first(function($column){ return $column['_primary_key'];})) === null) {
-//            throw new Exception('Данная таблица не имеет первичного ключа. Поэтому обновление данным методом невозможно');
-//        }
-//        if (!array_key_exists($pk['column_name'], $entity)) {
-//            throw new Exception('Полученный объект не содержит информации о первичном ключе. Обновление невозможно.');
-//        }
-//        /*Составляем запрос на обновление*/
-//        $columns = $this->currentObject['fields'];
-//        $values = array();
-//        $query = 'UPDATE ' . $this->currentObject['name'] . ' SET ' .
-//            join(
-//                ',',
-//                (new linq($entity, 'assoc'))
-//                ->where(function($v, $k) use ($pk) {
-//                    return $k !== $pk['column_name'];
-//                })
-//                ->select(function($v, $k) use ($columns, $values) {
-//                    $values[$k] = self::_getValueForQuery($v, $columns[$k]);
-//                    return '`' . $k . '`= :' . $k;
-//                })
-//                ->getData()
-//            ).
-//            ' WHERE ' . $pk['column_name'] . '=' . $entity[$pk['column_name']];
-//        $this->_execQueryCommand($query, self::QueryTypeUpdate, $values);
-//        /*Вернем обновленную информацию*/
-//        $table_name = $this->currentObject['name'];
-//        return $this->$table_name->getEntity($entity[$pk['column_name']]);
-    }
-
-    /**
-     * Подготавливает значение к использованию в SQL-запросе
-     * @param string $v
-     * @param array $column
-     * @return DateTime|int|mixed|string
-     * @throws Exception
-     */
-    protected static function _getValueForQuery($v, &$column) {
-//        if ($v === null) {
-//            return 'null';
-//        }
-//        switch ($column['data_type']) {
-////            case 'int':
-////            case 'year':
-////            case 'bigint':
-////            case 'mediumint':
-////            case 'smallint':
-////            case 'decimal':
-////            case 'dec':
-////            case 'double':
-////            case 'float':
-////            case 'real':
-////            case 'tinyint':
-////                /*
-////                 * Защита от ввода недопустимых значений,
-////                 * которые потенциально опасны для БД
-////                 */
-////                if (!is_numeric($v)) {
-////                    $v = 0;
-////                }
-////                return $v;
-////            case 'char':
-////            case 'varchar':
-////            case 'nvarchar':
-////            case 'text':
-////            case 'tinytext':
-////            case 'mediumtext':
-////                /*В строковых значениях необходимо экранировать кавычки и обратные слеши*/
-////                return $v != null ? '\'' . str_replace('\'', '\'\'', str_replace('\\', '\\\\', (string)$v)) . '\'' : 'null';
-////            case 'tinyint(1)':
-////                return $v === TRUE || (gettype($v) === gettype('aaa') && strtolower($v) === 'true') || (int)$v === 1 ? 1 : 0;
-//            case 'bit':
-//                return 'b\'' . (gettype($v) === gettype(true) ?
-//                    ($v ? '1' : '0') :
-//                    (($v = strtolower($v)) && ($v === 'true' || $v === '1') ? '1' : '0')) . '\'';
-//            case 'json':
-//                if (gettype($v) === gettype('') ) {
-//                    /*Это строка, которую надо распарсить перед сохранением*/
-//                    if ($v !== '') {
-//                        $v = json_decode($v);
-//                    }
-//                }
-//                else {
-//                    /*Это готовый объект для сохранения*/
-//                        $v = $v;
-//                }
-//                return $v;
-//            case 'datetime':
-//                $formatString = 'Y-m-d H:i:s';
-//                if (gettype($v) === gettype('') ) {
-//                    if ($v !== '') {
-//
-//                        $v = new DateTime($v);
-//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-//                    }
-//                }
-//                elseif (gettype($v) === gettype(array())) {
-//                    if (array_key_exists('date', $v)) {
-//                        $v = new DateTime($v['date']);
-//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-//                    }
-//                    else {
-//                        $v = 'null';
-//                    }
-//                }
-//                else {
-//                    try {
-//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-//                    } catch (Exception $ex) {
-//                        $v = 'null';
-//                    }
-//                }
-//                return $v;
-//            case 'date':
-//                $formatString = 'Y-m-d';
-//                if (gettype($v) === gettype('') ) {
-//                    if ($v !== '') {
-//                        $v = new DateTime($v);
-//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-//                    }
-//                }
-//                elseif (gettype($v) === gettype(array())) {
-//                    if (array_key_exists('date', $v)) {
-//                        $v = new DateTime($v['date']);
-//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-//                    }
-//                    else {
-//                        $v = 'null';
-//                    }
-//                }
-//                else {
-//
-//                    try {
-//                        $v = '\'' . date($formatString, $v->getTimestamp()) . '\'';
-//                    } catch (Exception $ex) {
-//                        $v = 'null';
-//                    }
-//                }
-//                return $v;
-//            default: return $v;
-//        }
+    public function getCount(
+        ?QueryConfig $queryConfig = null
+    ) : int {
+        $this->setInitState();
+        if (!$this->currentObject) {
+            throw new Exception('Не установлен объект для извелечения из БД');
+        }
+        $queryConfig = $queryConfig ?? new QueryConfig();
+        /*Отберем список колонок, которым надо преобразовать тип из строкового*/
+        $columns = $this->currentObject['fields'];
+        /*Запросим строки и сразу произведем типизацию*/
+        $query = $this->_getQueryString($queryConfig, true);
+        $rows = (new linq($this->query($query, $queryConfig->Substitution)))
+            ->getData();
+        return intval($rows[0]['count']);
     }
 
     /**
@@ -1130,77 +929,6 @@ class DataBase {
         $this->lastInsertId = null;
         $this->lastQueryState = 0;
     }
-
-    /**
-     * Метод позволяет выбрать из БД конкретную запись по ее Id
-     * Возвращает Entity - ассоциативный массив с типизированными значениями
-     * @param int $IdEntity
-     * @return array|null
-     * @throws Exception
-     */
-//    public function getEntity(
-//            $IdEntity//Идентификатор записи
-//            ) {
-//        if (!$this->currentObject) {
-//            throw new Exception('Не установлен объект для извелечения из БД');
-//        }
-//        /*Найдем ключевую колонку*/
-//        $primaryKey = (new linq($this->currentObject['fields'], 'assoc'))->first(function($col){ return $col['_primary_key'] === true;});
-//        $rows = array();
-//        if ($primaryKey) {
-//            /*Отберем список колонок, которым надо преобразовать тип из строкового*/
-//            $columns = $this->currentObject['fields'];
-//            /*Запросим строки и сразу произведем типизацию*/
-//            $rows = (new linq($this->query('select * from ' . $this->currentObject['name'] . ' WHERE ' . $primaryKey['column_name'] . '=' . $IdEntity)))
-//                ->where(function($row){ return count($row) > 0;})
-//                ->for_each(function(&$row) use ($columns){
-//                    self::_convertValue($row, $this->currentObject['fields']);
-//                })->getData();
-//        }
-//        return count($rows) > 0 ? $rows[0] : null;
-//    }
-
-    /**
-     * Возвращает экземпляр класса
-     * @param int $IdObject
-     * @return mixed
-     * @throws Exception
-     */
-//    public function getObject(
-//            $IdObject
-//            ) {
-//        if (!$this->currentObject) {
-//            throw new Exception('Не установлен объект для извелечения из БД');
-//        }
-//
-//        $className = $this->getObjClassName();
-//
-//        return new $className($this->getEntity($IdObject), $this->currentObject['name']);
-//    }
-
-    /**
-     * @param null $values
-     * @return array|null
-     * @throws Exception
-     */
-//    public function getEmptyEntity(
-//            $values = null
-//            ) {
-//        if (!$this->currentObject) {
-//            throw new Exception('Не установлен объект для извелечения из БД');
-//        }
-//        $values = gettype($values) === gettype(array()) ? $values : array();
-//        $entity = (new linq($this->currentObject['fields'], 'assoc'))
-//            ->toAssoc(
-//                function($column){ return $column['column_name'];},
-//                function($column) use ($values) {
-//                    return array_key_exists($column['column_name'], $values) ?
-//                        $values[$column['column_name']] : null;
-//                }
-//            )->getData();
-//        self::_convertValue($entity, $this->currentObject['fields']);
-//        return $entity;
-//    }
 
     /**
      * Конвертирует значения в Entity в соответствии с типом полей

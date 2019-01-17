@@ -23,6 +23,14 @@ trait FullModelMethods
         return parent::getRows($db, $queryConfig, $deepDecodeForeignKeys);
     }
 
+    public static function getCount(
+        $db = null,
+        $queryConfig = null,
+        $deepDecodeForeignKeys = 0
+    ) : int {
+        return parent::getCount($db, $queryConfig, $deepDecodeForeignKeys);
+    }
+
     public static function getFirstRow(
         $db = null,
         $queryConfig = null,

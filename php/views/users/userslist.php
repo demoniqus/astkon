@@ -14,7 +14,7 @@
             <a href="/UserGroups/UserGroupsList" class="btn btn-outline-secondary">Группы пользователей</a>
         </div>
         <?php
-        View::TableList($modelConfig, $listItems, $listItemOptions);
+        View::TableList($modelConfig, $listItems, $listItemOptions, $tableViewConfig);
         ?>
     </div>
 </div>

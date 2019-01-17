@@ -88,8 +88,6 @@ class UsersController extends Controller
         $view = new View();
         $condition = null;
         $substitution = null;
-//        $pageId = isset($context['id']) ? intval($context['id']) : 0;
-//        $pageSize = 5;
 
         $queryConfig = new QueryConfig();
         $queryConfig->Condition = $condition;

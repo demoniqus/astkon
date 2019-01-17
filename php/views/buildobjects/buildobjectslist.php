@@ -13,7 +13,7 @@
             <a href="/BuildObjects/Edit/0" class="btn btn-success">Добавить объект</a>
         </div>
         <?php
-        View::TableList($modelConfig, $listItems, $listItemOptions);
+        View::TableList($modelConfig, $listItems, $listItemOptions, $tableViewConfig);
         ?>
     </div>
 </div>

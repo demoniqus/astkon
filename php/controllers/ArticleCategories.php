@@ -40,20 +40,29 @@ class ArticleCategoriesController extends Controller
         if (CURRENT_USER['IsAdmin']) {
             static::editOption($options, __CLASS__);
         }
+
+        $queryConfig = new QueryConfig();
+        $queryConfig->OrderBy = $this->getDefaultOrder();
+
         $this->ListViewAction(
             $view,
             ArticleCategory::class,
-            $options
+            $options,
+            $queryConfig
         );
         $view->generate();
     }
 
     public function ArticleCategoriesDictAction($context) {
         $view = new View();
+
+        $queryConfig = new QueryConfig();
+        $queryConfig->OrderBy = $this->getDefaultOrder();
+
         $this->DictViewAction(
             $view,
             ArticleCategory::class,
-            null,
+            $queryConfig,
             array(
                 'CategoryName',
                 'IsSaleable',
@@ -94,5 +103,9 @@ class ArticleCategoriesController extends Controller
         $view->options = $options;
         $view->Model = $model;
         $view->generate();
+    }
+
+    private function getDefaultOrder() {
+        return array('CategoryName');
     }
 }

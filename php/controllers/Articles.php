@@ -10,7 +10,6 @@ namespace Astkon\Controllers;
 
 use Astkon\Controller\Controller;
 use Astkon\DataBase;
-use Astkon\GlobalConst;
 use function Astkon\Lib\array_keys_CamelCase;
 use function Astkon\Lib\getReferer;
 use Astkon\linq;
@@ -189,7 +188,6 @@ class ArticlesController extends Controller
             )
         );
 
-
         $this->ListViewAction(
             $view,
             Article::class,
@@ -208,15 +206,7 @@ class ArticlesController extends Controller
 
     public function ArticlesDictAction($context) {
         $view = new View();
-        $condition = null;
-        $substitution = null;
-//        $pageId = isset($context['id']) ? intval($context['id']) : 0;
-//        $pageSize = 5;
-        $queryConfig = new QueryConfig();
-        $queryConfig->Condition = $condition;
-        $queryConfig->Substitution = $substitution;
-
-        $this->DictViewAction($view, Article::class, $queryConfig);
+        $this->DictViewAction($view, Article::class);
         $view->generate();
     }
 
@@ -265,5 +255,9 @@ class ArticlesController extends Controller
         $view->options = $options;
         $view->Model = $model;
         $view->generate();
+    }
+
+    private function getDefaultOrder() {
+        return array('ArticleName');
     }
 }

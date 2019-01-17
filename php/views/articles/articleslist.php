@@ -27,7 +27,7 @@
 
         </div>
         <?php
-        View::TableList($modelConfig, $listItems, $listItemOptions);
+        View::TableList($modelConfig, $listItems, $listItemOptions, $tableViewConfig);
         ?>
     </div>
 </div>

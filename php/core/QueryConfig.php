@@ -8,9 +8,6 @@
 
 namespace Astkon;
 
-
-use phpDocumentor\Reflection\Types\Mixed_;
-
 class QueryConfig
 {
     /**

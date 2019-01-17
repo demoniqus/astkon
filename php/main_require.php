@@ -54,6 +54,7 @@ final class GlobalConst {
      * @var string
      */
     const TmpDirName = 'tmp';
+    const CoreDirectory = 'php' . DIRECTORY_SEPARATOR . 'core';
     const ControllersDirectory = 'php' . DIRECTORY_SEPARATOR . 'controllers';
     /**
      * Каталог для создания частичных классов, реализующих сущности базы данных
@@ -93,6 +94,16 @@ final class GlobalConst {
      * Поэтому функция explode(PHP_EOL, $string) может е сработать
      */
     const NewLineChar = "\n";
+
+    /**
+     * Дефолтное количество элементов на странице при просмотре справочника элементов
+     */
+    const DefaultDictViewItemsCount = 10;
+
+    /**
+     * Дефолтное количество элементов на стрнаице при просмотре списка элементов
+     */
+    const DefaultListViewItemsCount = 15;
 
 }
 

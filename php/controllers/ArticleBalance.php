@@ -24,6 +24,7 @@ use Astkon\Model\UserGroup;
 use Astkon\QueryConfig;
 use Astkon\Traits\EditAction;
 use Astkon\Traits\ListView;
+use Astkon\View\TableViewConfig;
 use Astkon\View\View;
 
 class ArticleBalanceController extends Controller
@@ -191,8 +192,14 @@ class ArticleBalanceController extends Controller
         );
 
         $queryConfig = new QueryConfig();
-        $queryConfig->Condition ='article_balance.id_user_group = :id_user_group';
-        $queryConfig->Substitution = array('id_user_group' => CURRENT_USER['IdUserGroup']);
+        $queryConfig->Condition =implode(
+            ' AND ',
+            array(
+                '`' . ArticleBalance::DataTable . '`.`' . UserGroup::PrimaryColumnKey . '` = :' . UserGroup::PrimaryColumnKey,
+                'balance > 0'
+            )
+        );
+        $queryConfig->Substitution = array(UserGroup::PrimaryColumnKey => CURRENT_USER[UserGroup::PrimaryColumnName]);
 
         $this->ListViewAction(
             $view,
@@ -223,7 +230,13 @@ class ArticleBalanceController extends Controller
             die();
         }
 
-        $queryConfig->Reset();
+        $queryConfig->Reset();//Offset, Limit и OrderBy будут настроены в DictViewAction
+
+        $tableViewConfig = new TableViewConfig();
+        $tableViewConfig->GETParams = array( //Параметр mode будет настроен в DictViewAction
+            'operation' => $_GET['operation']
+        );
+
         $changeBalanceMethod = ChangeBalanceMethod::GetByPrimaryKey($operationType[ChangeBalanceMethod::PrimaryColumnKey]);
         if ($changeBalanceMethod['method_name'] === 'in_fixation') {
             $queryConfig->RequiredFields = array_merge(
@@ -233,6 +246,7 @@ class ArticleBalanceController extends Controller
                     'CategoryName'
                 )
             );
+
             $this->DictViewAction(
                 $view,
                 Article::class,
@@ -241,17 +255,17 @@ class ArticleBalanceController extends Controller
                     'CategoryName',
                     'ArticleName',
                     'MeasureName',
-                )
-
+                ),
+                $tableViewConfig
             );
         }
         else {
             $conditions = array(
-                '`' . ArticleBalance::DataTable . '`.id_user_group = :id_user_group',
+                '`' . ArticleBalance::DataTable . '`.`' . UserGroup::PrimaryColumnKey . '` = :' . UserGroup::PrimaryColumnKey,
                 'balance > 0'
             );
             $substitution = array(
-                'id_user_group' => CURRENT_USER['IdUserGroup']
+                UserGroup::PrimaryColumnKey => CURRENT_USER[UserGroup::PrimaryColumnName]
             );
             $requiredFields = array(
                 'MeasureName',
@@ -285,10 +299,15 @@ class ArticleBalanceController extends Controller
                     'ArticleName',
                     'MeasureName',
                     'Balance',
-                )
+                ),
+                $tableViewConfig
             );
         }
         $view->generate();
+    }
+
+    private function getDefaultOrder() {
+        return array(/*'CategoryName', */'ArticleName');
     }
 
 }

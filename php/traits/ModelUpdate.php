@@ -55,15 +55,23 @@ trait ModelUpdate
      * @param DataBase $db
      */
     private static function generateClass(string $className, DataBase $db) {
+        echo 'Обновляется модель ' . $className . PHP_EOL;
         $className = DataBase::underscoreToCamelCase($className);
 
         $tableName = DataBase::camelCaseToUnderscore($className);
 
+        echo 'Формируем Partial-модель ' . PHP_EOL;
         self::generatePartialModel($className, $tableName, $db);
+        echo 'Формирование завершено ' . PHP_EOL;
 
+        echo 'Формируем модель ' . PHP_EOL;
         self::generateModel($className, $db);
+        echo 'Формирование завершено ' . PHP_EOL;
 
+        echo 'Регистрируем модель ' . PHP_EOL;
         self::registerModel($className);
+        echo 'Регистрация завершена ' . PHP_EOL;
+        echo 'Обновление модели завершено ' . PHP_EOL;
     }
 
     /**
