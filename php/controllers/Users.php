@@ -59,8 +59,16 @@ class UsersController extends Controller
             'icon' => '/tools-pict-time.png',
             'title' => 'Артикулы во временном пользовании'
         );
+        $options[] = array(
+            'action' => null,
+            'click' => 'if (confirm(\'Вы уверены, что хотите удалить пользователя?\')) {window.location.href=\'/Users/Delete/@IdUser\';}',
+            'icon' => '/trash-empty-icon.png',
+            'title' => 'Удаление пользователя'
+        );
+
 
         $queryConfig = new QueryConfig();
+        $queryConfig->Condition = '`is_delete` <> 1';
         $queryConfig->RequiredFields = array(
             User::PrimaryColumnName,
             'UserName',
@@ -88,7 +96,7 @@ class UsersController extends Controller
 
     public function UsersDictAction($context) {
         $view = new View();
-        $condition = null;
+        $condition = '`is_delete` <> 1';
         $substitution = null;
 
         $queryConfig = new QueryConfig();
@@ -188,6 +196,24 @@ class UsersController extends Controller
         $view->options = $options;
         $view->generate();
     }
+
+    public function DeleteAction(array $context)  {
+        if (!CURRENT_USER['IsAdmin']) {
+            $view = new View();
+            $view->error(ErrorCode::FORBIDDEN);
+        }
+
+        $user = User::GetByPrimaryKey(intval($context['id']));
+        if ($user) {
+            User::Update(array(
+                User::PrimaryColumnKey => $user[User::PrimaryColumnKey],
+                'is_delete'            => true,
+            ));
+        }
+
+        Redirect(static::Name(), 'UsersList');
+    }
+
 
     /**
      * Метод отвечает за инициализацию проекта и создания суперпользователя.

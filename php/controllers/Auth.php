@@ -47,7 +47,7 @@ class AuthController extends Controller
         if (array_key_exists('submit', $_POST)) {
             $db = new DataBase();
             $usersList = $db->user->getRows(new QueryConfig(
-                'login = :login AND has_account = 1',
+                'login = :login AND has_account = 1 AND is_delete <> 1',
                 null,
                 array('login' => $_POST['Login'])
             ));
