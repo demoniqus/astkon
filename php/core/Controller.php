@@ -41,7 +41,6 @@ abstract class Controller
                 else {
                     $view = new View();
                     $view->error(ErrorCode::FORBIDDEN);
-                    die();
                 }
             }
         }
@@ -49,7 +48,6 @@ abstract class Controller
             /*Возвращаем ошибку*/
             $view = new View();
             $view-> error(404);
-            die();
         }
 
     }

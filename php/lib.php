@@ -22,7 +22,6 @@ function TileMenu (array $tiles, int $tileColumnsCount = 0, int $tilesInRow = 0)
             'method' => array_pop(debug_backtrace(2, 2))
         );
         $view->error(ErrorCode::PROGRAMMER_ERROR);
-        die();
     }
 
     $cssClass = 'col-md';
@@ -69,7 +68,7 @@ function Redirect(string $controller, string $action = null, string $id = null) 
 function RedirectToUrl(string $url) {
     ob_clean();
     header('Location: ' . $url);
-    die();
+    exit();
 }
 
 /**
@@ -101,7 +100,7 @@ function array_keys_underscore($a) {
 function cleanedDump($value) {
     ob_clean();
     var_dump($value);
-    die();
+    exit();
 }
 
 function getReferer() {

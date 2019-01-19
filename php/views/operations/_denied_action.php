@@ -1,7 +1,6 @@
 <?php
 
 use Astkon\Controllers\OperationsController;
-use Astkon\Model\OperationState;
 
 require_once $this->defHeaderTemplate;
 ?>

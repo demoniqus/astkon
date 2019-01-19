@@ -18,5 +18,5 @@ catch (\Exception $exception) {
     );
 
     $view->error(ErrorCode::PROGRAMMER_ERROR);
-    die();
+    exit();
 }

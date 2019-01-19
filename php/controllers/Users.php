@@ -201,7 +201,6 @@ class UsersController extends Controller
         $dataTable =  User::DataTable;
         if ($db->$dataTable->getFirstRow() !== null) {
             $view->error(ErrorCode::FORBIDDEN);
-            die();
         }
 
         $options = array();

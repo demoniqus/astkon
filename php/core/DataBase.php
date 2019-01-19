@@ -222,7 +222,6 @@ class DataBase {
         $view = new View();
         $view->trace = $errInfo;
         $view->error(ErrorCode::PROGRAMMER_ERROR);
-        die();
     }
 
     /**
@@ -321,7 +320,6 @@ class DataBase {
                         'errorInfo' => $PDOException->errorInfo,
                     );
                     $view->error(ErrorCode::PROGRAMMER_ERROR);
-                    die();
                 default:
                     return array(
                         '@error' => true,
@@ -498,7 +496,7 @@ class DataBase {
                     break;
                 case 'HY093':
                     $programmerErrorProcessor($errInfo);
-                    die();
+                    break;
                 case 'HY000':
                     if ($errInfo['errorMessage']) {
 
@@ -799,7 +797,6 @@ class DataBase {
                 'backtrace'             => $backtrace,
             );
             $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
         }
         $columnParams = &$this->currentObject['fields'][$columnName];
 

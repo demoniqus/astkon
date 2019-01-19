@@ -94,6 +94,7 @@ class View
                 require $template;
             }
         }
+        exit();
     }
 
     public function error(int $code) {
@@ -108,6 +109,7 @@ class View
         require_once $this->defHeaderTemplate;
         require_once $templateName;
         require_once $this->defFooterTemplate;
+        exit();
     }
 
     /**
@@ -185,6 +187,6 @@ class View
     public function JSONView() {
         header('Content-Type: application/json; charset=utf-8', true);
         echo json_encode($this->variables);
-        die();
+        exit();
     }
 }

@@ -36,7 +36,6 @@ class linq {
                 'trace' => $debugTrace
             );
             $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
         }
         $this->data = $data;
         $this->mode = strtolower($mode ? $mode . '' : 'array') !== 'assoc' ? 'array' : 'assoc';

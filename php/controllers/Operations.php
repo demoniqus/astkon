@@ -57,7 +57,6 @@ class OperationsController extends Controller
         $operation = Operation::getFirstRow($db, $queryConfig);
         if (!$operation) {
             $view->generate(self::Name() . '/_operation_404');
-            die();
         }
 
         $queryConfig->Reset();
@@ -76,7 +75,6 @@ class OperationsController extends Controller
             $view->message = 'Не допускается редактировать документ в статусе "' . $fixedState['state_label'] . '"';
             /*Запрещено редактировать закрытый документ*/
             $view->generate(self::Name() . '/_denied_action');
-            die();
         }
         $opTypeName = $operationType['operation_name'];
         $operation = $this->defineCommonFormContext($view, $opTypeName, $context);
@@ -98,7 +96,6 @@ class OperationsController extends Controller
 
         if (!$operation) {
             $view->generate(self::Name() . '/_operation_404');
-            die();
         }
 
         $queryConfig->Reset();
@@ -170,7 +167,6 @@ class OperationsController extends Controller
         if (!$operation) {
             $db->rollback();
             $view->generate(self::Name() . '/_operation_404');
-            die();
         }
 
         $listOperationTypes = OperationType::getRows($db);
@@ -187,7 +183,6 @@ class OperationsController extends Controller
             $db->rollback();
             $view->message = 'Для документа изменение типа запрещено.';
             $view->generate(self::Name() . '/_denied_action');
-            die();
         }
 
         $targetType = isset($_GET['targetType']) ? intval($_GET['targetType']) : 0;
@@ -195,7 +190,6 @@ class OperationsController extends Controller
             $db->rollback();
             $view->message = 'Не указан целевой тип операции.';
             $view->generate(self::Name() . '/_denied_action');
-            die();
         }
 
         $targetType = $dictOperationTypes[$targetType];
@@ -203,7 +197,6 @@ class OperationsController extends Controller
             $db->rollback();
             $view->message = 'Указан недопустимый целевой тип операции.';
             $view->generate(self::Name() . '/_denied_action');
-            die();
         }
 
         $operation['operation_info']['change_type'] = array(
@@ -392,7 +385,6 @@ class OperationsController extends Controller
         if (is_null($operation)) {
             $db->rollback();
             $view->generate(self::Name() . '/_operation_404');
-            die();
         }
         $res = $this->setOperationFixedState($operation, $db);
         if (is_array($res) && isset($res['errors'])) {
@@ -403,7 +395,6 @@ class OperationsController extends Controller
             ));
             $view->message = implode('<br />', $res['errors']);
             $view->generate(self::Name() . '/_denied_action');
-            die();
         }
         else {
             $db->commit();
@@ -686,7 +677,6 @@ class OperationsController extends Controller
                 $view->message = 'Не допускается удалять документ в статусе "' . OperationState::getFirstRow(null, $queryConfig)['state_label'] . '"';
                 /*Запрещено удалять закрытый документ*/
                 $view->generate(self::Name() . '/_denied_action');
-                die();
             }
 
             $changeBalanceMethod = ChangeBalanceMethod::GetByPrimaryKey(

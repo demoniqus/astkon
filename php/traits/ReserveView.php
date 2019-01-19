@@ -30,7 +30,6 @@ trait ReserveView
 
         if (!$targetItem) {
             $view->error(ErrorCode::NOT_FOUND);
-            die();
         }
 
         $opStateNew = OperationState::getFirstRow(

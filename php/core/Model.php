@@ -513,7 +513,6 @@ abstract class Model  {
                 'Не передано значение первичного ключа для обновления записи в БД'
             );
             $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
         }
         if (!$values[$PKName]) {
             $values[$PKName] = 0;
@@ -832,7 +831,6 @@ abstract class Model  {
                     $view = new View();
                     $view->trace = 'Внешний ключ модели ' . static::class . ' ссылается на несуществующее поле ' . $fieldName . ' модели ' . $refModel;
                     $view->error(ErrorCode::PROGRAMMER_ERROR);
-                    die();
                 }
                 $refModelFieldConfig = $refModelConfig[$fieldName];
                 if ($checkIsJoined($refModelFieldConfig)) {
@@ -955,7 +953,6 @@ abstract class Model  {
                 'Для обновления записи не указан первичный ключ'
             );
             $view->error(ErrorCode::PROGRAMMER_ERROR);
-            die();
 
         }
         $pkValue = $substitution[static::PrimaryColumnKey];

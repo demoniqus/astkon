@@ -51,7 +51,6 @@ class ArticleBalanceController extends Controller
         $model = implode('\\', $modelName);
         if (!class_exists($model)) {
             $view->error(ErrorCode::NOT_FOUND);
-            die();
         }
 
         $articleBalance = ArticleBalance::getFirstRow(
@@ -69,7 +68,6 @@ class ArticleBalanceController extends Controller
         );
         if (!$articleBalance) {
             $view->error(ErrorCode::NOT_FOUND);
-            die();
         }
 
         $opStateNew = OperationState::getFirstRow(
@@ -105,7 +103,6 @@ class ArticleBalanceController extends Controller
                 break;
             default:
                 $view->error(ErrorCode::FORBIDDEN);
-                die();
         }
         $view->article = Article::GetByPrimaryKey($articleBalance[Article::PrimaryColumnKey]);
 
@@ -227,7 +224,6 @@ class ArticleBalanceController extends Controller
         $operationType = OperationType::getFirstRow(null, $queryConfig);
         if (!$operationType) {
             $view->error(ErrorCode::NOT_FOUND);
-            die();
         }
 
         $queryConfig->Reset();//Offset, Limit и OrderBy будут настроены в DictViewAction
