@@ -32,11 +32,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => '10',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
   'BuildObjectName' => 
   array (
@@ -45,11 +48,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'varchar',
     'max_length' => '500',
     'num_prec' => NULL,
+    'num_scale' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
   'Comment' => 
   array (
@@ -58,11 +64,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'text',
     'max_length' => '65535',
     'num_prec' => NULL,
+    'num_scale' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'YES',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
 );
 	/**

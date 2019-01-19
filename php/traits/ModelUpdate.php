@@ -415,11 +415,11 @@ trait ModelUpdate
             fwrite($classFileHandle, PHP_EOL);
             fwrite($classFileHandle, 'namespace ' . self::getRootNameSpace() . '\\Model;');
             fwrite($classFileHandle, PHP_EOL . PHP_EOL);
-            fwrite($classFileHandle, 'use  ' . self::getRootNameSpace() . '\\GlobalConst;');
+            fwrite($classFileHandle, 'use ' . self::getRootNameSpace() . '\\GlobalConst;');
             fwrite($classFileHandle, PHP_EOL);
-            fwrite($classFileHandle, 'use  ' . self::getRootNameSpace() . '\\DataBase;');
+            fwrite($classFileHandle, 'use ' . self::getRootNameSpace() . '\\DataBase;');
             fwrite($classFileHandle, PHP_EOL);
-            fwrite($classFileHandle, 'use  ' . self::getRootNameSpace() . '\\Model\\' . self::$PartialSuffix . '\\' . ucfirst($className) . self::$PartialSuffix . ';');
+            fwrite($classFileHandle, 'use ' . self::getRootNameSpace() . '\\Model\\' . self::$PartialSuffix . '\\' . ucfirst($className) . self::$PartialSuffix . ';');
             fwrite($classFileHandle, PHP_EOL . PHP_EOL);
             fwrite($classFileHandle, 'require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::PartialModelsDirectory . DIRECTORY_SEPARATOR . \'' . $partialClassFileName . '\';');
             fwrite($classFileHandle, PHP_EOL . PHP_EOL);

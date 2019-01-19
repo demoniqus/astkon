@@ -1,12 +1,12 @@
 <?php
 namespace Astkon\Model;
 
-require_once getcwd() . '//php/partialModels/UserPartial.php';
-
 use  Astkon\DataBase;
-
+use Astkon\GlobalConst;
 use  Astkon\Model\Partial\UserPartial;
 use Astkon\Traits\FullModelMethods;
+
+require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::PartialModelsDirectory . DIRECTORY_SEPARATOR . 'UserPartial.php';
 
 /**
 * В этом классе реализуются все особенности поведения и строения соответствующего типа

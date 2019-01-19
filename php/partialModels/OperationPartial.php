@@ -32,11 +32,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'bigint',
     'max_length' => NULL,
     'num_prec' => '20',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
     'external_link' => 
     array (
       'operation_item' => 
@@ -46,18 +49,27 @@ protected static $fieldsInfo = array (
       ),
     ),
   ),
-  'CreateDatetime' => 
+  'IdOperationState' => 
   array (
     'table_name' => 'operation',
-    'column_name' => 'create_datetime',
-    'data_type' => 'datetime',
+    'column_name' => 'id_operation_state',
+    'data_type' => 'int',
     'max_length' => NULL,
-    'num_prec' => NULL,
-    'dtime_prec' => '0',
+    'num_prec' => '10',
+    'num_scale' => '0',
+    'dtime_prec' => NULL,
     'char_set' => NULL,
-    'column_key' => '',
+    'column_key' => 'MUL',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => 'operation_state',
+    'ref_column_name' => 'id_operation_state',
+    'foreign_key' => 
+    array (
+      'model' => 'operation_state',
+      'field' => 'id_operation_state',
+      'display_mode' => 'decode_id_to_string',
+    ),
   ),
   'IdOperationType' => 
   array (
@@ -66,62 +78,20 @@ protected static $fieldsInfo = array (
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => '10',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => 'operation_type',
+    'ref_column_name' => 'id_operation_type',
     'foreign_key' => 
     array (
       'model' => 'operation_type',
       'field' => 'id_operation_type',
       'display_mode' => 'decode_id_to_string',
     ),
-  ),
-  'OperationInfo' => 
-  array (
-    'table_name' => 'operation',
-    'column_name' => 'operation_info',
-    'data_type' => 'json',
-    'max_length' => NULL,
-    'num_prec' => NULL,
-    'dtime_prec' => NULL,
-    'char_set' => NULL,
-    'column_key' => '',
-    'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
-  ),
-  'IdOperationState' => 
-  array (
-    'table_name' => 'operation',
-    'column_name' => 'id_operation_state',
-    'data_type' => 'int',
-    'max_length' => NULL,
-    'num_prec' => '10',
-    'dtime_prec' => NULL,
-    'char_set' => NULL,
-    'column_key' => 'MUL',
-    'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
-    'foreign_key' => 
-    array (
-      'model' => 'operation_state',
-      'field' => 'id_operation_state',
-      'display_mode' => 'decode_id_to_string',
-    ),
-  ),
-  'FixDatetime' => 
-  array (
-    'table_name' => 'operation',
-    'column_name' => 'fix_datetime',
-    'data_type' => 'datetime',
-    'max_length' => NULL,
-    'num_prec' => NULL,
-    'dtime_prec' => '0',
-    'char_set' => NULL,
-    'column_key' => '',
-    'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update,references',
   ),
   'IdUserGroup' => 
   array (
@@ -130,17 +100,68 @@ protected static $fieldsInfo = array (
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => '10',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => 'user_group',
+    'ref_column_name' => 'id_user_group',
     'foreign_key' => 
     array (
       'model' => 'user_group',
       'field' => 'id_user_group',
       'display_mode' => 'decode_id_to_string',
     ),
+  ),
+  'CreateDatetime' => 
+  array (
+    'table_name' => 'operation',
+    'column_name' => 'create_datetime',
+    'data_type' => 'datetime',
+    'max_length' => NULL,
+    'num_prec' => NULL,
+    'num_scale' => NULL,
+    'dtime_prec' => '0',
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
+  ),
+  'OperationInfo' => 
+  array (
+    'table_name' => 'operation',
+    'column_name' => 'operation_info',
+    'data_type' => 'json',
+    'max_length' => NULL,
+    'num_prec' => NULL,
+    'num_scale' => NULL,
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
+  ),
+  'FixDatetime' => 
+  array (
+    'table_name' => 'operation',
+    'column_name' => 'fix_datetime',
+    'data_type' => 'datetime',
+    'max_length' => NULL,
+    'num_prec' => NULL,
+    'num_scale' => NULL,
+    'dtime_prec' => '0',
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'YES',
+    'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
   'LinkedData' => 
   array (
@@ -149,11 +170,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'json',
     'max_length' => NULL,
     'num_prec' => NULL,
+    'num_scale' => NULL,
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'YES',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
 );
 	/**

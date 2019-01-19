@@ -1,9 +1,9 @@
 <?php
 namespace Astkon\Model;
 
-use  Astkon\GlobalConst;
-use  Astkon\DataBase;
-use  Astkon\Model\Partial\ArticleBalancePartial;
+use Astkon\GlobalConst;
+use Astkon\DataBase;
+use Astkon\Model\Partial\ArticleBalancePartial;
 use Astkon\Traits\FullModelMethods;
 
 require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::PartialModelsDirectory . DIRECTORY_SEPARATOR . 'ArticleBalancePartial.php';

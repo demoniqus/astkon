@@ -32,11 +32,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'bigint',
     'max_length' => NULL,
     'num_prec' => '20',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
   'IdArticle' => 
   array (
@@ -45,11 +48,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'bigint',
     'max_length' => NULL,
     'num_prec' => '20',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => 'article',
+    'ref_column_name' => 'id_article',
     'foreign_key' => 
     array (
       'model' => 'article',
@@ -82,11 +88,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => '10',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => 'user_group',
+    'ref_column_name' => 'id_user_group',
     'foreign_key' => 
     array (
       'model' => 'user_group',
@@ -100,11 +109,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'decimal',
     'max_length' => NULL,
     'num_prec' => '30',
+    'num_scale' => '15',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
 );
 	/**

@@ -1,9 +1,9 @@
 <?php
 namespace Astkon\Model;
 
-use  Astkon\GlobalConst;
-use  Astkon\DataBase;
-use  Astkon\Model\Partial\ArticleCategoryPartial;
+use Astkon\GlobalConst;
+use Astkon\DataBase;
+use Astkon\Model\Partial\ArticleCategoryPartial;
 use Astkon\Traits\FullModelMethods;
 
 require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::PartialModelsDirectory . DIRECTORY_SEPARATOR . 'ArticleCategoryPartial.php';

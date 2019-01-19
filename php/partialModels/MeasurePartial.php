@@ -32,11 +32,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => '10',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
     'external_link' => 
     array (
       'article' => 
@@ -53,11 +56,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'varchar',
     'max_length' => '50',
     'num_prec' => NULL,
+    'num_scale' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
   'IsSplit' => 
   array (
@@ -66,11 +72,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'bit',
     'max_length' => NULL,
     'num_prec' => '1',
+    'num_scale' => NULL,
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
   'Precision' => 
   array (
@@ -79,15 +88,18 @@ protected static $fieldsInfo = array (
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => '10',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'YES',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
 );
 	/**
-    * @list_view_order 1
+	* @list_view_order 1
 	* @database_column_name id_measure
 	* @caption Идентификатор
 	* @var int
@@ -95,7 +107,7 @@ protected static $fieldsInfo = array (
 	public $IdMeasure;
 
 	/**
-     * @list_view_order 3
+	* @list_view_order 3
 	* @database_column_name is_split
 	* @caption Признак делимости
 	* @var bool
@@ -103,7 +115,7 @@ protected static $fieldsInfo = array (
 	public $IsSplit;
 
 	/**
-     * @list_view_order 2
+	* @list_view_order 2
 	* @foreign_key_display_value
 	* @database_column_name measure_name
 	* @caption Единица измерения
@@ -112,7 +124,7 @@ protected static $fieldsInfo = array (
 	public $MeasureName;
 
 	/**
-     * @list_view_order 4
+	* @list_view_order 4
 	* @database_column_name precision
 	* @caption Точность деления (дес. зн)
 	* @var int

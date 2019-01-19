@@ -32,11 +32,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => '10',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
   'Login' => 
   array (
@@ -45,50 +48,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'varchar',
     'max_length' => '255',
     'num_prec' => NULL,
+    'num_scale' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
-  ),
-  'Password' => 
-  array (
-    'table_name' => 'user',
-    'column_name' => 'password',
-    'data_type' => 'varchar',
-    'max_length' => '45',
-    'num_prec' => NULL,
-    'dtime_prec' => NULL,
-    'char_set' => 'utf8',
-    'column_key' => '',
-    'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
-  ),
-  'Config' => 
-  array (
-    'table_name' => 'user',
-    'column_name' => 'config',
-    'data_type' => 'json',
-    'max_length' => NULL,
-    'num_prec' => NULL,
-    'dtime_prec' => NULL,
-    'char_set' => NULL,
-    'column_key' => '',
-    'is_nullable' => 'YES',
-    'privileges' => 'select,insert,update,references',
-  ),
-  'HasAccount' => 
-  array (
-    'table_name' => 'user',
-    'column_name' => 'has_account',
-    'data_type' => 'bit',
-    'max_length' => NULL,
-    'num_prec' => '1',
-    'dtime_prec' => NULL,
-    'char_set' => NULL,
-    'column_key' => '',
-    'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
   'IdUserGroup' => 
   array (
@@ -97,17 +64,68 @@ protected static $fieldsInfo = array (
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => '10',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => 'user_group',
+    'ref_column_name' => 'id_user_group',
     'foreign_key' => 
     array (
       'model' => 'user_group',
       'field' => 'id_user_group',
       'display_mode' => 'decode_id_to_string',
     ),
+  ),
+  'Password' => 
+  array (
+    'table_name' => 'user',
+    'column_name' => 'password',
+    'data_type' => 'varchar',
+    'max_length' => '45',
+    'num_prec' => NULL,
+    'num_scale' => NULL,
+    'dtime_prec' => NULL,
+    'char_set' => 'utf8',
+    'column_key' => '',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
+  ),
+  'Config' => 
+  array (
+    'table_name' => 'user',
+    'column_name' => 'config',
+    'data_type' => 'json',
+    'max_length' => NULL,
+    'num_prec' => NULL,
+    'num_scale' => NULL,
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'YES',
+    'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
+  ),
+  'HasAccount' => 
+  array (
+    'table_name' => 'user',
+    'column_name' => 'has_account',
+    'data_type' => 'bit',
+    'max_length' => NULL,
+    'num_prec' => '1',
+    'num_scale' => NULL,
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
   'UserName' => 
   array (
@@ -116,11 +134,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'varchar',
     'max_length' => '100',
     'num_prec' => NULL,
+    'num_scale' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
   'IsAdmin' => 
   array (
@@ -129,11 +150,30 @@ protected static $fieldsInfo = array (
     'data_type' => 'bit',
     'max_length' => NULL,
     'num_prec' => '1',
+    'num_scale' => NULL,
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => '',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
+  ),
+  'IsDelete' => 
+  array (
+    'table_name' => 'user',
+    'column_name' => 'is_delete',
+    'data_type' => 'bit',
+    'max_length' => NULL,
+    'num_prec' => '1',
+    'num_scale' => NULL,
+    'dtime_prec' => NULL,
+    'char_set' => NULL,
+    'column_key' => '',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
 );
 	/**
@@ -180,6 +220,15 @@ protected static $fieldsInfo = array (
 	* @var bool
 	*/
 	public $IsAdmin;
+
+	/**
+    * @nodisplay
+    * @noeditable
+	* @database_column_name is_delete
+	* @caption Удаленный пользователь
+	* @var bool
+	*/
+	public $IsDelete;
 
 	/**
 	* @form_edit_order 1

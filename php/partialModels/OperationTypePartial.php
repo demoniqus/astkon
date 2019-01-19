@@ -32,11 +32,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => '10',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'PRI',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
     'external_link' => 
     array (
       'operation' => 
@@ -53,24 +56,14 @@ protected static $fieldsInfo = array (
     'data_type' => 'varchar',
     'max_length' => '25',
     'num_prec' => NULL,
+    'num_scale' => NULL,
     'dtime_prec' => NULL,
     'char_set' => 'utf8',
     'column_key' => 'UNI',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
-  ),
-  'OperationLabel' => 
-  array (
-    'table_name' => 'operation_type',
-    'column_name' => 'operation_label',
-    'data_type' => 'varchar',
-    'max_length' => '30',
-    'num_prec' => NULL,
-    'dtime_prec' => NULL,
-    'char_set' => 'utf8',
-    'column_key' => '',
-    'is_nullable' => 'NO',
-    'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
   'IdChangeBalanceMethod' => 
   array (
@@ -79,16 +72,35 @@ protected static $fieldsInfo = array (
     'data_type' => 'int',
     'max_length' => NULL,
     'num_prec' => '10',
+    'num_scale' => '0',
     'dtime_prec' => NULL,
     'char_set' => NULL,
     'column_key' => 'MUL',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
+    'ref_table_name' => 'change_balance_method',
+    'ref_column_name' => 'id_change_balance_method',
     'foreign_key' => 
     array (
       'model' => 'change_balance_method',
       'field' => 'id_change_balance_method',
     ),
+  ),
+  'OperationLabel' => 
+  array (
+    'table_name' => 'operation_type',
+    'column_name' => 'operation_label',
+    'data_type' => 'varchar',
+    'max_length' => '30',
+    'num_prec' => NULL,
+    'num_scale' => NULL,
+    'dtime_prec' => NULL,
+    'char_set' => 'utf8',
+    'column_key' => '',
+    'is_nullable' => 'NO',
+    'privileges' => 'select,insert,update,references',
+    'ref_table_name' => NULL,
+    'ref_column_name' => NULL,
   ),
 );
 	/**

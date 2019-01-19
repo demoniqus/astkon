@@ -1,15 +1,14 @@
 <?php
 namespace Astkon\Model;
 
-require_once getcwd() . '//php/partialModels/OperationItemPartial.php';
-
-use  Astkon\DataBase;
-
+use Astkon\DataBase;
+use Astkon\GlobalConst;
 use Astkon\linq;
-use  Astkon\Model\Partial\OperationItemPartial;
+use Astkon\Model\Partial\OperationItemPartial;
 use Astkon\QueryConfig;
 use Astkon\Traits\FullModelMethods;
 
+require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::PartialModelsDirectory . DIRECTORY_SEPARATOR . 'OperationItemPartial.php';
 /**
 * В этом классе реализуются все особенности поведения и строения соответствующего типа
 */
