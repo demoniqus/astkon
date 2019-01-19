@@ -12,7 +12,7 @@ use Astkon\DataBase;
             <button type="button" class="btn btn-light" onclick="new DictionaryField({targetContainer: $(this).parents('.form-group:first'), extReferencePKName: '<?= DataBase::underscoreToCamelCase($ForeignKeyParams['field']); ?>', dataSourceUrl: '<?= $dictionaryAction; ?>', title: $(this).parents('.form-group:first').find('.col-form-label:first').text(), setValueCallback: 'setSingleReferenceValue'})">...</button>
             <!--<button type="button" class="btn btn-light" onclick="DictionarySelector.dialog($(this).parents('.form-group:first'), '<?= DataBase::underscoreToCamelCase($ForeignKeyParams['field']); ?>', '<?= $dictionaryAction; ?>')">...</button>-->
         </div>
-        <div class="col-sm-9 visible-value"><?= $displayValue; ?></div>
+        <div class="col-sm-9 visible-value col-form-label"><?= $displayValue; ?></div>
         <input type="hidden" name="<?= $propName; ?>" value="<?= $value; ?>" class="form-control <?= $validClass; ?>"/>
         <?= $feedback; ?>
     </div>
