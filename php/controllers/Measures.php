@@ -64,7 +64,20 @@ class MeasuresController extends Controller
         $entity = array();
         $model = Measure::class;
         if (array_key_exists('submit', $_POST)) {
-            $this->processPostData($entity, $options, $model, $context);
+            $maxPrecision = 15;
+            if ($_POST['Precision'] > $maxPrecision) {
+                $errors = array(
+                    array(
+                        'expected_error_column_name' => 'Precision',
+                        'err_code_explain' => 'Максимальная точность составляет ' . $maxPrecision . ' знаков после запятой',
+                    )
+                );
+                $entity = array_filter($_POST, function($v, $k){ return $k !== 'submit'; }, ARRAY_FILTER_USE_BOTH);
+                $this->processErrors($entity, $options, $errors);
+            }
+            else {
+                $this->processPostData($entity, $options, $model, $context);
+            }
 
         }
         else {
