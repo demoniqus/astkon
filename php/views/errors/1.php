@@ -12,6 +12,10 @@ use Astkon\GlobalConst;
     pre {
         color: lightgray;
     }
+    .trace font {
+        white-space: normal;
+        /*word-break: break-all;*/
+    }
 </style>
 <div class="container-fluid">
     <div class="col pl-3 pt-3 m-0" style="font-size: 300%; color: #239abf;">
@@ -24,7 +28,7 @@ use Astkon\GlobalConst;
     </div>
     <?php
     if (isset($trace)) {
-        echo '<div class="row m-0 text-left px-3" style="font-weight: bold; color: lightcoral">';
+        echo '<div class="row m-0 text-left px-3 trace" style="font-weight: bold; color: lightcoral">';
         if (gettype($trace) === gettype('')) {
             echo $trace;
         }
