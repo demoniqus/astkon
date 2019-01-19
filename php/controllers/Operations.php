@@ -394,9 +394,20 @@ class OperationsController extends Controller
             $view->generate(self::Name() . '/_operation_404');
             die();
         }
-        $this->setOperationFixedState($operation, $db);
-
-        $db->commit();
+        $res = $this->setOperationFixedState($operation, $db);
+        if (is_array($res) && isset($res['errors'])) {
+            $db->rollback();
+            $view->operationType = array_keys_CamelCase(OperationType::GetByPrimaryKey(
+                $operation[OperationType::PrimaryColumnKey],
+                $db
+            ));
+            $view->message = implode('<br />', $res['errors']);
+            $view->generate(self::Name() . '/_denied_action');
+            die();
+        }
+        else {
+            $db->commit();
+        }
         Redirect(static::Name(), 'OperationsList', $operation[OperationType::PrimaryColumnKey]);
     }
 
@@ -456,7 +467,7 @@ class OperationsController extends Controller
         /*Проверим, что переданы действительные идентификаторы артикулов*/
         $articleListId = array_map(
             function($item){
-                /*Вряд ли кто-нибудь осилит создать 2 млрд артикулов, так что здесь можно использовать такую проверку*/
+                /*Вряд ли кто-нибудь осилит создать 2 и более (для 64bit) млрд артикулов, так что здесь можно использовать такую проверку*/
                 $id = intval($item[Article::PrimaryColumnName]);
                 return $id == $item[Article::PrimaryColumnName] && $id > 0 ? $id : null;
             },
@@ -468,11 +479,30 @@ class OperationsController extends Controller
             function($id){ return !is_null($id);}
         );
 
+        $deepDecodeForeignKeys = 0;
+
         $queryConfig->Reset();
         $queryConfig->Condition = Article::PrimaryColumnKey . ' in (' . implode(',', $articleListId) . ')';
         $queryConfig->Limit = count($articleListId);
+        if (
+            strtolower($operationType['operation_name']) === 'sale' ||
+            strtolower($operationType['operation_name']) === 'writeoff'
+        ) {
+            $deepDecodeForeignKeys = 1;
+            $queryConfig->RequiredFields = array_merge(
+                Article::ModelPublicProperties(),
+                array(
+                    'is_writeoff',
+                    'is_saleable',
+                )
+            );
+        }
 
-        $articles = Article::getRows($db, $queryConfig);
+        $articles = Article::getRows(
+            $db,
+            $queryConfig,
+            $deepDecodeForeignKeys
+        );
 
         if (
             count($articles) !== count($articleListId) ||
@@ -480,6 +510,25 @@ class OperationsController extends Controller
             count($articleListId) !== count($_POST['selectedItems'])
         ) {
             $errors[] = 'Некорректная информация об артикулах.';
+        }
+
+        switch (strtolower($operationType['operation_name'])) {
+            case 'sale':
+                $checkedFlag = 'is_saleable';
+                foreach ($articles as $article) {
+                    if (!$article[$checkedFlag]) {
+                        $errors[] = 'Артикул "' . $article['article_name'] . '" не может быть израсходован';
+                    }
+                }
+                break;
+            case 'writeoff':
+                $checkedFlag = 'is_writeoff';
+                foreach ($articles as $article) {
+                    if (!$article[$checkedFlag]) {
+                        $errors[] = 'Артикул "' . $article['article_name'] . '" не может быть списан';
+                    }
+                }
+                break;
         }
 
         /*
@@ -587,9 +636,18 @@ class OperationsController extends Controller
                 $_POST['setFixedState'] === true ||
                 (is_string($_POST['setFixedState']) && strtolower($_POST['setFixedState']) === 'true')
             ) {
-                $this->setOperationFixedState($operation, $db);
+                $res = $this->setOperationFixedState($operation, $db);
+                if (is_array($res) && isset($res['errors'])) {
+                    $errors = $res['errors'];
+                }
                 $view->redirect = '/' . static::Name() . '/Detail/' . $operation[Operation::PrimaryColumnKey];
             }
+        }
+        if (count($errors)) {
+            $db->rollback();
+            $view->ClearVariables();
+            $view->errors = $errors;
+            $view->JSONView();
         }
 
         $db->commit();
@@ -666,8 +724,12 @@ class OperationsController extends Controller
 
     /**
      * Метод устанавливает для операции статус Зафиксирована, а также при необходимости корректирует состояние запаса
+     * Возвращает массив с ошибками, либо true в случае, если статус накладной изменен на Зафиксирован, либо false в случае,
+     * если накладная уже имеет статус Зафиксирован
+     *
      * @param array    $operation
      * @param DataBase $db
+     * @return bool | array
      */
     private function setOperationFixedState(array $operation, DataBase $db) {
         $operationState = OperationState::GetByPrimaryKey($operation[OperationState::PrimaryColumnKey], $db);
@@ -679,12 +741,49 @@ class OperationsController extends Controller
                      * Артикулы могут быть лишь временно зарезервированы на сотруднике.
                      * После этого они должны быть либо израсходованы, либо списаны.
                      */
-                    return;
+                    return array(
+                        'errors' => array(
+                            'Данный тип операций не может быть зафиксирован. Для фиксации измените тип на расходый или списание.'
+                        )
+                    );
                 case 'inventory':
                     /*
                      * !!!!!Инвентаризация не может проводиться по тем элементам, по которым есть незакрытое движение / поступление
                      */
                     break;
+                case 'sale':
+                case 'writeoff':
+
+                    $operationItems = Operation::getItems(
+                        $operation,
+                        array(
+                            'article_name',
+                            'is_writeoff',
+                            'is_saleable',
+                        ),
+                        $db,
+                        2
+                    );
+                    if (strtolower($operationType['operation_name']) === 'sale') {
+                        $message = ' не может быть проведен через документ расхода';
+                        $checkedFlag = 'is_saleable';
+                    }
+                    else {
+                        $message = ' не может быть проведен через документ списания';
+                        $checkedFlag = 'is_writeoff';
+                    }
+                    $errors = array();
+                    foreach ($operationItems as $operationItem) {
+                        if (!$operationItem[$checkedFlag]) {
+                            $errors[] = 'Артикул \'' . $operationItem['article_name'] . '\' ' . $message;
+                        }
+                    }
+                    if (count($errors)) {
+                        return array(
+                            'errors' => $errors
+                        );
+                    }
+                break;
             }
 
             $queryConfig = new QueryConfig();
@@ -724,7 +823,9 @@ class OperationsController extends Controller
                 ),
                 $db
             );
+            return true;
         }
+        return false;
     }
 
     /**
