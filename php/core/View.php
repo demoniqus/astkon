@@ -42,6 +42,10 @@ class View
         }
     }
 
+    public function ClearVariables() {
+        $this->variables = array();
+    }
+
     /**
      * @param null|string|array $template - наименование шаблона для вывода.
      *          null - соответствует текущему Controller->Action. По умолчанию дополняется дефолтными header и footer
