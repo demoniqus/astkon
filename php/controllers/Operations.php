@@ -59,6 +59,8 @@ class OperationsController extends Controller
             $view->generate(self::Name() . '/_operation_404');
         }
 
+        $this->checkEditionRules($view, $operation);
+
         $queryConfig->Reset();
         $queryConfig->Condition = OperationType::PrimaryColumnKey . ' = :' . OperationType::PrimaryColumnKey;
         $queryConfig->Substitution = array(OperationType::PrimaryColumnKey => $operation[OperationType::PrimaryColumnKey]);
@@ -376,6 +378,13 @@ class OperationsController extends Controller
         $view->generate();
     }
 
+    private function checkEditionRules(View $view, array $operation) {
+        if ($operation[UserGroup::PrimaryColumnKey] !== CURRENT_USER[UserGroup::PrimaryColumnName]) {
+            $view->message = 'У вас нет прав для изменения данного документа.';
+            $view->generate(self::Name() . '/_denied_action');
+        }
+    }
+
 
     public function FixationAction (array $context) {
         $db = new DataBase();
@@ -386,6 +395,9 @@ class OperationsController extends Controller
             $db->rollback();
             $view->generate(self::Name() . '/_operation_404');
         }
+
+        $this->checkEditionRules($view, $operation);
+
         $res = $this->setOperationFixedState($operation, $db);
         if (is_array($res) && isset($res['errors'])) {
             $db->rollback();
@@ -425,6 +437,29 @@ class OperationsController extends Controller
         $db->beginTransaction();
         /*Проверяем, что запрошен допустимый тип операции*/
         $operation = $_POST['operation'];
+
+        $existsOperation = null;
+        if ($operation[Operation::PrimaryColumnName] != 0) {
+            $existsOperation = Operation::GetByPrimaryKey(
+                $operation[Operation::PrimaryColumnName],
+                $db
+            );
+            if (!$existsOperation) {
+                $errors[] = 'Получен недействительный идентификатор операции';
+            }
+            if ($existsOperation[OperationType::PrimaryColumnKey] != $operation[OperationType::PrimaryColumnName]) {
+                $errors[] = 'Тип существующего документа не может быть изменен';
+            }
+            if ($existsOperation[OperationState::PrimaryColumnKey] != $operation[OperationState::PrimaryColumnName]) {
+                $errors[] = 'Статус существующего документа не может быть изменен напрямую';
+            }
+        }
+        if (count($errors)) {
+            $db->rollback();
+            $view->errors = $errors;
+            $view->JSONView();
+        }
+
         $queryConfig->Condition = OperationType::PrimaryColumnKey . ' = :' . OperationType::PrimaryColumnKey;
         $queryConfig->Substitution = array(
             OperationType::PrimaryColumnKey => $operation[OperationType::PrimaryColumnName],

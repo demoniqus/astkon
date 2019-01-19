@@ -7,6 +7,7 @@ use Astkon\GlobalConst;
 use Astkon\Model\Article;
 use Astkon\Model\Operation;
 use Astkon\Model\OperationType;
+use Astkon\Model\UserGroup;
 
 require_once getcwd() . DIRECTORY_SEPARATOR . GlobalConst::ViewsDirectory . DIRECTORY_SEPARATOR . 'left_menu.php';
 
@@ -43,7 +44,7 @@ if (strtolower($operationType['OperationName']) === 'reserving') {
         <div class="row mt-3">
             <a href="<?= '/' . OperationsController::Name() . '/OperationsList/' . $operationType[OperationType::PrimaryColumnName]; ?>" class="btn btn-outline-secondary mr-2">К списку документов</a>
             <?php
-                if (strtolower($operationState['state_name']) !== 'fixed') {
+                if (strtolower($operationState['state_name']) !== 'fixed' && $operation[UserGroup::PrimaryColumnName] === CURRENT_USER[UserGroup::PrimaryColumnName]) {
                     ?>
                         <a href="<?= '/' . OperationsController::Name() . '/Edit/' . $operation[Operation::PrimaryColumnName]; ?>" class="btn btn-outline-info mr-2">Редактировать</a>
                     <?php
