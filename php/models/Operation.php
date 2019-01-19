@@ -21,11 +21,11 @@ class Operation extends OperationPartial {
 		parent::__construct($fields, DataBase::camelCaseToUnderscore(__CLASS__));
 	}
 
-    public static function getItems($operation, ?array $requiredFields = null, ?Database $db = null) {
+    public static function getItems($operation, ?array $requiredFields = null, ?Database $db = null, int $deepDecodeForeignKeys = 0) {
 	    $queryConfig = new QueryConfig(
-            '`' . static::PrimaryColumnKey . '` = ' . (is_array($operation) ? $operation[Operation::PrimaryColumnKey] : $operation),
+            '`' . OperationItem::DataTable . '`.`' . static::PrimaryColumnKey . '` = ' . (is_array($operation) ? $operation[Operation::PrimaryColumnKey] : $operation),
             $requiredFields
         );
-        return OperationItem::getRows($db, $queryConfig);
+        return OperationItem::getRows($db, $queryConfig, $deepDecodeForeignKeys);
     }
 }
