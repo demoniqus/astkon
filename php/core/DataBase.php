@@ -253,13 +253,15 @@ class DataBase {
         }
         catch (PDOException $PDOException) {
             $errInfo = array(
-                '@error' => true,
-                'errors' => array(
+                '@error'       => true,
+                'queryString'  => $stmt->queryString,
+                'substitution' => $substitution,
+                'errors'       => array(
                     array(
-                        'errorType' => 'PDO',
-                        'errorCode' => $PDOException->getCode(),
+                        'errorType'    => 'PDO',
+                        'errorCode'    => $PDOException->getCode(),
                         'errorMessage' => $PDOException->getMessage(),
-                        'errorInfo' => $PDOException->errorInfo
+                        'errorInfo'    => $PDOException->errorInfo,
                     ),
                 ),
             );
@@ -270,13 +272,16 @@ class DataBase {
             }
             catch (PDOException $PDOExceptionRollback) {
                 $errInfo['errors'][] = array(
-                    'errorType' => 'PDO',
-                    'errorCode' => $PDOExceptionRollback->getCode(),
+                    'errorType'    => 'PDO',
+                    'errorCode'    => $PDOExceptionRollback->getCode(),
                     'errorMessage' => $PDOExceptionRollback->getMessage(),
                 );
             }
 
-            $errInfo = self::errorMessageParser($errInfo, array_keys($substitution));
+            $errInfo = self::errorMessageParser(
+                $errInfo,
+                is_array($substitution) ? array_keys($substitution) : array()
+            );
 
             return $errInfo;
         }
@@ -536,6 +541,17 @@ class DataBase {
                                 case 1452:
                                     $keySuffix = $keyPrefix = '`';
                                     $errCodeExplain = 'Необходимо выбрать значение из справочника';
+                                    break;
+                                case 1052:
+                                    preg_match('/^[^\']+\'([^\']+)/', $errInfo['errorMessage'], $expectedErrorColumn);
+                                    $errInfo['errorMessage'] = array(
+                                        'Неоднозначное обращение к колонке \''
+                                        . $expectedErrorColumn[1] .
+                                        '\' в условии запроса WHERE',
+                                        $errInfo['errorMessage']
+                                    );
+
+                                    $programmerErrorProcessor($errInfo);
                                     break;
                             }
                         }
