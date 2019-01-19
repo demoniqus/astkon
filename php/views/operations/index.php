@@ -21,7 +21,7 @@
                 array(
                     'Action' => '/Operations/OperationsList/' . $operationTypes['Income'],
                     'Caption' => 'Поступление',
-                    'Icon' => '/receipt.jpg',
+                    'Icon' => '/receipt.png',
                 ),
                 array(
                     'Action' => '/Operations/OperationsList/' . $operationTypes['Sale'],
@@ -42,7 +42,7 @@
                 array(
                     'Action' => '/Operations/OperationsList/' . $operationTypes['Inventory'],
                     'Caption' => 'Инвентаризация',
-                    'Icon' => '/invent.jpeg',
+                    'Icon' => '/invent.png',
                 ),
             );
 

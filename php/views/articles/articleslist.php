@@ -1,7 +1,6 @@
 <style type="text/css">
 
 </style>
-
 <div class="row mx-0">
     <?php
 
@@ -20,11 +19,10 @@
             <?php
             if (CURRENT_USER['IsAdmin']) {
                 ?>
-                    <a href="/<?= ArticlesController::Name(); ?>/Import" class="btn offset-2 py-0"><img src="/icon_import_csv.jpg" class="graphic-button" title="Импорт из файла CSV"/></a>
+                    <a href="/<?= ArticlesController::Name(); ?>/Import" class="btn offset-2 py-0"><img src="/icon_import_csv.png" class="graphic-button" title="Импорт из файла CSV"/></a>
                 <?php
             }
             ?>
-
         </div>
         <?php
         View::TableList($modelConfig, $listItems, $listItemOptions, $tableViewConfig);

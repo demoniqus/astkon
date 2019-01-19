@@ -29,24 +29,7 @@ class IndexController extends Controller
      */
     public function IndexAction(array $context)
     {
-//        echo '<pre style="background-color:rgb(' . mt_rand(50, 235) . ',' . mt_rand(50, 235) . ',' . mt_rand(50, 235) . ')">';
         $this->view->generate();
-//        $this->AuthAction($context);
-//        echo '<pre style="background-color:rgb(' . mt_rand(50, 235) . ',' . mt_rand(50, 235) . ',' . mt_rand(50, 235) . ')">';
-//        echo '<img src="/4.jpg" />';
-//        echo 'Controller Index, action Index' . PHP_EOL;
-//        echo (new \DateTime())->format('Y-m-d H:i:s') . PHP_EOL;
-//        echo PHP_EOL;
-//        echo PHP_EOL;
-////        var_dump($_SERVER);
-//        echo PHP_EOL;
-//        echo PHP_EOL;
-//        if (isset($_POST['login']) && isset($_POST['password'])) {
-//            $db = new DataBase();
-//        } else {
-//            return 'View';
-//        }
-
     }
 
 }

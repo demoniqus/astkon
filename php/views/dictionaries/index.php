@@ -45,7 +45,7 @@
                     //            array(
                     //                'Action' => '/People/PeopleList',
                     //                'Caption' => 'Люди',
-                    //                'Icon' => '/people.jpg',
+                    //                'Icon' => '/people.png',
                     //            ),
 
                 );
@@ -85,7 +85,7 @@
                     //            array(
                     //                'Action' => '/People/PeopleList',
                     //                'Caption' => 'Люди',
-                    //                'Icon' => '/people.jpg',
+                    //                'Icon' => '/people.png',
                     //            ),
 
                 );
