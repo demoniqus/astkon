@@ -1,7 +1,7 @@
--- USE `astkon`;
+USE `ck54269_astkon`;
 -- MySQL dump 10.13  Distrib 5.7.24, for Linux (x86_64)
 --
--- Host: 127.0.0.1    Database: astkon
+-- Host: 127.0.0.1    Database: ck54269_astkon
 -- ------------------------------------------------------
 -- Server version	5.7.24-0ubuntu0.18.04.1-log
 
@@ -25,7 +25,7 @@ DROP TABLE IF EXISTS `article`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `article` (
   `id_article` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `article_name` varchar(300) NOT NULL,
+  `article_name` varchar(255) NOT NULL,
   `id_measure` int(11) unsigned NOT NULL,
   `vendor_code` varchar(50) DEFAULT NULL COMMENT 'Код производителя',
   `is_archive` bit(1) NOT NULL DEFAULT b'0' COMMENT 'Элемент помещен в архив',
@@ -37,7 +37,7 @@ CREATE TABLE `article` (
   FULLTEXT KEY `fk_article_article_name_idx` (`article_name`),
   CONSTRAINT `fk_article__article_category` FOREIGN KEY (`id_article_category`) REFERENCES `article_category` (`id_article_category`),
   CONSTRAINT `fk_article__measure` FOREIGN KEY (`id_measure`) REFERENCES `measure` (`id_measure`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=112 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -93,7 +93,7 @@ CREATE TABLE `article_category` (
   `is_saleable` bit(1) NOT NULL DEFAULT b'1',
   PRIMARY KEY (`id_article_category`),
   UNIQUE KEY `category_name_UNIQUE` (`category_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -114,7 +114,7 @@ DROP TABLE IF EXISTS `build_object`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `build_object` (
   `id_build_object` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `build_object_name` varchar(500) NOT NULL,
+  `build_object_name` varchar(255) NOT NULL,
   `comment` text,
   PRIMARY KEY (`id_build_object`),
   UNIQUE KEY `object_name_UNIQUE` (`build_object_name`)
@@ -193,11 +193,11 @@ CREATE TABLE `operation` (
   `id_operation` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `create_datetime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Дата создания документа',
   `id_operation_type` int(10) unsigned NOT NULL,
-  `operation_info` json NOT NULL,
+  `operation_info` mediumtext NOT NULL,
   `id_operation_state` int(10) unsigned NOT NULL,
   `fix_datetime` datetime DEFAULT NULL COMMENT 'Дата изменения статуса операции на "Зафиксировано"',
   `id_user_group` int(10) unsigned NOT NULL,
-  `linked_data` json DEFAULT NULL COMMENT 'Информация о дополнительных элементах, связанных с операцией, например пользователями, за которыми временно зарезервирован инструмент, или объекты, на которые израсходованы материалы.\nИнформация раскладывается по наименованим сущностей, к которым она принадлежит',
+  `linked_data` mediumtext COMMENT 'Информация о дополнительных элементах, связанных с операцией, например пользователями, за которыми временно зарезервирован инструмент, или объекты, на которые израсходованы материалы.\nИнформация раскладывается по наименованим сущностей, к которым она принадлежит',
   PRIMARY KEY (`id_operation`),
   KEY `fk_operation_operation_type_idx` (`id_operation_type`),
   KEY `fk_operation_operation_state_idx` (`id_operation_state`),
@@ -205,7 +205,7 @@ CREATE TABLE `operation` (
   CONSTRAINT `fk_operation__operation_state` FOREIGN KEY (`id_operation_state`) REFERENCES `operation_state` (`id_operation_state`),
   CONSTRAINT `fk_operation__operation_type` FOREIGN KEY (`id_operation_type`) REFERENCES `operation_type` (`id_operation_type`),
   CONSTRAINT `fk_operation__user_group` FOREIGN KEY (`id_user_group`) REFERENCES `user_group` (`id_user_group`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -230,7 +230,7 @@ CREATE TABLE `operation_item` (
   `id_operation` bigint(20) unsigned NOT NULL,
   `operation_count` decimal(30,15) NOT NULL DEFAULT '0.000000000000000' COMMENT 'Количество в операции',
   `consignment_balance` decimal(30,15) NOT NULL DEFAULT '0.000000000000000' COMMENT 'Остаток от данной партии',
-  `operation_item_info` json DEFAULT NULL COMMENT 'Информация об операции',
+  `operation_item_info` mediumtext COMMENT 'Информация об операции',
   PRIMARY KEY (`id_operation_item`),
   KEY `fk_operation_item_article_idx` (`id_article`),
   KEY `fk_operation_item_operation_idx` (`id_operation`),
@@ -259,7 +259,7 @@ CREATE TABLE `operation_state` (
   `id_operation_state` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `state_name` varchar(30) NOT NULL,
   `state_label` varchar(30) DEFAULT NULL,
-  `state_comment` varchar(500) DEFAULT NULL,
+  `state_comment` text,
   PRIMARY KEY (`id_operation_state`),
   UNIQUE KEY `state_name_UNIQUE` (`state_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
@@ -339,7 +339,7 @@ CREATE TABLE `user` (
   `id_user` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `login` varchar(255) NOT NULL,
   `password` varchar(45) NOT NULL,
-  `config` json DEFAULT NULL COMMENT 'Настройки пользователя',
+  `config` mediumtext COMMENT 'Настройки пользователя',
   `has_account` bit(1) NOT NULL DEFAULT b'0' COMMENT 'Флаг наличия аккаунта в системе',
   `id_user_group` int(10) unsigned NOT NULL,
   `user_name` varchar(100) NOT NULL,
@@ -371,10 +371,10 @@ DROP TABLE IF EXISTS `user_group`;
 CREATE TABLE `user_group` (
   `id_user_group` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_group_name` varchar(100) NOT NULL,
-  `comment` varchar(3500) DEFAULT NULL,
+  `comment` text,
   PRIMARY KEY (`id_user_group`),
   UNIQUE KEY `user_group_name_UNIQUE` (`user_group_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -395,4 +395,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-01-19 16:24:00
+-- Dump completed on 2019-01-19 17:30:22
