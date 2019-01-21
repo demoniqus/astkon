@@ -85,8 +85,8 @@ protected static $fieldsInfo = array (
   array (
     'table_name' => 'operation_state',
     'column_name' => 'state_comment',
-    'data_type' => 'varchar',
-    'max_length' => '500',
+    'data_type' => 'text',
+    'max_length' => '65535',
     'num_prec' => NULL,
     'num_scale' => NULL,
     'dtime_prec' => NULL,

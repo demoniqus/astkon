@@ -79,8 +79,8 @@ protected static $fieldsInfo = array (
   array (
     'table_name' => 'user_group',
     'column_name' => 'comment',
-    'data_type' => 'varchar',
-    'max_length' => '3500',
+    'data_type' => 'text',
+    'max_length' => '65535',
     'num_prec' => NULL,
     'num_scale' => NULL,
     'dtime_prec' => NULL,

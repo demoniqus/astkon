@@ -99,12 +99,12 @@ protected static $fieldsInfo = array (
   array (
     'table_name' => 'user',
     'column_name' => 'config',
-    'data_type' => 'json',
-    'max_length' => NULL,
+    'data_type' => 'mediumtext',
+    'max_length' => '16777215',
     'num_prec' => NULL,
     'num_scale' => NULL,
     'dtime_prec' => NULL,
-    'char_set' => NULL,
+    'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'YES',
     'privileges' => 'select,insert,update,references',
@@ -182,7 +182,7 @@ protected static $fieldsInfo = array (
 	* @list_view_order 6
 	* @database_column_name config
 	* @caption Системная конфигурация
-	* @var array
+	* @var string
 	*/
 	public $Config;
 
@@ -222,8 +222,8 @@ protected static $fieldsInfo = array (
 	public $IsAdmin;
 
 	/**
-    * @nodisplay
-    * @noeditable
+	* @nodisplay
+	* @noeditable
 	* @database_column_name is_delete
 	* @caption Удаленный пользователь
 	* @var bool

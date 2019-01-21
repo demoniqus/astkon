@@ -972,7 +972,6 @@ class DataBase {
                 case 'nvarchar':
                 case 'text':
                 case 'tinytext':
-                case 'mediumtext':
                     $entity[$k] = $v . '';
                     break;
 //                case 'tinyint':
@@ -981,6 +980,11 @@ class DataBase {
                 case 'bit':
                     $entity[$k] = $v === '1' || $v === true || $v === 1;
                     break;
+                case 'mediumtext':
+                    /*
+                     * Из-за отсутствия поддержки JSON на целевом хостинге под хранение JSON выделим тип mediumtext - это позволит не
+                     * переделывать весь код под новые наименования колонок таблиц
+                    */
                 case 'json':
                     /*MySql возвращает все значения в строковом виде, поэтому здесь не проверяем is_string($v)*/
                     if ($v !== null && trim($v) !== '') {

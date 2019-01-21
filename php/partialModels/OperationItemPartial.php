@@ -121,12 +121,12 @@ protected static $fieldsInfo = array (
   array (
     'table_name' => 'operation_item',
     'column_name' => 'operation_item_info',
-    'data_type' => 'json',
-    'max_length' => NULL,
+    'data_type' => 'mediumtext',
+    'max_length' => '16777215',
     'num_prec' => NULL,
     'num_scale' => NULL,
     'dtime_prec' => NULL,
-    'char_set' => NULL,
+    'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'YES',
     'privileges' => 'select,insert,update,references',
@@ -172,7 +172,7 @@ protected static $fieldsInfo = array (
 	/**
 	* @database_column_name operation_item_info
 	* @caption
-	* @var array
+	* @var string
 	*/
 	public $OperationItemInfo;
 

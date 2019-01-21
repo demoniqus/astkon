@@ -135,12 +135,12 @@ protected static $fieldsInfo = array (
   array (
     'table_name' => 'operation',
     'column_name' => 'operation_info',
-    'data_type' => 'json',
-    'max_length' => NULL,
+    'data_type' => 'mediumtext',
+    'max_length' => '16777215',
     'num_prec' => NULL,
     'num_scale' => NULL,
     'dtime_prec' => NULL,
-    'char_set' => NULL,
+    'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'NO',
     'privileges' => 'select,insert,update,references',
@@ -167,12 +167,12 @@ protected static $fieldsInfo = array (
   array (
     'table_name' => 'operation',
     'column_name' => 'linked_data',
-    'data_type' => 'json',
-    'max_length' => NULL,
+    'data_type' => 'mediumtext',
+    'max_length' => '16777215',
     'num_prec' => NULL,
     'num_scale' => NULL,
     'dtime_prec' => NULL,
-    'char_set' => NULL,
+    'char_set' => 'utf8',
     'column_key' => '',
     'is_nullable' => 'YES',
     'privileges' => 'select,insert,update,references',
@@ -231,7 +231,7 @@ protected static $fieldsInfo = array (
 	* @nodisplay
 	* @database_column_name linked_data
 	* @caption Информация о связанных объектах
-	* @var array
+	* @var string
 	*/
 	public $LinkedData;
 
@@ -240,7 +240,7 @@ protected static $fieldsInfo = array (
 	* @nodisplay
 	* @database_column_name operation_info
 	* @caption Расширенная информация
-	* @var array
+	* @var string
 	*/
 	public $OperationInfo;
 
