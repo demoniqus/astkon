@@ -12,6 +12,10 @@ baseInstansablePrototype = function(){
         return id;
     };
 
+    o.registerId = function(id){
+        __static_data.instances[id] = this;
+    };
+
     o.unregisterId = function(id){
         if (id in __static_data.instances) {
             delete __static_data.instances[id];
@@ -87,8 +91,6 @@ DictionarySelector = (function(){
     };
 
     DS.prototype = new baseInstansablePrototype();
-
-
 
     DS.prototype.close = function(__data){
         __data.dialog.dialog('close');
