@@ -17,7 +17,7 @@ if ($totalPagesCount > 1) {
                     while ($startPage < $endPage) {
                         ?>
                         <li class="page-item <?= intval($startPage) === intval($tableViewConfig->currentPage) ? 'active' : ''; ?>">
-                            <a class="page-link" href="javascript:void(0);" onclick="TableManager.get('<?= $tableViewConfig->id; ?>').setPage(<?= $startPage ; ?>);"><?= $startPage + 1; ?></a>
+                            <a class="page-link" href="javascript:void(0);" onclick="TableManager.instance('<?= $tableViewConfig->id; ?>').setPage(<?= $startPage ; ?>);"><?= $startPage + 1; ?></a>
                         </li>
                         <?php
                         $startPage++;
