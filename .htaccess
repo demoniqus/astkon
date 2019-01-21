@@ -1,0 +1,24 @@
+#не выдаем содержимое каталога
+Options -Indexes
+#устанавливаем индексную страницу
+DirectoryIndex index.php
+#устанавливаем дефолтную кодировку
+AddDefaultCharset UTF-8
+
+
+RewriteEngine On
+
+
+RewriteBase /
+
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
+
+RewriteRule (.+\.(png|jpe?g|bmp|tiff|gif))$ /public/images/$1 [L,NC]
+RewriteRule (.+\.js)$ /public/scripts/$1 [L,NC]
+RewriteRule (.+\.css)$ /public/styles/$1 [L,NC]
+
+#RewriteRule ^([a-z0-9_-]+)\.css$ public/styles/$1.css [L,NC]
+
+RewriteRule ^.*$ index.php [L,NC]
