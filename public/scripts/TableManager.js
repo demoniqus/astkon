@@ -1,13 +1,8 @@
 if (!('TableManager' in window)) {
     window.TableManager = (function(){
-        let globalStorage = {
-            instances: {
-
-            }
-        };
         let self = function(/*string*/ id){
-            if (id in globalStorage.instances) {
-                return globalStorage.instances[id];
+            if (this.instance(id)) {
+                return this.instance(id);
             }
             let localStorage = {
                 id: id,
@@ -22,11 +17,6 @@ if (!('TableManager' in window)) {
             let instance = this;
 
             instance.setPage = function(/*int*/ pageNum, /*bool*/ isInitValue) {
-                console.log({
-                    method : 'setPage',
-                    localStorage: localStorage,
-                    globalStorage, globalStorage
-                });
                 localStorage.currentPage = pageNum;
                 if (!isInitValue){
                     this.updateTableData();
@@ -132,9 +122,9 @@ if (!('TableManager' in window)) {
             return instance;
         };
 
-        self.get = function(/*string*/id){
-            return globalStorage.instances[id];
-        }
+        self.prototype = new baseInstansablePrototype();
+
+        self.instance = self.prototype.instance;
 
         return self;
     })();
