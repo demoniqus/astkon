@@ -4,15 +4,12 @@
     use Astkon\Model\Model;
 
     foreach ($items as $item) {
+        $PKVal = isset($item[$primaryKeyName]) ? $item[$primaryKeyName] : 0;
         ?>
-        <tr data-item="<?= htmlspecialchars(json_encode($item)); ?>">
+        <tr data-item="<?= htmlspecialchars(json_encode($item)); ?>" class="<?= $primaryKeyName . $PKVal; ?>">
         <?php
-        $PKVal = 0;
         foreach ($config as $fieldConfig) {
             $val = isset($item[$fieldConfig['key']]) ? $item[$fieldConfig['key']] : '';
-            if ($fieldConfig['primary_key']) {
-                $PKVal = $val;
-            }
             if (array_key_exists('nodisplay', $fieldConfig)) {
                 continue;
             }
