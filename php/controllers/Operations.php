@@ -759,7 +759,13 @@ class OperationsController extends Controller
     private function setOperationFixedState(array $operation, DataBase $db) {
         $operationState = OperationState::GetByPrimaryKey($operation[OperationState::PrimaryColumnKey], $db);
         if (strtolower($operationState['state_name']) !== 'fixed') {
+            $queryConfig = new QueryConfig();
+            $queryConfig->Condition ='`state_name`=\'fixed\'';
+
+            $fixedState = OperationState::getFirstRow($db, $queryConfig);
+
             $operationType = OperationType::GetByPrimaryKey($operation[OperationType::PrimaryColumnKey], $db);
+
             switch (strtolower($operationType['operation_name'])) {
                 case 'reserving':
                     /*
@@ -773,8 +779,63 @@ class OperationsController extends Controller
                     );
                 case 'inventory':
                     /*
-                     * !!!!!Инвентаризация не может проводиться по тем элементам, по которым есть незакрытое движение / поступление
+                     * !!!!!Инвентаризация не может проводиться по тем элементам, по которым есть незакрытое движение
+                     * (расход, резерв, списание, другая незакрытая инвентаризационная накладная) в текущей группе пользователей
                      */
+                    $listIdOperationItems = Operation::getItems(
+                        $operation,
+                        array(Article::PrimaryColumnKey),
+                        $db
+                    );
+                    $listIdOperationItems = array_map(
+                        function($operationItem){ return $operationItem[Article::PrimaryColumnKey];},
+                        $listIdOperationItems
+                    );
+
+                    $queryConfig->Reset();
+                    $queryConfig->Condition = '`operation_name` = \'Income\'';
+                    $queryConfig->RequiredFields = array(OperationType::PrimaryColumnKey);
+
+                    $incomeType = OperationType::getFirstRow($db, $queryConfig, 0);
+
+                    $queryConfig->Reset();
+                    $queryConfig->Condition =
+                        '`' . OperationItem::DataTable . '`.`' . Article::PrimaryColumnKey . '` in (' . implode(',', $listIdOperationItems) . ')' .
+                        ' AND `' . OperationItem::DataTable . '`.`' . Operation::PrimaryColumnKey . '` <> ' . $operation[Operation::PrimaryColumnKey] .
+                        ' AND `' . Operation::DataTable . '`.`' . OperationState::PrimaryColumnKey . '` <> ' . $fixedState[OperationState::PrimaryColumnKey] .
+                        ' AND `' . Operation::DataTable . '`.`' . OperationType::PrimaryColumnKey . '` <> ' . $incomeType[OperationType::PrimaryColumnKey] .
+                        ' AND `' . Operation::DataTable . '`.`' . UserGroup::PrimaryColumnKey . '` = ' . CURRENT_USER[UserGroup::PrimaryColumnName];
+                    $queryConfig->RequiredFields = array(
+                        Article::PrimaryColumnKey,
+                        'article_name',
+                        Operation::PrimaryColumnKey
+                    );
+
+                    $articlesData = OperationItem::getRows(
+                        $db,
+                        $queryConfig,
+                        1
+                    );
+                    if (count($articlesData)) {
+                        $tmp = array();
+                        foreach ($articlesData as $articleData) {
+                            if (!array_key_exists($articleData[Operation::PrimaryColumnKey], $tmp)) {
+                                $tmp[$articleData[Operation::PrimaryColumnKey]] = array();
+                            }
+                            $tmp[$articleData[Operation::PrimaryColumnKey]][$articleData[Article::PrimaryColumnKey]] = $articleData['article_name'];
+                        }
+
+                        $errors = array();
+                        foreach ($tmp  as $idOperation => $articleData) {
+                            foreach ($articleData as $idArticle => $articleName) {
+                                $errors[] = 'Инвентаризация по артикулу \'' . $articleName . '\' невозможна, т.к. он используется в '
+                                    .'<a href="/' . self::Name() . '/Detail/' . $idOperation . '" target="_blank">операции #' . $idOperation . '</a>';
+                            }
+                        }
+                        return array(
+                            'errors' => $errors
+                        );
+                    }
                     break;
                 case 'sale':
                 case 'writeoff':
@@ -828,11 +889,6 @@ class OperationsController extends Controller
                         break;
                 }
             }
-
-            $queryConfig->Reset();
-            $queryConfig->Condition ='`state_name`=\'fixed\'';
-
-            $fixedState = OperationState::getFirstRow($db, $queryConfig);
 
             $operation['operation_info']['fixer'] = array(
                 'value' => CURRENT_USER[User::PrimaryColumnName],
