@@ -99,7 +99,8 @@
                                 }
                                 ?>">
                             <img src="<?= $option['icon']; ?>"
-                                 title="<?= isset($option['title']) ? $option['title'] : ''; ?>" class="action-icon"/>
+                                 title="<?= isset($option['title']) ? $option['title'] : ''; ?>"
+                                 class="action-icon <?= isset($option['class']) ? $option['class'] : '';?>"/>
                         </a>
                         <?php
                     }
