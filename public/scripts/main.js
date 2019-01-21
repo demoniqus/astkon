@@ -30,9 +30,10 @@ baseInstansablePrototype = function(){
 
 DictionarySelector = (function(){
     var DS = function(/*object*/options){
-        var _self = this;
-        var __data = {
-            id: this.getID(),
+        var instance = this;
+        var localStorage = {
+            id: instance.getID(),
+            selectedItems: {}
         };
         var url = options.url;
         if (url[1] !== '/') {
@@ -42,7 +43,7 @@ DictionarySelector = (function(){
         if (options.dialogButtons) {
             for (let i in options.dialogButtons) {
                 let dlgBtn = options.dialogButtons[i];
-                dlgBtn.click = dlgBtn.click.bind({this: this, storage: __data});
+                dlgBtn.click = dlgBtn.click.bind({instance: instance, storage: localStorage});
                 dialogButtons.push(dlgBtn);
             }
         }
@@ -53,20 +54,20 @@ DictionarySelector = (function(){
                 if (typeof function(){} === typeof options.onClose) {
                     options.onClose();
                 }
-                this.this.close(this.storage);
-            }.bind({this: this, storage: __data})
+                this.instance.close(this.storage);
+            }.bind({instance: instance, storage: localStorage})
         });
 
         $.post(
             url,
-            {dialogId : __data.id},
+            {dialogId : localStorage.id},
             function(request){
                 if (request) {
-                    __data.modalWindow = $('<div></div>');
-                    __data.modalWindow.html(request);
-                    __data.modalWindow.css('display', 'none');
-                    $('body').append(__data.modalWindow);
-                    __data.dialog = $(__data.modalWindow).dialog({
+                    localStorage.modalWindow = $('<div></div>');
+                    localStorage.modalWindow.html(request);
+                    localStorage.modalWindow.css('display', 'none');
+                    $('body').append(localStorage.modalWindow);
+                    localStorage.dialog = $(localStorage.modalWindow).dialog({
                         title: options.title || '',
                         height: document.body.clientHeight * .8,
                         width: document.body.clientWidth * .8,
@@ -80,9 +81,25 @@ DictionarySelector = (function(){
             }
         );
 
-        this.setValue = function(objectsData, fields){
+        instance.setValue = function(objectsData, fields){
             options.onSelect(objectsData, fields);
-            _self.close(__data);
+            instance.close(localStorage);
+        };
+
+        instance.setItem = function(/*object*/ item, /*string*/pkName){
+            console.log('setItem', pkName, item, localStorage);
+            localStorage.selectedItems[item[pkName]] = item;
+        };
+
+        instance.unsetItem = function(/*object*/ item, /*string*/pkName){
+            console.log('unsetItem', pkName, item, localStorage);
+            delete localStorage.selectedItems[item[pkName]];
+        };
+
+        instance.getSelectedItems = function(){
+            return linq(localStorage.selectedItems)
+                .valuesToArray()
+                .collection;
         };
 
     };
@@ -99,7 +116,7 @@ DictionarySelector = (function(){
         this.unregisterId(__data.id)
     };
 
-
+    DS.instance = DS.prototype.instance;
 
     return DS;
 })();
@@ -133,13 +150,8 @@ DictionaryField = (function(){
                     'class': 'btn btn-light',
                     text: 'Добавить отмеченные',
                     click: function(){
-                        let objectsData = linq(this.storage.modalWindow.find('tr[data-checked_state=checked]'))
-                            .select(
-                                function(tr){
-                                    return JSON.parse(tr.dataset.item);
-                                }
-                            ).collection;
-                        this.this.setValue(objectsData);
+                        let objectsData = __data.DictionarySelector.getSelectedItems();
+                        this.instance.setValue(objectsData);
                     }
                 }
             ]
@@ -213,12 +225,16 @@ function setSelectedArticlesAsEditable(/*DOM.form-group*/ selectedArticlesContai
     })
 }
 
-function DictionaryItemChangeCheckedState(/*DOM img*/img) {
+function DictionaryItemChangeCheckedState(/*DOM img*/img, /*string*/ dictionarySelectorInstanceId, /*string*/ pkName) {
     let tr = $(img).parents('tr:first').get(0);
     let state = tr.dataset.checked_state || 'unchecked';
     state = state === 'unchecked' ? 'checked' : 'unchecked';
     tr.dataset.checked_state = state;
     $(img).attr('src', '/checkbox-' + state + '.png');
+    DictionarySelector.instance(dictionarySelectorInstanceId)[state === 'checked' ? 'setItem' : 'unsetItem'](
+        JSON.parse(tr.dataset.item),
+        pkName
+    );
 
 }
 

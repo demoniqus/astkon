@@ -136,9 +136,15 @@ trait ListView
             if ( trim(strtolower($_GET['mode'])) === 'multiple') {
                 $listItemOptions[] = array(
                     'action' => null,
-                    'click'  => htmlspecialchars('DictionaryItemChangeCheckedState($(this).find("img:first"))'),
+                    'click'  => htmlspecialchars(
+                        'DictionaryItemChangeCheckedState($(this).find("img:first"), "'
+                        . $_REQUEST['dialogId'] . '","'
+                        . $model::PrimaryColumnName
+                        . '")'
+                    ),
                     'icon'   => '/checkbox-unchecked.png',
-                    'title'  => 'Отметить элемент'
+                    'title'  => 'Отметить элемент',
+                    'class'  => 'checkbox',
                 );
             }
         }

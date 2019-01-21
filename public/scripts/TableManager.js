@@ -12,7 +12,8 @@ if (!('TableManager' in window)) {
                 orderBy: [],
                 baseURL: '',
                 mode: 'relocation',
-                queryParams: {}
+                queryParams: {},
+                selectedItems: {}
             };
             let instance = this;
 
@@ -118,7 +119,17 @@ if (!('TableManager' in window)) {
                 }
             };
 
-            globalStorage.instances[id] = instance;
+            instance.restoreSelectedItems = function(/*string*/dictionarySelectorInstanceId, /*string*/ pkName){
+                let container = $('#' + localStorage.id).parents('.table-view-container:first');
+                let selectedItems = DictionarySelector.instance(dictionarySelectorInstanceId).getSelectedItems();
+                linq(selectedItems)
+                    .foreach(function(selectedItem){
+                        let className = '.' + pkName + (selectedItem[pkName] || '0') + ':first';
+                        container.find('tr' + className).find('img.checkbox:first').attr('src', '/checkbox-checked.png')
+                    });
+            };
+
+            instance.registerId(id);
             return instance;
         };
 

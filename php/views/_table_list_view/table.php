@@ -42,6 +42,14 @@
             .setGETParams(<?= json_encode($tableViewConfig->GETParams); ?>)
             .setMode('<?= $tableViewConfig->displayMode; ?>')
             .setPageSize(<?= $tableViewConfig->pageSize; ?>, true)
-            .setPage(<?= $tableViewConfig->currentPage; ?>, true);
+            .setPage(<?= $tableViewConfig->currentPage; ?>, true)
+        <?php
+            if ($tableViewConfig->displayMode === 'reload') {
+            ?>
+            .restoreSelectedItems('<?= $_REQUEST['dialogId']; ?>', '<?= $primaryKeyName; ?>')
+            <?php
+            }
+        ?>
+            ;
     </script>
 </div>
